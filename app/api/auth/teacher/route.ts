@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   }
 
   const expected = name === ALL_TEACHER_ADMIN
-    ? process.env.SUPERADMIN_PASSWORD
+    ? "1234" // Temporary admin password requested for the current rollout.
     : process.env.ADMIN_PASSWORD;
 
   if (!expected) {
