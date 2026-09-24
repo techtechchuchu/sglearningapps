@@ -39,11 +39,11 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: name, password }),
       });
-      const authJson = await auth.json();
+      const authJson = await auth.json().catch(() => ({ message: `로그인 서버 오류 (${auth.status})` }));
       if (!auth.ok) throw new Error(authJson.message || "로그인 실패");
 
       const response = await fetch("/api/dashboard/student", { cache: "no-store" });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({ message: `데이터 서버 오류 (${response.status})` }));
       if (!response.ok) throw new Error(data.message || "데이터 조회 실패");
       setStudentData(data);
       setTeacherData(null);
