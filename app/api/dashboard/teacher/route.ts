@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSupabase } from "../../../../lib/supabase-server";
+import { getSession } from "../../../../lib/session";
 
 const ALL_TEACHER_ADMIN = "전체 관리자";
 
 export async function GET(request: NextRequest) {
   try {
-    const teacher = String(request.nextUrl.searchParams.get("teacher") || "").trim();
-    if (!teacher) {
-      return NextResponse.json({ ok: false, message: "선생님 정보가 없습니다." }, { status: 400 });
+    const session = getSession(request);
+    if (!session || session.role !== "teacher") {
+      return NextResponse.json({ ok: false, message: "로그인이 필요합니다." }, { status: 401 });
     }
+    const teacher = session.name;
 
     const supabase = getServerSupabase();
 
@@ -56,6 +58,6 @@ export async function GET(request: NextRequest) {
       reports: reportRes.data || [],
     });
   } catch (error) {
-    return NextResponse.json({ ok: false, message: "선생님 데이터를 불러오지 못했습니다.", detail: String(error) }, { status: 500 });
+    return NextResponse.json({ ok: false, message: "선생님 데이터를 불러오지 못했습니다." }, { status: 500 });
   }
 }

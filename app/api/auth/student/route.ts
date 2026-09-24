@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { NextResponse } from "next/server";
+import { setSession } from "../../../../lib/session";
 import { getServerSupabase } from "../../../../lib/supabase-server";
 
 export async function POST(request: Request) {
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "학생 또는 비밀번호가 올바르지 않습니다." }, { status: 401 });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       user: {
         username: data.username,
@@ -35,9 +36,11 @@ export async function POST(request: Request) {
         tempPassword: Boolean(data.temp_password),
       },
     });
+    setSession(response, "student", data.username);
+    return response;
   } catch (error) {
     return NextResponse.json(
-      { ok: false, message: "로그인 처리 중 오류가 발생했습니다.", detail: String(error) },
+      { ok: false, message: "로그인 처리 중 오류가 발생했습니다." },
       { status: 500 },
     );
   }

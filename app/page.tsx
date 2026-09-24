@@ -42,7 +42,7 @@ export default function Home() {
       const authJson = await auth.json();
       if (!auth.ok) throw new Error(authJson.message || "로그인 실패");
 
-      const response = await fetch(`/api/dashboard/student?username=${encodeURIComponent(name.trim())}`);
+      const response = await fetch("/api/dashboard/student", { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "데이터 조회 실패");
       setStudentData(data);
@@ -68,7 +68,7 @@ export default function Home() {
       const authJson = await auth.json();
       if (!auth.ok) throw new Error(authJson.message || "로그인 실패");
 
-      const response = await fetch(`/api/dashboard/teacher?teacher=${encodeURIComponent(teacher)}`);
+      const response = await fetch("/api/dashboard/teacher", { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "데이터 조회 실패");
       setTeacherData(data);
@@ -82,6 +82,7 @@ export default function Home() {
   }
 
   function logout() {
+    void fetch("/api/auth/logout", { method: "POST" });
     setStudentData(null);
     setTeacherData(null);
     setSessionLabel("");
