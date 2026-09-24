@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSupabase } from "../../../../lib/supabase-server";
+import { getSession } from "../../../../lib/session";
 
 export async function GET(request: NextRequest) {
   try {
-    const username = String(request.nextUrl.searchParams.get("username") || "").trim();
-    if (!username) {
-      return NextResponse.json({ ok: false, message: "학생 정보가 없습니다." }, { status: 400 });
+    const session = getSession(request);
+    if (!session || session.role !== "student") {
+      return NextResponse.json({ ok: false, message: "로그인이 필요합니다." }, { status: 401 });
     }
+    const username = session.name;
 
     const supabase = getServerSupabase();
     const [rosterRes, wrongRes, filesRes, noticesRes] = await Promise.all([
@@ -27,6 +29,6 @@ export async function GET(request: NextRequest) {
       notices: noticesRes.data || [],
     });
   } catch (error) {
-    return NextResponse.json({ ok: false, message: "학생 데이터를 불러오지 못했습니다.", detail: String(error) }, { status: 500 });
+    return NextResponse.json({ ok: false, message: "학생 데이터를 불러오지 못했습니다." }, { status: 500 });
   }
 }
