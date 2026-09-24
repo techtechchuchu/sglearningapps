@@ -7,8 +7,9 @@ const TTL_SECONDS = 12 * 60 * 60;
 type Session = { role: "student" | "teacher"; name: string; expires: number };
 
 function secret() {
-  const value = process.env.SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!value || value.length < 32) throw new Error("A server session secret must contain at least 32 characters.");
+  const candidates = [process.env.SESSION_SECRET, process.env.SUPABASE_SERVICE_ROLE_KEY, process.env.SUPABASE_KEY];
+  const value = candidates.find((candidate) => candidate && candidate.length >= 32);
+  if (!value) throw new Error("Missing server session secret. Configure SESSION_SECRET with at least 32 characters.");
   return value;
 }
 
