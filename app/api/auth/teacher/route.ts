@@ -5,6 +5,7 @@ const TEACHERS = ["이주백.T", "박병민.T", "노대근.T"];
 const ALL_TEACHER_ADMIN = "전체 관리자";
 
 export async function POST(request: Request) {
+  try {
   const { teacher, password } = await request.json();
   const name = String(teacher || "").trim();
   const pw = String(password || "");
@@ -28,4 +29,8 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ ok: true, teacher: name });
   setSession(response, "teacher", name);
   return response;
+  } catch (error) {
+    console.error("[teacher login] failed", error);
+    return NextResponse.json({ ok: false, message: "서버 로그인 설정 오류입니다. SESSION_SECRET 설정을 확인해주세요." }, { status: 503 });
+  }
 }
