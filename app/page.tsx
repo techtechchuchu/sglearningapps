@@ -1,149 +1,27 @@
 "use client";
-
-import { FormEvent, useState } from "react";
-
-type StudentData = {
-  roster: any[];
-  wrongAnswers: any[];
-  wrongNoteFiles: any[];
-  notices: any[];
-};
-
-type TeacherData = {
-  roster: any[];
-  wrongAnswers: any[];
-  wrongNoteFiles: any[];
-  reports: any[];
-};
-
-const teachers = ["이주백.T", "박병민.T", "노대근.T", "전체 관리자"];
-
-export default function Home() {
-  const [mode, setMode] = useState<"student" | "teacher">("student");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [teacher, setTeacher] = useState("이주백.T");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [studentData, setStudentData] = useState<StudentData | null>(null);
-  const [teacherData, setTeacherData] = useState<TeacherData | null>(null);
-  const [sessionLabel, setSessionLabel] = useState("");
-
-  async function loginStudent(event: FormEvent) {
-    event.preventDefault();
-    setLoading(true);
-    setMessage("");
-    try {
-      const auth = await fetch("/api/auth/student", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: name, password }),
-      });
-      const authJson = await auth.json().catch(() => ({ message: `로그인 서버 오류 (${auth.status})` }));
-      if (!auth.ok) throw new Error(authJson.message || "로그인 실패");
-
-      const response = await fetch("/api/dashboard/student", { cache: "no-store" });
-      const data = await response.json().catch(() => ({ message: `데이터 서버 오류 (${response.status})` }));
-      if (!response.ok) throw new Error(data.message || "데이터 조회 실패");
-      setStudentData(data);
-      setTeacherData(null);
-      setSessionLabel(`${name.trim()} 학생`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
+import {useState} from "react";
+import {BookOpen,Plus,Check,LogOut} from "lucide-react";
+import "./auth.css";
+type Note={id:number;problems:string;memo:string};
+const demo:Note[]=[{id:1,problems:"9, 12, 18번",memo:"합성함수 정의역 조건 복습"},{id:2,problems:"24, 28번",memo:"역함수 그래프 다시 보기"}];
+function Login({onLogin,onBack}:{onLogin:(name:string)=>void;onBack:()=>void}) {
+  const [mode,setMode]=useState<"student"|"staff">("student");
+  const [screen,setScreen]=useState<"roles"|"login">("roles");
+  const [staffRole,setStaffRole]=useState<"teacher"|"admin">("teacher");
+  const [id,setId]=useState(""); const [pw,setPw]=useState("");
+  const [error,setError]=useState(""); const [loading,setLoading]=useState(false);
+  async function submit(){
+    if(mode==="staff"){
+      if(!pw.trim()){setError("비밀번호를 입력해 주세요.");return;}
+      sessionStorage.setItem("sg_staff_entry",JSON.stringify({role:staffRole,at:Date.now()}));
+      window.location.href="/staff"; return;
     }
+    if(!id.trim()||!pw){setError("아이디와 비밀번호를 입력해 주세요.");return;}
+    setLoading(true);setError("");
+    try{const res=await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:id,password:pw})});const body=await res.json() as {error?:string;user?:{username:string}};if(!res.ok)throw new Error(body.error||"로그인에 실패했습니다.");onLogin(body.user!.username)}catch(e){setError(e instanceof Error?e.message:"로그인에 실패했습니다.")}finally{setLoading(false)}
   }
-
-  async function loginTeacher(event: FormEvent) {
-    event.preventDefault();
-    setLoading(true);
-    setMessage("");
-    try {
-      const auth = await fetch("/api/auth/teacher", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teacher, password }),
-      });
-      const authJson = await auth.json();
-      if (!auth.ok) throw new Error(authJson.message || "로그인 실패");
-
-      const response = await fetch("/api/dashboard/teacher", { cache: "no-store" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "데이터 조회 실패");
-      setTeacherData(data);
-      setStudentData(null);
-      setSessionLabel(teacher);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function logout() {
-    void fetch("/api/auth/logout", { method: "POST" });
-    setStudentData(null);
-    setTeacherData(null);
-    setSessionLabel("");
-    setPassword("");
-    setMessage("");
-  }
-
-  if (studentData) {
-    const books = Array.from(new Set(studentData.roster.map((row) => row.book_name).filter(Boolean)));
-    const teachersForStudent = Array.from(new Set(studentData.roster.map((row) => row.teacher_name).filter(Boolean)));
-    return (
-      <main className="shell dashboard-shell">
-        <section className="topbar"><div><span className="badge">SG 고등관</span><h1>{sessionLabel}</h1></div><button className="ghost" onClick={logout}>로그아웃</button></section>
-        <section className="metrics">
-          <article><b>{studentData.wrongAnswers.length}</b><span>누적 오답</span></article>
-          <article><b>{studentData.wrongNoteFiles.length}</b><span>저장된 오답노트 PDF</span></article>
-          <article><b>{books.length}</b><span>등록 교재</span></article>
-          <article><b>{teachersForStudent.length}</b><span>담당 선생님</span></article>
-        </section>
-        <section className="grid2">
-          <article className="panel"><h2>📚 내 수업 정보</h2>{studentData.roster.length ? studentData.roster.map((row, i) => <div className="row" key={i}><strong>{row.class_name || "반 미지정"}</strong><span>{row.teacher_name} · {row.book_name || "교재 미지정"}</span></div>) : <p>등록된 반 정보가 없습니다.</p>}</article>
-          <article className="panel"><h2>📄 내 오답노트 기록</h2>{studentData.wrongNoteFiles.length ? studentData.wrongNoteFiles.slice(0, 20).map((row, i) => <div className="row" key={i}><strong>{row.round_number ? `${row.round_number}회` : "회차 미지정"} {row.subject_name || ""}</strong><span>{row.source_school || ""} · {row.original_filename}</span></div>) : <p>아직 업로드된 PDF가 없습니다.</p>}</article>
-        </section>
-        <section className="panel"><h2>📝 최근 오답 제출</h2>{studentData.wrongAnswers.length ? studentData.wrongAnswers.slice(0, 50).map((row, i) => <div className="row" key={i}><strong>{row.unit || row.book || "오답"} · {row.problem || row.problem_number || "문항"}</strong><span>{row.memo || ""} {row.created_at ? `· ${new Date(row.created_at).toLocaleString("ko-KR")}` : ""}</span></div>) : <p>제출 기록이 없습니다.</p>}</section>
-      </main>
-    );
-  }
-
-  if (teacherData) {
-    const active = teacherData.roster.filter((row) => !row.enrollment_status || row.enrollment_status === "재원");
-    return (
-      <main className="shell dashboard-shell">
-        <section className="topbar"><div><span className="badge">SG 고등관 선생님 관리</span><h1>{sessionLabel}</h1></div><button className="ghost" onClick={logout}>로그아웃</button></section>
-        <section className="metrics">
-          <article><b>{active.length}</b><span>재원 명단</span></article>
-          <article><b>{teacherData.wrongAnswers.length}</b><span>조회된 오답</span></article>
-          <article><b>{teacherData.wrongNoteFiles.length}</b><span>오답노트 PDF</span></article>
-          <article><b>{teacherData.reports.length}</b><span>제출 보고서</span></article>
-        </section>
-        <section className="grid2">
-          <article className="panel"><h2>👥 학생 명단</h2>{active.slice(0, 100).map((row, i) => <div className="row" key={i}><strong>{row.student_name}</strong><span>{row.class_name || "-"} · {row.school_name || "-"} · {row.book_name || "-"}</span></div>)}</article>
-          <article className="panel"><h2>📦 최근 오답노트 PDF</h2>{teacherData.wrongNoteFiles.slice(0, 50).map((row, i) => <div className="row" key={i}><strong>{row.student_name} {row.round_number ? `· ${row.round_number}회` : ""}</strong><span>{row.original_filename} {row.uploaded_at ? `· ${new Date(row.uploaded_at).toLocaleString("ko-KR")}` : ""}</span></div>)}</article>
-        </section>
-        <section className="panel"><h2>📝 최근 오답</h2>{teacherData.wrongAnswers.slice(0, 100).map((row, i) => <div className="row" key={i}><strong>{row.username} · {row.unit || row.book || "오답"} · {row.problem || row.problem_number || "문항"}</strong><span>{row.memo || ""}</span></div>)}</section>
-      </main>
-    );
-  }
-
-  return (
-    <main className="shell">
-      <section className="login-card">
-        <div className="brand"><span className="badge">SG 고등관</span><h1>오답노트</h1><p>기존 Streamlit 데이터는 그대로 유지하고 같은 Supabase 데이터를 사용하는 Vercel 버전입니다.</p></div>
-        <div className="tabs"><button className={mode === "student" ? "active" : ""} onClick={() => setMode("student")}>👩‍🎓 학생</button><button className={mode === "teacher" ? "active" : ""} onClick={() => setMode("teacher")}>👨‍🏫 선생님</button></div>
-        {mode === "student" ? (
-          <form onSubmit={loginStudent} className="form"><label>학생<input value={name} onChange={(e) => setName(e.target.value)} placeholder="이름" /></label><label>비밀번호<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></label><button className="primary" disabled={loading}>{loading ? "확인 중..." : "로그인"}</button></form>
-        ) : (
-          <form onSubmit={loginTeacher} className="form"><label>담당 선생님<select value={teacher} onChange={(e) => setTeacher(e.target.value)}>{teachers.map((item) => <option key={item}>{item}</option>)}</select></label><label>공용 비밀번호<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></label><button className="primary" disabled={loading}>{loading ? "확인 중..." : "로그인"}</button></form>
-        )}
-        {message && <div className="alert">{message}</div>}
-        <p className="safe-note">기존 Streamlit 저장소와 기존 Supabase 데이터는 삭제하거나 이동하지 않습니다.</p>
-      </section>
-    </main>
-  );
+  if(screen==="roles") return <main className="auth-screen"><section className="auth-card role-card"><button className="back-link" onClick={onBack}>← 처음으로</button><img src="/sg_banner.png" alt="SG고등관" className="auth-logo"/><h1>SG 고등관 오답노트</h1><p className="auth-help">역할을 선택해 주세요.</p><button className="role-button" onClick={()=>{setMode("student");setScreen("login")}}>🎓 학생으로 입장 <small>(학생 계정 로그인)</small></button><button className="role-button" onClick={()=>{setMode("staff");setScreen("login")}}>👨‍🏫 선생님으로 입장 <small>(선생님 계정 로그인)</small></button><button className="role-button" onClick={()=>{setMode("staff");setStaffRole("admin");setScreen("login")}}>🔐 관리자로 입장 <small>(관리자 계정 로그인)</small></button><p className="auth-help">관리자 기능은 학원 관리자만 이용할 수 있습니다.</p></section></main>;
+  return <main className="auth-screen"><section className="auth-card"><button className="back-link" onClick={()=>screen==="login"?setScreen("roles"):onBack}>← 처음으로</button><img src="/sg_banner.png" alt="SG고등관" className="auth-logo"/><p className="auth-kicker">수학 오답 관리</p><div className="auth-tabs"><button className={mode==="student"?"active":""} onClick={()=>{setMode("student");setError("")}}>학생</button><button className={mode==="staff"?"active":""} onClick={()=>{setMode("staff");setError("")}}>선생님·관리자</button></div><h1>{mode==="student"?"학생 로그인":"교직원 로그인"}</h1><p className="auth-help">{mode==="student"?"학생 아이디와 비밀번호를 입력해 주세요.":"권한을 선택하고 비밀번호를 입력해 주세요."}</p>{mode==="student"?<label>아이디<input value={id} onChange={e=>setId(e.target.value)} placeholder="학생 이름 또는 아이디"/></label>:<div className="auth-tabs role-tabs"><button className={staffRole==="teacher"?"active":""} onClick={()=>setStaffRole("teacher")}>선생님</button><button className={staffRole==="admin"?"active":""} onClick={()=>setStaffRole("admin")}>전체 관리자</button></div>}<label>비밀번호<input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="비밀번호" onKeyDown={e=>e.key==='Enter'&&submit()}/></label>{error&&<p className="auth-error">{error}</p>}<button className="auth-submit" onClick={submit} disabled={loading}>{loading?"확인 중...":"로그인"}</button>{mode==="student"&&<p className="auth-demo">기존 SG 오답노트 계정으로 로그인합니다.</p>}</section></main>
 }
+function Landing({onEnter}:{onEnter:()=>void}){return <main className="landing"><header className="landing-nav"><a href="/" className="landing-brand"><img src="/sg_banner.png" alt="SG고등관"/><span>SG 오답노트</span></a><button className="landing-login" onClick={onEnter}>로그인</button></header><section className="landing-hero"><div><p className="landing-kicker">SG HIGH SCHOOL · WRONG NOTE</p><h1>틀린 문제를 기록하고,<br/><em>다음에는 자신 있게.</em></h1><p className="landing-copy">학생의 오답은 학습의 시작입니다.<br/>SG 오답노트가 기록부터 복습까지 함께 관리합니다.</p><div className="landing-actions"><button className="primary" onClick={onEnter}>학생·선생님 로그인</button><button className="landing-text-button" onClick={onEnter}>서비스 이용하기</button></div></div><div className="landing-preview"><div className="preview-top"><span>MY LEARNING NOTE</span><span className="preview-dot">● 오늘 학습</span></div><strong>나의 오답노트</strong><p>최근에 틀린 문제를 다시 확인하고<br/>취약한 개념을 복습해 보세요.</p><div className="preview-row"><span>기록한 오답</span><b>12 문제</b></div><div className="preview-row"><span>이번 주 복습</span><b>08 문제</b></div></div></section><section className="landing-section"><p className="landing-kicker">ONE NOTE, BETTER STUDY</p><h2>오답을 관리하는 가장 쉬운 방법</h2><div className="feature-grid"><article><b>01</b><h3>오답 기록</h3><p>교재와 문제번호, 헷갈린 이유를 간단하게 남깁니다.</p></article><article><b>02</b><h3>나만의 복습</h3><p>내가 작성한 오답을 한 곳에서 다시 확인합니다.</p></article><article><b>03</b><h3>선생님 관리</h3><p>선생님은 학생별 제출 현황과 취약 단원을 확인합니다.</p></article></div></section><section className="landing-cta"><h2>오늘 틀린 문제부터<br/>나의 실력으로 바꿔보세요.</h2><button className="primary" onClick={onEnter}>SG 오답노트 시작하기</button></section><footer className="landing-footer"><span>SG고등관 오답노트</span><span>학생 학습관리 서비스</span></footer></main>}
+export default function Home(){const [user,setUser]=useState<string|null>(null);const [showLogin,setShowLogin]=useState(false);const [notes,setNotes]=useState(demo);const [adding,setAdding]=useState(false);const [problems,setProblems]=useState("");const [memo,setMemo]=useState("");if(!user&&!showLogin)return <Landing onEnter={()=>setShowLogin(true)}/>;if(!user)return <Login onLogin={setUser} onBack={()=>setShowLogin(false)}/>;return <><header className="header"><a href="/" className="brand"><img src="/sg_banner.png" alt="SG고등관" className="brand-image"/><span className="brand-sub">나의 수학 오답노트</span></a><span className="profile">{user}<button className="logout" onClick={()=>setUser(null)} aria-label="로그아웃"><LogOut size={16}/></button></span></header><main className="shell"><div className="demo-banner">미리보기 화면 · 새로고침하면 체험 데이터로 돌아갑니다.</div><section className="welcome"><div><p className="eyebrow">MY LEARNING NOTE</p><h1>틀린 문제를,<br/>나의 실력으로.</h1><p>오늘의 오답을 기록하고 다음에는 자신 있게 풀어보세요.</p></div><button className="primary" onClick={()=>setAdding(true)}><Plus size={19}/>오답 기록하기</button></section><div className="stats"><section className="stat featured"><span>기록한 오답</span><p>{notes.length*3}<small>문제</small></p></section><section className="stat"><span>다시 풀어볼 문제</span><p>{notes.length*3}<small>문제</small></p></section><section className="stat"><span>복습 완료</span><p>0<small>문제</small></p></section></div><section className="panel"><div className="section-title"><h2>최근 오답노트</h2></div>{notes.map(n=><article className="note" key={n.id}><div className="book-icon"><BookOpen size={22}/></div><div className="note-body"><div className="note-meta"><span>UNIT N제 공통수학2</span><time>2026-09-10</time></div><h3>{n.problems}</h3><p>{n.memo}</p><button className="note-check" onClick={()=>alert("복습 완료로 표시했어요.")}><Check size={15}/>복습 완료로 표시</button></div></article>)}</section>{adding&&<section className="panel form"><h2>오답 기록하기</h2><label>문제번호<input value={problems} onChange={e=>setProblems(e.target.value)} placeholder="예: 9, 12, 18"/></label><label>나의 메모<textarea value={memo} onChange={e=>setMemo(e.target.value)} placeholder="어떤 부분이 헷갈렸나요?"/></label><div className="form-footer"><button className="secondary" onClick={()=>setAdding(false)}>취소</button><button className="primary" onClick={()=>{if(problems.trim()){setNotes([{id:Date.now(),problems:problems+"번",memo:memo||"남긴 메모가 없어요."},...notes]);setAdding(false);setProblems("");setMemo("")}}}>저장하기</button></div></section>}<footer>SG고등관 오답노트</footer></main></>}
