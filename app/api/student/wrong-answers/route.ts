@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "../../../../lib/session";
 import { getServerSupabase } from "../../../../lib/supabase-server";
 import { normalizeSubmittedNumbers, parseProblemNumbers } from "../../../../lib/wrong-answers";
+import { FALLBACK_BOOKS } from "../../../../lib/fallback-books";
 
 function ownSession(request: NextRequest) {
   const session = getSession(request);
@@ -31,7 +32,14 @@ export async function POST(request: NextRequest) {
     if (!book || input.bookConfirmed !== true) return NextResponse.json({ message: "교재를 선택하고 확인해주세요." }, { status: 400 });
     const db = getServerSupabase();
     const activeBook = await db.from("book_master").select("id").eq("book_name", book).eq("is_active", true).limit(1);
-    if (activeBook.error || !activeBook.data?.length) return NextResponse.json({ message: "현재 사용 중인 교재를 선택해주세요." }, { status: 400 });
+    if (activeBook.error || !activeBook.data?.length) {
+      const catalogue = await db.from("book_master").select("id").limit(1);
+      if ((catalogue.error || !catalogue.data?.length) && FALLBACK_BOOKS.includes(book)) {
+        // The old app permits its built-in books before book_master is populated.
+      } else {
+        return NextResponse.json({ message: "현재 사용 중인 교재를 선택해주세요." }, { status: 400 });
+      }
+    }
     const normalized = normalizeSubmittedNumbers(book, input.problem, input.examId, input.examConfirmed === true);
     const existing = await existingNumbers(db, username, book);
     const fresh = normalized.numbers.filter((number) => !existing.has(number));

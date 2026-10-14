@@ -11,12 +11,13 @@
 - X-패턴 4종의 학교별 offset 변환·원래 번호 표시
 - 학교 기출 오답 입력·목록
 - 선생님별 학생·오답·주간 제출·학교 기출·출력 현황·재설정 요청
+- 오답 Paper 생성용 `.xlsx`와 다운로드 시 출력 대기 등록
 - 명단의 쉼표 구분 복수 교재 매칭
 - 전체 관리자 교재/학교 기출 등록 및 사용 상태, 공지, 명단 정보 수정
 
 ## 운영 투입 전에 남은 일
 
-- Streamlit의 모든 출력용 Excel·PDF 생성, ZIP/PDF 업로드, 평가 결과 Excel 반영, AI 학습 상담, 학생 계정/오답 이전 기능 이전
+- Streamlit의 PDF 생성, ZIP/PDF 업로드, 평가 결과 Excel 반영, AI 학습 상담, 학생 계정/오답 이전 기능 이전
 - 실제 Supabase 스키마와 소수의 테스트 계정으로 권한·저장·출력 흐름 검증
 - Vercel Production에 `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`, `SUPERADMIN_PASSWORD`, `STUDENT_SIGNUP_CODE` 추가. `SESSION_SECRET`, `SUPABASE_URL`은 추가됨
 - Preview 환경에 필요한 값을 설정하고 배포 미리보기 검증
