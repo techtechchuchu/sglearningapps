@@ -2,7 +2,6 @@ import { ArrowUpRight, ArrowRight, BookOpen, GraduationCap, Layers3, Building2 }
 import { useEffect, useRef } from "react";
 import "./landing-motion.css";
 import LearningScene from "./learning-scene";
-import BrandLockup from "./brand-lockup";
 import "./partners.css";
 
 type Props = { onLogin: (mode: "student" | "teacher") => void };
@@ -31,7 +30,7 @@ export default function Landing({ onLogin }: Props) {
     <main className="gyeol" ref={landingRef}>
       <a className="g-skip" href="#choose">본문으로 바로가기</a>
       <header className="g-nav">
-        <a className="g-brand" href="/" aria-label="SG 고등관 × 스터디결 홈"><BrandLockup compact /><span className="g-beta">BETA</span></a>
+        <a className="g-brand" href="/" aria-label="스터디결 홈"><span className="g-mark" aria-hidden="true">결</span>스터디결<span className="g-beta">BETA</span></a>
         <nav aria-label="주요 메뉴"><a href="#personal">개인을 위한 결</a><a href="#academy">학원을 위한 결</a></nav>
         <button className="g-login" onClick={() => onLogin("student")}>지금 시작하기 <ArrowUpRight size={15}/></button>
       </header>
