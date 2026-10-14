@@ -2,6 +2,7 @@ import { ArrowUpRight, ArrowRight, BookOpen, GraduationCap, Layers3, Building2 }
 import { useEffect, useRef } from "react";
 import "./landing-motion.css";
 import LearningScene from "./learning-scene";
+import "./partners.css";
 
 type Props = { onLogin: (mode: "student" | "teacher") => void };
 
@@ -10,7 +11,7 @@ export default function Landing({ onLogin }: Props) {
   useEffect(() => {
     const root = landingRef.current;
     if (!root || !("IntersectionObserver" in window)) return;
-    const elements = root.querySelectorAll(".g-section-head, .g-path, .g-detail-title, .g-feature-list article, .g-faq");
+    const elements = root.querySelectorAll(".g-section-head, .g-path, .g-detail-title, .g-feature-list article, .g-faq, .g-partner-card");
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) {
@@ -35,6 +36,14 @@ export default function Landing({ onLogin }: Props) {
       </header>
 
       <LearningScene />
+
+      <section className="g-partners g-wrap" aria-labelledby="partners-title" id="partners">
+        <div className="g-section-head"><p className="g-eyebrow">LEARNING, TOGETHER</p><h2 id="partners-title">지금, 스터디결과 함께하고 있어요.</h2><p>현대해상 멘토링과 SG 고등관에서 스터디결을 이용하고 있습니다.</p></div>
+        <div className="g-partner-grid">
+          <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>이용 중</span><div className="g-partner-logo"><img src="/partners/hyundai.png" alt="현대해상" width="319" height="102" loading="lazy"/></div><h3>현대해상 멘토링</h3><p>멘토링 현장에서 함께하는 스터디결</p></div></article>
+          <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>이용 중</span><div className="g-partner-logo"><img src="/partners/sg.png" alt="SG 고등관" width="309" height="70" loading="lazy"/></div><h3>SG 고등관</h3><p>학원 수업 현장에서 함께하는 스터디결</p></div></article>
+        </div>
+      </section>
 
       <section className="g-choose g-wrap" id="choose"><div className="g-section-head"><p className="g-eyebrow">TWO WAYS, ONE GYEOL</p><h2>어떤 배움을<br className="g-mobile-break"/> 시작하고 싶으세요?</h2><p>공부하는 나에게도, 가르치는 우리에게도 맞는 공간.</p></div>
         <div className="g-paths">
