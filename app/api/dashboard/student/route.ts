@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSupabase } from "../../../../lib/supabase-server";
 import { getSession } from "../../../../lib/session";
+import { fetchPagedRows } from "../../../../lib/paged-rows";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,22 +12,25 @@ export async function GET(request: NextRequest) {
     const username = session.name;
 
     const supabase = getServerSupabase();
-    const [rosterRes, wrongRes, filesRes, noticesRes] = await Promise.all([
+    const [rosterRes, wrongRes, filesRes, noticesRes, userRes] = await Promise.all([
       supabase.from("student_roster").select("*").eq("student_name", username).order("created_at", { ascending: false }),
-      supabase.from("wrong_answers").select("*").eq("username", username).order("created_at", { ascending: false }).limit(500),
+      fetchPagedRows((start, end) => supabase.from("wrong_answers").select("*").eq("username", username).order("created_at", { ascending: false }).range(start, end)),
       supabase.from("wrong_note_files").select("*").eq("student_name", username).order("uploaded_at", { ascending: false }).limit(100),
       supabase.from("notices").select("*").order("created_at", { ascending: false }).limit(20),
+      supabase.from("users").select("username,grade,temp_password").eq("username", username).single(),
     ]);
 
-    const firstError = rosterRes.error || wrongRes.error || filesRes.error || noticesRes.error;
+    const firstError = rosterRes.error || filesRes.error || noticesRes.error || userRes.error;
     if (firstError) throw firstError;
 
     return NextResponse.json({
       ok: true,
       roster: rosterRes.data || [],
-      wrongAnswers: wrongRes.data || [],
+      wrongAnswers: wrongRes,
       wrongNoteFiles: filesRes.data || [],
       notices: noticesRes.data || [],
+      mustChangePassword: Boolean(String(userRes.data?.temp_password || "").trim()),
+      grade: userRes.data?.grade || "",
     });
   } catch (error) {
     return NextResponse.json({ ok: false, message: "학생 데이터를 불러오지 못했습니다." }, { status: 500 });

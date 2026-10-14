@@ -1,7 +1,7 @@
-import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { setSession } from "../../../../lib/session";
 import { getServerSupabase } from "../../../../lib/supabase-server";
+import { passwordMatches } from "../../../../lib/student-auth";
 
 export async function POST(request: Request) {
   try {
@@ -23,8 +23,7 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    const hash = createHash("sha256").update(loginPassword, "utf8").digest("hex");
-    if (!data || data.password_hash !== hash) {
+    if (!data || !passwordMatches(loginPassword, data.password_hash)) {
       return NextResponse.json({ ok: false, message: "학생 또는 비밀번호가 올바르지 않습니다." }, { status: 401 });
     }
 
@@ -39,6 +38,7 @@ export async function POST(request: Request) {
     setSession(response, "student", data.username);
     return response;
   } catch (error) {
+    console.error("[student login] failed", error);
     return NextResponse.json(
       { ok: false, message: "로그인 처리 중 오류가 발생했습니다." },
       { status: 500 },
