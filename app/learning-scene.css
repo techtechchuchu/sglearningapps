@@ -1,3 +1,4 @@
+.scene-skip{display:inline-block;font-size:11px;color:#506b43!important;text-decoration:underline!important;text-underline-offset:4px;margin-top:8px}.g-partner-collab{gap:12px}.g-partner-logo.g-partner-collab img{max-width:44%;min-width:0}.g-partner-collab>span{color:#a2ad98;font-size:18px}
 .learning-story{--gather:0;--classroom:0;position:relative;height:270svh;background:#f4f4e9}
 .learning-stage{height:100svh;min-height:650px;position:sticky;top:0;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse at 80% 30%,#e5ecc8 0,transparent 55%),#f7f6ec}
 .scene-grid{position:absolute;inset:0;z-index:-1;background-image:linear-gradient(#65775809 1px,transparent 1px),linear-gradient(90deg,#65775809 1px,transparent 1px);background-size:80px 80px;mask-image:linear-gradient(transparent,#000 65%)}

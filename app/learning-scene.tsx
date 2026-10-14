@@ -14,6 +14,61 @@ export default function LearningScene() {
   const root = useRef<HTMLElement>(null);
   const [phase, setPhase] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [holding, setHolding] = useState(false);
+  const skipTour = useRef(false);
+  useEffect(() => {
+    const scene = root.current;
+    if (!scene) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let step = -1;
+    let until = 0;
+    let touchY = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const advance = (event: Event, delta: number) => {
+      if (skipTour.current || reduced.matches || delta <= 0 || !event.cancelable) return;
+      const rect = scene.getBoundingClientRect();
+      const start = window.scrollY + rect.top;
+      const travel = Math.max(1, rect.height - window.innerHeight);
+      if (window.scrollY > start + travel + 3 || rect.top > window.innerHeight / 2) return;
+      event.preventDefault();
+      if (performance.now() < until) return;
+      if (step >= 2) {
+        skipTour.current = true;
+        setHolding(false);
+        document.getElementById("partners")?.scrollIntoView({ behavior: "auto" });
+        return;
+      }
+      step += 1;
+      window.scrollTo({ top: start + [0, .52, 1][step] * travel, behavior: "instant" });
+      until = performance.now() + 1500;
+      setHolding(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setHolding(false), 1500);
+    };
+    const wheel = (event: WheelEvent) => { if (!event.ctrlKey && Math.abs(event.deltaY) > Math.abs(event.deltaX)) advance(event, event.deltaY); };
+    const touchStart = (event: TouchEvent) => { touchY = event.touches[0]?.clientY ?? 0; };
+    const touchMove = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      const y = event.touches[0].clientY;
+      const delta = touchY - y;
+      if (Math.abs(delta) > 8) { advance(event, delta); touchY = y; }
+    };
+    const key = (event: KeyboardEvent) => {
+      if ((event.target as HTMLElement)?.closest("a,button,input,select,textarea,[contenteditable]")) return;
+      if (!event.shiftKey && ["ArrowDown", "PageDown", " ", "End"].includes(event.key)) advance(event, 100);
+    };
+    window.addEventListener("wheel", wheel, { passive: false });
+    window.addEventListener("touchstart", touchStart, { passive: true });
+    window.addEventListener("touchmove", touchMove, { passive: false });
+    window.addEventListener("keydown", key);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("wheel", wheel);
+      window.removeEventListener("touchstart", touchStart);
+      window.removeEventListener("touchmove", touchMove);
+      window.removeEventListener("keydown", key);
+    };
+  }, []);
   useEffect(() => {
     const scene = root.current;
     if (!scene) return;
@@ -52,7 +107,8 @@ export default function LearningScene() {
           <p className="scene-description">{chapters[phase].description}</p>
         </div>
         <a className="scene-cta" href="#choose">나에게 맞는 스터디결 <ArrowUpRight size={19}/></a>
-        <p className="scene-caption">개인의 배움부터, 교실의 변화까지.</p>
+        <p className="scene-caption">{holding ? "잠시 장면을 감상해 주세요 · 1.5초" : "아래로 스크롤하면 다음 장면으로 이어집니다."}</p>
+        <a className="scene-skip" href="#partners" onClick={() => { skipTour.current = true; setHolding(false); }}>소개 건너뛰기 ↓</a>
       </div>
 
       <div className="scene-world" aria-label="학습 기록이 모여 개인 노트와 교실로 이어지는 브랜드 애니메이션. 아래 내용은 예시입니다.">

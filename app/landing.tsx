@@ -38,9 +38,9 @@ export default function Landing({ onLogin }: Props) {
       <LearningScene />
 
       <section className="g-partners g-wrap" aria-labelledby="partners-title" id="partners">
-        <div className="g-section-head"><p className="g-eyebrow">LEARNING, TOGETHER</p><h2 id="partners-title">지금, 스터디결과 함께하고 있어요.</h2><p>현대해상 멘토링과 SG 고등관에서 스터디결을 이용하고 있습니다.</p></div>
+        <div className="g-section-head"><p className="g-eyebrow">LEARNING, TOGETHER</p><h2 id="partners-title">지금, 스터디결과 함께하고 있어요.</h2><p>현대해상 이주배경 청소년 멘토링과 SG 고등관에서 스터디결을 이용하고 있습니다.</p></div>
         <div className="g-partner-grid">
-          <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>이용 중</span><div className="g-partner-logo"><img src="/partners/hyundai.png" alt="현대해상" width="319" height="102" loading="lazy"/></div><h3>현대해상 멘토링</h3><p>멘토링 현장에서 함께하는 스터디결</p></div></article>
+          <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>이용 중</span><div className="g-partner-logo g-partner-collab"><img src="/partners/hyundai.png" alt="현대해상" width="319" height="102" loading="lazy"/><span aria-hidden="true">×</span><img src="/partners/jump.png" alt="JUMP" width="293" height="107" loading="lazy"/></div><h3>현대해상 이주배경 청소년 멘토링</h3><p>현대해상 · JUMP와 함께하는 멘토링 현장</p></div></article>
           <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>이용 중</span><div className="g-partner-logo"><img src="/partners/sg.png" alt="SG 고등관" width="309" height="70" loading="lazy"/></div><h3>SG 고등관</h3><p>학원 수업 현장에서 함께하는 스터디결</p></div></article>
         </div>
       </section>
