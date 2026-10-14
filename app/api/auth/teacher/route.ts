@@ -15,11 +15,13 @@ export async function POST(request: Request) {
   }
 
   const expected = name === ALL_TEACHER_ADMIN
-    ? "1234" // Temporary admin password requested for the current rollout.
+    ? process.env.SUPERADMIN_PASSWORD
     : process.env.ADMIN_PASSWORD;
 
   if (!expected) {
-    return NextResponse.json({ ok: false, message: "Vercel 환경변수에 선생님 비밀번호가 아직 설정되지 않았습니다." }, { status: 503 });
+    return NextResponse.json({ ok: false, message: name === ALL_TEACHER_ADMIN
+      ? "Vercel 환경변수에 전체 관리자 비밀번호가 아직 설정되지 않았습니다."
+      : "Vercel 환경변수에 선생님 비밀번호가 아직 설정되지 않았습니다." }, { status: 503 });
   }
 
   if (pw !== expected) {
@@ -34,3 +36,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "서버 로그인 설정 오류입니다. SESSION_SECRET 설정을 확인해주세요." }, { status: 503 });
   }
 }
+
