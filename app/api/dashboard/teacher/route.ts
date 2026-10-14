@@ -66,9 +66,9 @@ export async function GET(request: NextRequest) {
       reports: reportRes.data || [],
     });
   } catch (error) {
-    // Do not log credentials or student rows. Keep the DB error server-side.
-    console.error("[teacher dashboard] failed", { stage, error });
+    // Some network errors echo Authorization headers, so never log raw errors.
+    const code = typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" ? error.code : "unknown";
+    console.error("[teacher dashboard] failed", { stage, code });
     return NextResponse.json({ ok: false, message: `선생님 데이터를 불러오지 못했습니다. (확인 단계: ${stage})` }, { status: 500 });
   }
 }
-
