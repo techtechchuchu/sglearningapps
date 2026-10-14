@@ -1,6 +1,22 @@
 import { ArrowUpRight, ArrowRight, BookOpen, GraduationCap, Layers3, Sparkles, Check, Building2 } from "lucide-react";
+import type { PointerEvent } from "react";
+import "./note-motion.css";
 
 type Props = { onLogin: (mode: "student" | "teacher") => void };
+
+function tiltNote(event: PointerEvent<HTMLDivElement>) {
+  if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const bounds = event.currentTarget.getBoundingClientRect();
+  const x = Math.max(-0.5, Math.min(0.5, (event.clientX - bounds.left) / bounds.width - 0.5));
+  const y = Math.max(-0.5, Math.min(0.5, (event.clientY - bounds.top) / bounds.height - 0.5));
+  event.currentTarget.style.setProperty("--note-rx", `${-y * 12}deg`);
+  event.currentTarget.style.setProperty("--note-ry", `${x * 14}deg`);
+}
+
+function resetNote(event: PointerEvent<HTMLDivElement>) {
+  event.currentTarget.style.removeProperty("--note-rx");
+  event.currentTarget.style.removeProperty("--note-ry");
+}
 
 export default function Landing({ onLogin }: Props) {
   return (
@@ -19,14 +35,15 @@ export default function Landing({ onLogin }: Props) {
           <a className="g-button" href="#choose">나에게 맞는 스터디결 찾기 <ArrowRight size={18}/></a>
           <p className="g-hero-note">오답 기록에서 시작해, 전 과목 학습 관리로.</p>
         </div>
-        <div className="g-art" aria-label="학습 기록 화면의 예시. 실제 학생 데이터가 아닙니다.">
+        <div className="g-art" onPointerMove={tiltNote} onPointerLeave={resetNote} onPointerCancel={resetNote} aria-label="학습 기록 화면의 예시. 실제 학생 데이터가 아닙니다.">
           <div className="g-orbit"/>
+          <div className="g-note-motion">
           <div className="g-note"><div className="g-note-top"><span><BookOpen size={17}/> 나의 학습 노트</span><small>화면 예시</small></div><h2>오늘의 배움을<br/>내일의 실력으로.</h2><p>작은 기록이 쌓여, 나만의 결이 됩니다.</p>
             <div className="g-subject"><span className="g-subject-icon">수</span><div><b>수학 · 다시 풀어볼 문제</b><small>틀린 이유를 기록하고 한 번 더</small></div><Check size={18}/></div>
             <div className="g-subject"><span className="g-subject-icon peach">영</span><div><b>영어 · 기억하고 싶은 문장</b><small>나만의 학습 기록으로 차곡차곡</small></div><Check size={18}/></div>
             <div className="g-subject"><span className="g-subject-icon blue">국</span><div><b>국어 · 놓쳤던 개념</b><small>배운 내용을 내 것으로</small></div><Check size={18}/></div>
             <div className="g-note-bottom"><span>MY LEARNING, MY WAY</span><span>스터디결 ↗</span></div>
-          </div><div className="g-float"><Sparkles size={20}/><span>어제보다 한 결 더.</span></div>
+          </div></div><div className="g-float"><Sparkles size={20}/><span>어제보다 한 결 더.</span></div>
         </div>
       </section>
 

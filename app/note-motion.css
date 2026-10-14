@@ -1,0 +1,37 @@
+/* Keep the floating motion separate from pointer tilt so both stay smooth. */
+.gyeol .g-art { perspective: 1100px; }
+.g-note-motion { position: relative; transform-style: preserve-3d; animation: note-hover 7s ease-in-out infinite; }
+.gyeol .g-note {
+  transform: rotateX(var(--note-rx, 4deg)) rotateY(var(--note-ry, -6deg)) rotateZ(-3deg);
+  transform-style: preserve-3d;
+  transition: transform 240ms ease-out;
+  box-shadow: 1px 2px 0 #e5e9dd, 3px 5px 0 #d9dfd0, 0 25px 45px -15px #203b2930;
+}
+.gyeol .g-note > * { transform: translateZ(16px); }
+.gyeol .g-note .g-subject { transform: translateZ(26px); }
+.gyeol .g-note::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(125deg, #ffffff45, transparent 45%, #dce5a80d);
+}
+.gyeol .g-float { animation: note-badge-hover 7s ease-in-out infinite; }
+@keyframes note-hover {
+  0%, 100% { transform: translateY(0) rotateX(0deg); }
+  50% { transform: translateY(-10px) rotateX(2deg); }
+}
+@keyframes note-badge-hover {
+  0%, 100% { transform: translateY(0) rotate(4deg); }
+  50% { transform: translateY(-5px) rotate(2deg); }
+}
+@media (hover: none), (pointer: coarse) {
+  .g-note-motion { animation-name: note-mobile-hover; }
+  .gyeol .g-note { transform: rotateX(2deg) rotateY(-3deg) rotateZ(-3deg); }
+}
+@keyframes note-mobile-hover {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gyeol .g-note-motion, .gyeol .g-float { animation: none; }
+  .gyeol .g-note { transform: rotate(-3deg); transition: none; }
+  .gyeol .g-note > *, .gyeol .g-note .g-subject { transform: none; }
+}
