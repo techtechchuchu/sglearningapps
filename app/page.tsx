@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Landing from "./landing";
 
 type StudentData = {
   roster: any[];
@@ -132,21 +133,13 @@ export default function Home() {
     );
   }
 
-  if (!showLogin) return (
-    <main className="sg-landing">
-      <header className="sg-nav"><a href="/" className="sg-logo">SG <span>고등관 오답노트</span></a><button onClick={() => setShowLogin(true)}>로그인</button></header>
-      <section className="sg-hero"><p className="sg-label">기록에서 시작하는 수학 공부</p><h1>틀린 문제를,<br/><span>나의 실력으로.</span></h1><p className="sg-description">흩어져 있는 오답을 한곳에.<br/>나의 기록을 확인하고, 선생님과 다음 공부를 준비하세요.</p><div className="sg-actions"><button onClick={() => {setMode("student");setShowLogin(true)}}>학생 로그인</button><button onClick={() => {setMode("teacher");setShowLogin(true)}}>선생님·관리자 로그인</button></div><a href="#features">서비스 알아보기</a></section>
-      <section className="sg-features" id="features"><p className="sg-label">SG와 함께하는 학습 관리</p><h2>다음 공부가 보이는<br/>나만의 오답 기록</h2><div className="sg-cards"><article><span>01 / 학생</span><h3>내 오답을 한눈에</h3><p>교재별 오답과 남겨둔 메모를 확인하고 복습할 문제를 찾아보세요.</p></article><article><span>02 / 수업</span><h3>내 수업과 교재 확인</h3><p>등록된 반과 담당 선생님, 수업 교재를 한곳에서 확인하세요.</p></article><article><span>03 / 선생님</span><h3>학생의 기록 함께 보기</h3><p>학생 명단과 오답 제출 기록을 확인해 다음 수업을 준비하세요.</p></article></div></section>
-      <section className="sg-bottom"><h2>오늘의 기록이<br/>내일의 자신감으로.</h2><button onClick={() => setShowLogin(true)}>SG 오답노트 시작하기</button></section>
-      <footer className="sg-footer"><strong>SG 고등관</strong><span>학생과 선생님을 위한 수학 오답노트</span></footer>
-    </main>
-  );
+  if (!showLogin) return <Landing onLogin={(selectedMode) => { setMode(selectedMode); setMessage(""); setPassword(""); setShowLogin(true); window.scrollTo(0, 0); }} />;
 
   return (
     <main className="shell">
       <section className="login-card">
         <button className="ghost" onClick={() => setShowLogin(false)}>홈으로</button>
-        <div className="brand"><span className="badge">SG 고등관</span><h1>오답노트</h1><p>나의 오답 기록과 수업 정보를 확인하세요.</p></div>
+        <div className="brand"><span className="badge">스터디결</span><h1>다시 만나 반가워요.</h1><p>기존 학원 계정으로 오답 기록과 수업 정보를 확인하세요.</p></div>
         <div className="tabs"><button className={mode === "student" ? "active" : ""} onClick={() => setMode("student")}>👩‍🎓 학생</button><button className={mode === "teacher" ? "active" : ""} onClick={() => setMode("teacher")}>👨‍🏫 선생님·관리자</button></div>
         {mode === "student" ? (
           <form onSubmit={loginStudent} className="form"><label>학생<input value={name} onChange={(e) => setName(e.target.value)} placeholder="이름" /></label><label>비밀번호<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></label><button className="primary" disabled={loading}>{loading ? "확인 중..." : "로그인"}</button></form>
