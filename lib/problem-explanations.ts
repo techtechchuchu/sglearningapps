@@ -1,4 +1,4 @@
-import { examOptions, splitRosterBooks } from "./wrong-answers";
+import { examOptions } from "./wrong-answers";
 
 export type ExplanationKind = "xpattern" | "school";
 export type Explanation = {
@@ -8,10 +8,15 @@ export type Explanation = {
   image_url: string | null;
 };
 
+export function bookExamOptions(book: string) {
+  const mapped = examOptions(book);
+  return mapped.length ? mapped : [{ id: "book", school: "교재 전체", offset: 0, max: 20, examType: "", requiresConfirmation: false, label: "1~20번" }];
+}
+
 export function explanationKey(kind: ExplanationKind, examId: string | number, number: number, book = "") {
   if (!Number.isSafeInteger(number) || number < 1 || number > 200) throw new Error("문제번호를 확인해주세요.");
   if (kind === "xpattern") {
-    if (!book || !examOptions(book).some((option) => option.id === examId && number <= option.max)) throw new Error("교재·학교·시험을 확인해주세요.");
+    if (!book || !bookExamOptions(book).some((option) => option.id === examId && number <= option.max)) throw new Error("교재·학교·시험을 확인해주세요.");
     return `xpattern:${encodeURIComponent(book)}:${encodeURIComponent(String(examId))}:${number}`;
   }
   if (!Number.isSafeInteger(Number(examId)) || Number(examId) < 1) throw new Error("학교·시험을 확인해주세요.");
@@ -41,7 +46,4 @@ export function safeImageUrl(value: unknown): string | null {
   } catch { throw new Error("해설 이미지는 HTTPS 이미지 주소를 입력해주세요."); }
 }
 
-export function assignedBook(roster: Array<Record<string, unknown>>, book: string) {
-  return roster.some((row) => row.enrollment_status !== "퇴원" && splitRosterBooks(row.book_name).includes(book));
-}
 

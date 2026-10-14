@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "../../../lib/session";
 import { getServerSupabase } from "../../../lib/supabase-server";
-import { assignedBook, explanationKey, safeImageUrl, youtubeId, type ExplanationKind } from "../../../lib/problem-explanations";
-import { examOptions } from "../../../lib/wrong-answers";
+import { bookExamOptions, explanationKey, safeImageUrl, youtubeId, type ExplanationKind } from "../../../lib/problem-explanations";
+import { FALLBACK_BOOKS } from "../../../lib/fallback-books";
 
 const headers = { "Cache-Control": "private, no-store" };
 
@@ -16,7 +16,7 @@ function inputFrom(request: NextRequest) {
 
 async function maxForExam(db: ReturnType<typeof getServerSupabase>, kind: ExplanationKind, book: string, examId: string) {
   if (kind === "xpattern") {
-    const exam = examOptions(book).find((option) => option.id === examId);
+    const exam = bookExamOptions(book).find((option) => option.id === examId);
     if (!exam) throw new Error("등록된 X-패턴 시험을 선택해주세요.");
     return exam.max;
   }
@@ -26,17 +26,21 @@ async function maxForExam(db: ReturnType<typeof getServerSupabase>, kind: Explan
   return Number.isSafeInteger(count) && count > 0 ? Math.min(count, 200) : 20;
 }
 
+async function knownBook(db: ReturnType<typeof getServerSupabase>, book: string) {
+  if (!book) return false;
+  const result = await db.from("book_master").select("book_name").eq("book_name", book).eq("is_active", true).limit(1);
+  if (result.data?.length) return true;
+  const catalogue = await db.from("book_master").select("id").limit(1);
+  return (!catalogue.data?.length || !!catalogue.error) && FALLBACK_BOOKS.includes(book);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = getSession(request);
     if (!session || (session.role !== "student" && session.role !== "teacher")) return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const { kind, book, examId } = inputFrom(request);
     const db = getServerSupabase();
-    if (session.role === "student" && kind === "xpattern") {
-      const roster = await db.from("student_roster").select("book_name,enrollment_status").eq("student_name", session.name);
-      if (roster.error) throw roster.error;
-      if (!assignedBook(roster.data || [], book)) return NextResponse.json({ message: "명단에 등록된 교재만 볼 수 있습니다." }, { status: 403 });
-    }
+    if (kind === "xpattern" && !(await knownBook(db, book))) return NextResponse.json({ message: "현재 사용 중인 교재를 선택해주세요." }, { status: 400 });
     const max = await maxForExam(db, kind, book, examId);
     const keys = Array.from({ length: max }, (_, index) => explanationKey(kind, examId, index + 1, book));
     const result = await db.from("problem_explanations").select("content_key,title,youtube_video_id,image_url").in("content_key", keys);
@@ -65,8 +69,8 @@ export async function POST(request: NextRequest) {
     const title = String(input.title || "").trim().slice(0, 200);
     const video = youtubeId(input.youtubeUrl);
     const image = safeImageUrl(input.imageUrl);
-    if (!video && !image) return NextResponse.json({ message: "유튜브 주소 또는 해설 이미지 주소를 입력해주세요." }, { status: 400 });
     const db = getServerSupabase();
+    if (kind === "xpattern" && !(await knownBook(db, book))) return NextResponse.json({ message: "현재 사용 중인 교재를 선택해주세요." }, { status: 400 });
     const max = await maxForExam(db, kind, book, examId);
     if (!Number.isSafeInteger(number) || number < 1 || number > max) return NextResponse.json({ message: `문제번호는 1~${max}번입니다.` }, { status: 400 });
     const key = explanationKey(kind, examId, number, book);
