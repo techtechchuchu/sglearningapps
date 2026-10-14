@@ -47,8 +47,24 @@ export async function GET(request: NextRequest) {
     const reportQuery = teacher === ALL_TEACHER_ADMIN
       ? supabase.from("submission_report_history").select("*").order("cutoff_at", { ascending: false }).limit(100)
       : supabase.from("submission_report_history").select("*").eq("teacher_name", teacher).order("cutoff_at", { ascending: false }).limit(100);
-    const reportRes = await reportQuery;
-    if (reportRes.error) throw reportRes.error;
+    const printQuery = teacher === ALL_TEACHER_ADMIN
+      ? supabase.from("print_status").select("*").order("id", { ascending: false }).limit(1000)
+      : supabase.from("print_status").select("*").eq("teacher_name", teacher).order("id", { ascending: false }).limit(1000);
+    const [reportRes, printRes, schoolWrongRes, resetRes, usersRes, examsRes] = await Promise.all([
+      reportQuery,
+      printQuery,
+      teacher === ALL_TEACHER_ADMIN
+        ? supabase.from("school_exam_wrong_answers").select("*").order("created_at", { ascending: false }).limit(2000)
+        : studentNames.length
+          ? supabase.from("school_exam_wrong_answers").select("*").in("username", studentNames).order("created_at", { ascending: false }).limit(2000)
+          : Promise.resolve({ data: [], error: null }),
+      supabase.from("password_reset_requests").select("id,username,status,requested_at,processed_at,processed_by").eq("status", "pending").order("requested_at", { ascending: false }).limit(500),
+      supabase.from("users").select("username,grade,created_at").limit(2000),
+      supabase.from("school_exam_master").select("id,display_name,school_name,exam_year,exam_type").limit(1000),
+    ]);
+    const firstError = reportRes.error || printRes.error || schoolWrongRes.error || resetRes.error || usersRes.error || examsRes.error;
+    if (firstError) throw firstError;
+    const allowed = new Set(studentNames);
 
     return NextResponse.json({
       ok: true,
@@ -56,6 +72,11 @@ export async function GET(request: NextRequest) {
       wrongAnswers,
       wrongNoteFiles,
       reports: reportRes.data || [],
+      printStatus: printRes.data || [],
+      schoolWrongAnswers: schoolWrongRes.data || [],
+      schoolExams: examsRes.data || [],
+      resetRequests: teacher === ALL_TEACHER_ADMIN ? resetRes.data || [] : (resetRes.data || []).filter((row) => allowed.has(row.username)),
+      users: teacher === ALL_TEACHER_ADMIN ? usersRes.data || [] : (usersRes.data || []).filter((row) => allowed.has(row.username)),
     });
   } catch (error) {
     return NextResponse.json({ ok: false, message: "선생님 데이터를 불러오지 못했습니다." }, { status: 500 });

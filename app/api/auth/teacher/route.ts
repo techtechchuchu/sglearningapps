@@ -14,12 +14,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "선생님을 선택해주세요." }, { status: 400 });
   }
 
+  // The Streamlit app uses separate secrets for teachers and the full administrator.
   const expected = name === ALL_TEACHER_ADMIN
-    ? "1234" // Temporary admin password requested for the current rollout.
+    ? process.env.SUPERADMIN_PASSWORD
     : process.env.ADMIN_PASSWORD;
 
   if (!expected) {
-    return NextResponse.json({ ok: false, message: "Vercel 환경변수에 선생님 비밀번호가 아직 설정되지 않았습니다." }, { status: 503 });
+    return NextResponse.json({ ok: false, message: "로그인 설정이 완료되지 않았습니다. 관리자에게 문의해주세요." }, { status: 503 });
   }
 
   if (pw !== expected) {
