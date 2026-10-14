@@ -120,13 +120,21 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     });
   }
 
+  const group = ["home", "answers", "weekly", "daily", "school", "missing"].includes(tab) ? "answers" : ["students", "reset", "admin"].includes(tab) ? "students" : "paper";
+  const menus: Array<[typeof tab, string]> = group === "answers"
+    ? [["home", "🏠 홈"], ["answers", "📋 전체 오답"], ["weekly", "🗓️ 주간 제출"], ["daily", "🗓️ 날짜별 제출량"], ["school", "🏫 학교 기출"], ["missing", "🚨 미제출"]]
+    : group === "students"
+      ? [["students", "👥 학생 명단·가입"], ["reset", "🔑 비밀번호 관리"], ...(admin ? [["admin", "⚙️ 관리자 설정"] as [typeof tab, string]] : [])]
+      : [["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"]];
+
   return <main className="shell dashboard-shell study-workspace">
-    <section className="topbar"><div><span className="badge">스터디결 · {admin ? "전체 관리자" : "선생님"}</span><h1>{teacher}</h1></div><button className="ghost" onClick={logout}>로그아웃</button></section>
-    <nav className="workspace-tabs" aria-label="선생님 메뉴">{[["home", "현황"], ["answers", "전체 오답"], ["weekly", "주간 제출"], ["daily", "날짜별 제출량"], ["missing", "미제출 학생"], ["school", "학교 기출"], ["paper", "오답 Paper 엑셀"], ["print", "출력 관리"], ["students", "학생 명단"], ["reset", "비밀번호 관리"], ...(admin ? [["admin", "관리자 설정"]] : [])].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}</nav>
+    <section className="staff-header"><img src="/partners/sg.png" alt="SG 고등관" /><div><h1>👨‍🏫 선생님 관리</h1><p>현재 로그인: {teacher}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
+    <nav className="workspace-group-tabs" aria-label="관리 영역"><button className={group === "answers" ? "active" : ""} onClick={() => setTab("home")}>📝 오답 관리</button><button className={group === "students" ? "active" : ""} onClick={() => setTab("students")}>👥 학생 관리</button><button className={group === "paper" ? "active" : ""} onClick={() => setTab("paper")}>🖨️ 오답노트 · 출력</button></nav>
+    <nav className="workspace-tabs staff-subtabs" aria-label="세부 메뉴">{menus.map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value); setMessage(""); }}>{label}</button>)}</nav>
     {message && <p className="workspace-message" role="status">{message}</p>}
     {(tab === "answers" || tab === "weekly" || tab === "daily" || tab === "missing" || tab === "students") && <section className="panel workspace-filters">{(tab === "daily" || tab === "missing") && <label>기준 날짜<input type="date" value={submissionDate} onChange={(event) => setSubmissionDate(event.target.value)} /></label>}<label>학생<select value={studentFilter} onChange={(event) => setStudentFilter(event.target.value)}><option value="">전체</option>{students.map((student) => <option key={student}>{student}</option>)}</select></label><label>반<select value={classFilter} onChange={(event) => setClassFilter(event.target.value)}><option value="">전체</option>{classes.map((className) => <option key={className}>{className}</option>)}</select></label></section>}
     {tab === "home" && <>
-      <section className="panel"><h2>🏠 오답노트 관리 홈</h2><p>{admin ? "보고서 업로드, 다음 전달 대상, 변형문제 요청을 한 화면에서 확인합니다." : "전체 관리자가 저장한 보고서 기준과 담당 학생 현황을 확인합니다."}</p></section>
+      <section className="panel"><h2>🏠 오답노트 관리 홈</h2><p>{admin ? "저장된 보고서 기준, 학생 제출 현황과 변형문제 요청을 한 화면에서 확인합니다." : "전체 관리자가 저장한 보고서 기준과 담당 학생 현황을 확인합니다."}</p></section>
       <section className="panel"><h2>📄 최신 저장 보고서</h2>{latestReports.length ? <div className="metrics">{latestReports.map((row) => <article key={row.id}><b>{row.teacher_name}</b><span>최근 제출 마감 {row.cutoff_at ? new Date(row.cutoff_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-"}</span><small>대상 {row.target_count ?? "-"}명 · {row.note_count ?? "-"}건</small></article>)}</div> : <p>아직 저장된 보고서가 없습니다.</p>}</section>
       <section className="metrics"><article><b>{students.length}</b><span>재원 학생</span></article><article><b>{matchingAnswers.length}</b><span>조회된 오답</span></article><article><b>{data.printStatus.filter((row) => !row.is_printed).length}</b><span>출력 대기</span></article><article><b>{data.resetRequests.length}</b><span>재설정 요청</span></article></section>
       <section className="panel"><h2>🧩 변형문제 요청</h2><div className="metrics"><article><b>{new Set(variantRequests.map((row) => row.username)).size}</b><span>요청 학생</span></article><article><b>{variantRequests.length}</b><span>요청 건수</span></article></div><details><summary>전체 요청 보기 · {variantRequests.length}건</summary>{variantRequests.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""}</span></div>)}</details></section>
