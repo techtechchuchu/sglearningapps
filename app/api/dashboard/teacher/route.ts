@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
           : Promise.resolve([]),
       supabase.from("password_reset_requests").select("id,username,status,requested_at,processed_at,processed_by").eq("status", "pending").order("requested_at", { ascending: false }).limit(500),
       fetchPagedRows((start, end) => supabase.from("users").select("username,grade,created_at").order("created_at", { ascending: false }).range(start, end)),
-      supabase.from("school_exam_master").select("id,display_name,school_name,exam_year,exam_type").limit(1000),
+      supabase.from("school_exam_master").select("id,display_name,school_name,exam_year,exam_type,question_count").limit(1000),
       supabase.from("book_master").select("book_name").eq("is_active", true).order("book_name").limit(2000),
     ]);
     const firstError = reportRes.error || resetRes.error || examsRes.error || booksRes.error;
@@ -86,3 +86,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: false, message: "선생님 데이터를 불러오지 못했습니다." }, { status: 500 });
   }
 }
+

@@ -8,6 +8,7 @@ import RosterActions from "./roster-actions";
 import StudentDetail from "./student-detail";
 import BrandLockup from "./brand-lockup";
 import ReportStatusPanel from "./report-status-panel";
+import TeacherExplanations from "./teacher-explanations";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; activeBooks: string[] };
@@ -26,7 +27,7 @@ function koreanDate(value: Date) {
 
 export default function TeacherWorkspace({ teacher, data, refresh, logout }: { teacher: string; data: TeacherData; refresh: () => Promise<void>; logout: () => void }) {
   const admin = teacher === "전체 관리자";
-  const [tab, setTab] = useState<"home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "detail" | "students" | "register" | "exited" | "reset" | "admin">("home");
+  const [tab, setTab] = useState<"home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "explanations" | "detail" | "students" | "register" | "exited" | "reset" | "admin">("home");
   const [studentFilter, setStudentFilter] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [submissionDate, setSubmissionDate] = useState(() => koreanDate(new Date()));
@@ -130,7 +131,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     ? [["home", "🏠 홈"], ["answers", "📋 전체 오답"], ["weekly", "🗓️ 주간 제출"], ["daily", "🗓️ 날짜별 제출량"], ["school", "🏫 학교 기출"], ["missing", "🚨 미제출"]]
     : group === "students"
       ? [["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["exited", "🚪 퇴원생 관리"], ["reset", "🔑 비밀번호 관리"], ...(admin ? [["admin", "⚙️ 관리자 설정"] as [typeof tab, string]] : [])]
-      : [["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"]];
+      : [["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"]];
 
   return <main className="shell dashboard-shell study-workspace">
     <section className="staff-header"><BrandLockup /><div className="staff-heading"><h1>👨‍🏫 선생님 관리</h1><p>현재 로그인: {teacher}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
@@ -161,6 +162,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
       <button className="primary" disabled={busy || !paperStudents.length}>엑셀 다운로드</button>
     </form></section>}
     {tab === "print" && <section className="panel"><h2>오답 Paper 출력 관리</h2>{data.printStatus.map((row) => <div className="row workspace-record" key={row.id}><div><strong>{row.student_name} · {row.book_name}</strong><span>{row.class_name} · {row.month}월 {row.week}주 · {row.is_printed ? "출력 완료" : "출력 대기"}</span></div><div><button disabled={busy} onClick={() => void changePrint(row.id, !row.is_printed)}>{row.is_printed ? "출력 취소" : "출력 완료"}</button></div></div>)}</section>}
+    {tab === "explanations" && <TeacherExplanations books={[...new Set([...(data.activeBooks || []), ...data.roster.flatMap((row) => splitRosterBooks(row.book_name))])]} schoolExams={data.schoolExams || []} />}
     {tab === "students" && <section className="panel"><h2>담당 학생 명단·가입 현황</h2>{visibleRoster.map((row) => <div className="row" key={row.id}><strong>{row.student_name} · {row.class_name}</strong><span>{row.school_name} · {row.grade} · {splitRosterBooks(row.book_name).join(", ")} · {data.users.some((user) => user.username === row.student_name) ? "가입 완료" : "미가입"}</span></div>)}</section>}
     {tab === "detail" && <StudentDetail teacher={teacher} roster={data.roster} answers={matchingAnswers} users={data.users} files={data.wrongNoteFiles} schoolAnswers={data.schoolWrongAnswers} schoolExams={data.schoolExams} />}
     {(tab === "register" || tab === "exited") && <RosterActions mode={tab} teacher={teacher} roster={data.roster} activeBooks={data.activeBooks || []} refresh={refresh} />}
