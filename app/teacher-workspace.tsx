@@ -7,6 +7,7 @@ import SubmissionReportUpload from "./submission-report-upload";
 import RosterActions from "./roster-actions";
 import StudentDetail from "./student-detail";
 import BrandLockup from "./brand-lockup";
+import ReportStatusPanel from "./report-status-panel";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; activeBooks: string[] };
@@ -141,6 +142,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
       <section className="panel"><h2>🏠 오답노트 관리 홈</h2><p>{admin ? "저장된 보고서 기준, 학생 제출 현황과 변형문제 요청을 한 화면에서 확인합니다." : "전체 관리자가 저장한 보고서 기준과 담당 학생 현황을 확인합니다."}</p></section>
       {admin && <SubmissionReportUpload refresh={refresh} />}
       <section className="panel"><h2>📄 최신 저장 보고서</h2>{latestReports.length ? <div className="metrics">{latestReports.map((row) => <article key={row.id}><b>{row.teacher_name}</b><span>최근 제출 마감 {row.cutoff_at ? new Date(row.cutoff_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-"}</span><small>대상 {row.target_count ?? "-"}명 · {row.note_count ?? "-"}건</small></article>)}</div> : <p>아직 저장된 보고서가 없습니다.</p>}</section>
+      <ReportStatusPanel roster={data.roster} answers={data.wrongAnswers} reports={data.reports} />
       <section className="metrics"><article><b>{students.length}</b><span>재원 학생</span></article><article><b>{matchingAnswers.length}</b><span>조회된 오답</span></article><article><b>{data.printStatus.filter((row) => !row.is_printed).length}</b><span>출력 대기</span></article><article><b>{data.resetRequests.length}</b><span>재설정 요청</span></article></section>
       <section className="panel"><h2>🧩 변형문제 요청</h2><div className="metrics"><article><b>{new Set(variantRequests.map((row) => row.username)).size}</b><span>요청 학생</span></article><article><b>{variantRequests.length}</b><span>요청 건수</span></article></div><details><summary>전체 요청 보기 · {variantRequests.length}건</summary>{variantRequests.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""}</span></div>)}</details></section>
       <section className="grid2"><article className="panel"><h2>최근 오답</h2>{matchingAnswers.slice(0, 12).map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit}</strong><span>{displayProblemNumbers(row.unit, row.problem)}번</span></div>)}</article><article className="panel"><h2>최근 오답노트 PDF</h2>{data.wrongNoteFiles.slice(0, 12).map((row) => <div className="row" key={row.id}><strong>{row.student_name}</strong><span>{row.original_filename} {row.id && <a href={`/api/files/wrong-note/${row.id}`} target="_blank" rel="noopener noreferrer">PDF 열기</a>}</span></div>)}</article></section>
@@ -166,3 +168,4 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {tab === "admin" && admin && <AdminPanel roster={data.roster} refreshRoster={refresh} />}
   </main>;
 }
+
