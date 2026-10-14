@@ -82,6 +82,32 @@ export async function PATCH(request: NextRequest) {
       if (updated.error) throw updated.error;
       return NextResponse.json({ ok: true, row: updated.data });
     }
+    if (input.type === "book-details") {
+      const current = await db.from("book_master").select("id,book_name").eq("id", id).single();
+      if (current.error) throw current.error;
+      const count = input.questionCount === "" || input.questionCount == null ? null : Number(input.questionCount);
+      if (count !== null && (!Number.isSafeInteger(count) || count < 0)) return NextResponse.json({ message: "문항 수를 확인해주세요." }, { status: 400 });
+      // The book name is deliberately immutable here: changing it also affects roster,
+      // wrong_answers and print_status, so that needs a separate audited migration.
+      const updated = await db.from("book_master").update({
+        grade: String(input.grade || "").trim(), subject: String(input.subject || "").trim(),
+        publisher: String(input.publisher || "").trim(), category: String(input.category || "교재").trim(),
+        question_count: count,
+      }).eq("id", id).select("*").single();
+      if (updated.error) throw updated.error;
+      return NextResponse.json({ ok: true, row: updated.data });
+    }
+    if (input.type === "exam-details") {
+      const current = await db.from("school_exam_master").select("id,display_name").eq("id", id).single();
+      if (current.error) throw current.error;
+      const count = input.questionCount === "" || input.questionCount == null ? null : Number(input.questionCount);
+      if (count !== null && (!Number.isSafeInteger(count) || count < 0)) return NextResponse.json({ message: "문항 수를 확인해주세요." }, { status: 400 });
+      const updated = await db.from("school_exam_master").update({
+        scope: String(input.scope || "").trim(), question_count: count,
+      }).eq("id", id).select("*").single();
+      if (updated.error) throw updated.error;
+      return NextResponse.json({ ok: true, row: updated.data });
+    }
     if (input.type === "book" || input.type === "exam") {
       if (typeof input.isActive !== "boolean") return NextResponse.json({ message: "사용 상태를 선택해주세요." }, { status: 400 });
       const table = input.type === "book" ? "book_master" : "school_exam_master";
