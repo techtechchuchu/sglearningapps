@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { parseProblemNumbers } from "../lib/wrong-answers";
 import { bookExamOptions, explanationKey, type Explanation } from "../lib/problem-explanations";
+import DemoExplanationMedia from "./demo-explanation-media";
 
 type Row = Record<string, any>;
 type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number };
 type SchoolAnswer = { id: number; exam_id: number; problem: string; memo: string; created_at: string };
 
-export default function StudentProblemBrowser({ books, schoolExams, wrongAnswers, schoolAnswers, onWrite }: {
+export default function StudentProblemBrowser({ studentName, books, schoolExams, wrongAnswers, schoolAnswers, onWrite }: {
+  studentName: string;
   books: string[];
   schoolExams: Exam[];
   wrongAnswers: Row[];
@@ -33,6 +35,7 @@ export default function StudentProblemBrowser({ books, schoolExams, wrongAnswers
   const effectiveExamId = schoolOptions.some((option) => option.id === examId) ? examId : schoolOptions[0]?.id || "";
   const exam = schoolOptions.find((option) => option.id === effectiveExamId);
   const max = Math.min(Number(exam?.max) || 0, 200);
+  const demoExam = studentName === "추재현" && kind === "xpattern" && effectiveBook === "X-패턴 공통수학2" && exam?.school === "23 달천고";
 
   const mine = useMemo(() => {
     const numbers = new Map<number, string[]>();
@@ -62,7 +65,7 @@ export default function StudentProblemBrowser({ books, schoolExams, wrongAnswers
   }, [kind, effectiveBook, effectiveExamId, exam, max, wrongAnswers, schoolAnswers]);
 
   useEffect(() => {
-    setSelected(exam ? 1 : null);
+    setSelected(exam ? (demoExam ? 9 : 1) : null);
     setMedia([]);
     setMediaMessage("");
     if (!exam) return;
@@ -75,10 +78,11 @@ export default function StudentProblemBrowser({ books, schoolExams, wrongAnswers
       .catch((error) => { if (error.name !== "AbortError") setMediaMessage(error.message || "해설을 불러오지 못했습니다."); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [kind, effectiveBook, effectiveExamId, exam?.id]);
+  }, [kind, effectiveBook, effectiveExamId, exam?.id, demoExam]);
 
   const visibleNumbers = Array.from({ length: max }, (_, index) => index + 1).filter((number) => !onlyMine || mine.has(number));
   const detail = selected && exam ? media.find((item) => item.content_key === explanationKey(kind, effectiveExamId, selected, effectiveBook)) : null;
+  const demoSelected = demoExam && selected === 9 && !detail?.youtube_video_id && !detail?.image_url;
 
   return <section className="panel problem-browser">
     <h2>문제별 해설 <small className="problem-demo-label">예시 화면</small></h2><p>교재 또는 학교 시험을 선택하고 문제번호를 누르세요. 내 오답은 별도로 표시됩니다.</p>
@@ -94,19 +98,21 @@ export default function StudentProblemBrowser({ books, schoolExams, wrongAnswers
       <div className="problem-number-grid">{visibleNumbers.map((number) => {
         const key = explanationKey(kind, effectiveExamId, number, effectiveBook);
         const explanation = media.find((item) => item.content_key === key);
-        return <button type="button" key={number} className={`problem-number${selected === number ? " selected" : ""}${mine.has(number) ? " is-wrong" : ""}`} onClick={() => setSelected(number)} aria-pressed={selected === number} aria-label={`${number}번${mine.has(number) ? ", 내 오답" : ""}${explanation?.youtube_video_id ? ", 해설 영상 있음" : ""}`}>
-          {explanation?.youtube_video_id && <span className="problem-number-play" aria-hidden="true">▶</span>}
+        const demoNumber = demoExam && number === 9 && !explanation?.youtube_video_id && !explanation?.image_url;
+        return <button type="button" key={number} className={`problem-number${selected === number ? " selected" : ""}${mine.has(number) ? " is-wrong" : ""}`} onClick={() => setSelected(number)} aria-pressed={selected === number} aria-label={`${number}번${mine.has(number) ? ", 내 오답" : ""}${explanation?.youtube_video_id ? ", 해설 영상 있음" : demoNumber ? ", 해설 화면 예시" : ""}`}>
+          {(explanation?.youtube_video_id || demoNumber) && <span className="problem-number-play" aria-hidden="true">▶</span>}
           {mine.has(number) && <span className="problem-number-dot" aria-hidden="true" />}
           <span className="problem-number-value">{number}</span>
         </button>;
       })}</div>
       {!visibleNumbers.length && <p className="problem-browser-note">이 시험에 저장한 오답이 없습니다. ‘내 오답만 보기’를 끄면 전체 문제를 볼 수 있습니다.</p>}
-      {selected !== null && <div className="problem-detail"><div className="problem-detail-heading"><h3><span>{selected}번 풀이</span> {detail?.title && <small>{detail.title}</small>}</h3><button type="button" className="ghost" onClick={() => setSelected(null)}>닫기</button></div>
+      {selected !== null && <div className="problem-detail"><div className="problem-detail-heading"><h3><span>{selected}번 풀이</span> {demoSelected ? <small>영상·이미지 등록 예시</small> : detail?.title && <small>{detail.title}</small>}</h3><button type="button" className="ghost" onClick={() => setSelected(null)}>닫기</button></div>
         {mine.has(selected) && <div className="problem-own-notes"><strong>내 오답 기록</strong>{mine.get(selected)?.map((note, index) => <p key={index}>{note || "메모 없이 저장됨"}</p>)}</div>}
+        {demoSelected && <DemoExplanationMedia />}
         {detail?.youtube_video_id && <div className="problem-video"><iframe title={`${selected}번 해설 영상`} src={`https://www.youtube-nocookie.com/embed/${detail.youtube_video_id}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen loading="lazy" referrerPolicy="strict-origin-when-cross-origin" /></div>}
-        {!detail?.youtube_video_id && <div className="problem-video problem-video-empty" role="status"><span>해설 영상 자리</span><small>영상 링크 등록 전</small></div>}
+        {!detail?.youtube_video_id && !demoSelected && <div className="problem-video problem-video-empty" role="status"><span>해설 영상 자리</span><small>영상 링크 등록 전</small></div>}
         {detail?.image_url && <a href={detail.image_url} target="_blank" rel="noopener noreferrer" className="problem-solution-image"><img src={detail.image_url} alt={`${selected}번 풀이 이미지`} loading="lazy" /><span>이미지 크게 보기 ↗</span></a>}
-        {!detail?.image_url && <div className="problem-image-empty">풀이 이미지 자리 <small>{loading ? "불러오는 중" : "이미지 등록 전"}</small></div>}
+        {!detail?.image_url && !demoSelected && <div className="problem-image-empty">풀이 이미지 자리 <small>{loading ? "불러오는 중" : "이미지 등록 전"}</small></div>}
         {!mine.has(selected) && <button type="button" className="primary" onClick={() => onWrite(kind, effectiveBook, effectiveExamId, selected)}>이 문제 오답 작성하기</button>}
       </div>}
     </>}
