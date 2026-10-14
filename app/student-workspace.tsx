@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { displayProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
+import BrandLockup from "./brand-lockup";
 
 type Row = Record<string, any>;
 type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices: Row[]; mustChangePassword?: boolean; grade?: string };
@@ -113,7 +114,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   }
 
   return <main className="shell dashboard-shell study-workspace">
-    <section className="topbar"><div><span className="badge">스터디결 · 내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
+    <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
     <nav className="workspace-tabs" aria-label="학생 메뉴">
       {[["wrong", "오답 작성"], ["school", "학교 기출"], ["records", "내 기록"], ["account", "계정 관리"]].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}
     </nav>

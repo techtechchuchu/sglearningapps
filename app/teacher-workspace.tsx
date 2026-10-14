@@ -6,6 +6,7 @@ import AdminPanel from "./admin-panel";
 import SubmissionReportUpload from "./submission-report-upload";
 import RosterActions from "./roster-actions";
 import StudentDetail from "./student-detail";
+import BrandLockup from "./brand-lockup";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; activeBooks: string[] };
@@ -131,7 +132,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
       : [["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"]];
 
   return <main className="shell dashboard-shell study-workspace">
-    <section className="staff-header"><img src="/partners/sg.png" alt="SG 고등관" /><div><h1>👨‍🏫 선생님 관리</h1><p>현재 로그인: {teacher}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
+    <section className="staff-header"><BrandLockup /><div className="staff-heading"><h1>👨‍🏫 선생님 관리</h1><p>현재 로그인: {teacher}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
     <nav className="workspace-group-tabs" aria-label="관리 영역"><button className={group === "answers" ? "active" : ""} onClick={() => setTab("home")}>📝 오답 관리</button><button className={group === "students" ? "active" : ""} onClick={() => setTab("students")}>👥 학생 관리</button><button className={group === "paper" ? "active" : ""} onClick={() => setTab("paper")}>🖨️ 오답노트 · 출력</button></nav>
     <nav className="workspace-tabs staff-subtabs" aria-label="세부 메뉴">{menus.map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value); setMessage(""); }}>{label}</button>)}</nav>
     {message && <p className="workspace-message" role="status">{message}</p>}

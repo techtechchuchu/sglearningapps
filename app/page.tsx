@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Landing from "./landing";
 import StudentWorkspace from "./student-workspace";
 import TeacherWorkspace, { type TeacherData } from "./teacher-workspace";
+import BrandLockup from "./brand-lockup";
 
 type StudentData = {
   roster: any[];
@@ -148,7 +149,7 @@ export default function Home() {
     <main className="shell">
       <section className="login-card">
         <button className="ghost" onClick={() => setShowLogin(false)}>홈으로</button>
-        <div className="brand"><span className="badge">스터디결</span><h1>학습 노트 시작하기</h1><p>기존 학원 계정으로 로그인해 오답을 기록하고 수업 현황을 확인하세요.</p></div>
+        <div className="brand"><BrandLockup compact /><h1>학습 노트 시작하기</h1><p>기존 학원 계정으로 로그인해 오답을 기록하고 수업 현황을 확인하세요.</p></div>
         <div className="tabs"><button className={mode === "student" ? "active" : ""} onClick={() => setMode("student")}>👩‍🎓 학생</button><button className={mode === "teacher" ? "active" : ""} onClick={() => setMode("teacher")}>👨‍🏫 선생님·관리자</button></div>
         {mode === "student" ? (<>
           <div className="tabs account-tabs"><button className={studentAuthTab === "login" ? "active" : ""} onClick={() => { setStudentAuthTab("login"); setMessage(""); }}>로그인</button><button className={studentAuthTab === "signup" ? "active" : ""} onClick={() => { setStudentAuthTab("signup"); setMessage(""); }}>회원가입</button><button className={studentAuthTab === "reset" ? "active" : ""} onClick={() => { setStudentAuthTab("reset"); setMessage(""); }}>비밀번호 재설정</button></div>
