@@ -206,6 +206,7 @@ export default function Home() {
         {message && <div className="alert">{message}</div>}
         <p className="safe-note">SG 오답노트 계정으로 로그인하세요.</p>
         <button type="button" className="ghost" onClick={() => { window.location.hash = "home"; setShowLogin(false); }}>공식 홈페이지로 이동 ↗</button>
+        <nav aria-label="서비스 정책" style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 20, fontSize: 13 }}><a href="/terms">이용약관</a><a href="/privacy">개인정보 처리방침</a><a href="/content-policy">자체교재·PDF 이용 및 보관 원칙</a></nav>
       </section>
     </main>
   );
