@@ -88,14 +88,15 @@ export default function Landing({ onLogin }: Props) {
         <div className="g-wrap">
           <div className="g-footer-heading">
             <div><a className="g-brand" href="/"><span className="g-mark" aria-hidden="true">결</span>스터디결</a><p>나만의 공부, 나만의 결.</p></div>
-            <nav aria-label="하단 서비스 안내"><a href="#choose">서비스 소개</a><a href="#personal">개인용 안내</a><a href="#academy">학원용 안내</a><a href="mailto:cjh1645@gmail.com">고객 문의</a><button onClick={() => onLogin("student")}>로그인</button></nav>
+            <nav aria-label="하단 서비스 안내"><a href="#choose">서비스 소개</a><a href="#personal">개인용 안내</a><a href="#academy">학원용 안내</a><a href="mailto:cjh1645@naver.com">고객 문의</a><button onClick={() => onLogin("student")}>로그인</button></nav>
           </div>
           <div className="g-footer-services"><strong>배움의 시작부터, 성장의 기록까지.</strong><div><a href="#personal">개인 학습 기록</a><a href="#personal">오답노트</a><a href="#academy">학생·수업 관리</a><a href="#academy">학원 운영</a></div></div>
           <div className="g-business-details">
+            <strong>사업자정보</strong>
             <p>상호: 스터디결 <span aria-hidden="true">·</span> 대표: 추재현 <span aria-hidden="true">·</span> 업태: 정보통신업</p>
             <address>주소: 울산광역시 남구 대학로 72-1 3층</address>
             <p>호스팅 서비스 제공: Vercel</p>
-            <p>고객 문의: <a href="mailto:cjh1645@gmail.com">cjh1645@gmail.com</a></p>
+            <p>고객 문의: <a href="mailto:cjh1645@naver.com">cjh1645@naver.com</a></p>
           </div>
           <nav aria-label="서비스 정책" style={{ display: "flex", flexWrap: "wrap", gap: "10px 20px", margin: "20px 0" }}><a href="/terms">이용약관</a><a href="/privacy">개인정보 처리방침</a><a href="/content-policy">자체교재·PDF 이용 및 보관 원칙</a></nav>
           <p className="g-copyright">Copyright © 2026 스터디결. All rights reserved.</p>
