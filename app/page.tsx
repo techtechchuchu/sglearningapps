@@ -30,7 +30,7 @@ async function fetchForRestore(url: string) {
 }
 
 export default function Home() {
-  const [showLogin, setShowLogin] = useState(false);
+  const [showLogin, setShowLogin] = useState(true);
   const [mode, setMode] = useState<"student" | "teacher">("student");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +50,14 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
-    if (window.location.hash.startsWith("#attendance=")) { setShowLogin(true); setMode("student"); }
+    function syncScreenFromHash() {
+      const hash = window.location.hash;
+      setShowLogin(!["#home", "#choose", "#personal", "#academy"].includes(hash));
+      if (hash === "#login-teacher") setMode("teacher");
+      if (hash === "#login-student" || hash.startsWith("#attendance=")) setMode("student");
+    }
+    syncScreenFromHash();
+    window.addEventListener("hashchange", syncScreenFromHash);
     async function restore() {
       try {
         const sessionResponse = await fetchForRestore("/api/auth/session");
@@ -72,7 +79,7 @@ export default function Home() {
       }
     }
     void restore();
-    return () => { active = false; };
+    return () => { active = false; window.removeEventListener("hashchange", syncScreenFromHash); };
   }, [restoreAttempt]);
 
   function retryRestore() {
@@ -169,7 +176,8 @@ export default function Home() {
     setSessionLabel("");
     setPassword("");
     setMessage("");
-    setShowLogin(false);
+    setShowLogin(true);
+    window.location.hash = "login-student";
   }
 
   if (studentData) return <StudentWorkspace name={sessionLabel.replace(/ 학생$/, "")} data={studentData} refresh={refreshStudent} logout={logout} />;
@@ -180,14 +188,14 @@ export default function Home() {
 
   if (restoreError) return <main className="shell"><section className="login-card" role="alert"><div className="brand"><BrandLockup compact /><h1>연결을 다시 확인해주세요</h1><p>일시적인 연결 문제일 수 있습니다. 로그인 정보는 삭제하지 않았습니다.</p></div><p className="alert">{restoreError}</p><div className="learning-actions"><button type="button" className="primary" onClick={retryRestore}>다시 연결</button><button type="button" className="ghost" onClick={() => { setRestoreError(""); setShowLogin(true); }}>로그인 화면</button></div></section></main>;
 
-  if (!showLogin) return <Landing onLogin={(selectedMode) => { setMode(selectedMode); setMessage(""); setPassword(""); setShowLogin(true); window.scrollTo(0, 0); }} />;
+  if (!showLogin) return <Landing onLogin={(selectedMode) => { setMode(selectedMode); setMessage(""); setPassword(""); setShowLogin(true); window.location.hash = `login-${selectedMode}`; window.scrollTo(0, 0); }} />;
 
   return (
     <main className="shell">
       <section className="login-card">
-        <button className="ghost" onClick={() => setShowLogin(false)}>홈으로</button>
+        <button className="ghost" onClick={() => { window.location.hash = "home"; setShowLogin(false); }}>홈으로</button>
         <div className="brand"><BrandLockup compact /><h1>학습 노트 시작하기</h1><p>기존 학원 계정으로 로그인해 오답을 기록하고 수업 현황을 확인하세요.</p></div>
-        <div className="tabs"><button className={mode === "student" ? "active" : ""} onClick={() => setMode("student")}>👩‍🎓 학생</button><button className={mode === "teacher" ? "active" : ""} onClick={() => setMode("teacher")}>👨‍🏫 선생님·관리자</button></div>
+        <div className="tabs"><button className={mode === "student" ? "active" : ""} onClick={() => { setMode("student"); window.location.hash = "login-student"; }}>👩‍🎓 학생</button><button className={mode === "teacher" ? "active" : ""} onClick={() => { setMode("teacher"); window.location.hash = "login-teacher"; }}>👨‍🏫 선생님·관리자</button></div>
         {mode === "student" ? (<>
           <div className="tabs account-tabs"><button className={studentAuthTab === "login" ? "active" : ""} onClick={() => { setStudentAuthTab("login"); setMessage(""); }}>로그인</button><button className={studentAuthTab === "signup" ? "active" : ""} onClick={() => { setStudentAuthTab("signup"); setMessage(""); }}>회원가입</button><button className={studentAuthTab === "reset" ? "active" : ""} onClick={() => { setStudentAuthTab("reset"); setMessage(""); }}>비밀번호 재설정</button></div>
           <form onSubmit={studentAuthTab === "login" ? loginStudent : studentAccountAction} className="form"><label>학생 이름<input value={name} onChange={(e) => setName(e.target.value)} placeholder="이름" required /></label>{studentAuthTab !== "reset" && <label>비밀번호<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={studentAuthTab === "signup" ? 4 : undefined} required /></label>}{studentAuthTab === "signup" && <><label>비밀번호 확인<input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={4} required /></label><label>학년<select value={signupGrade} onChange={(e) => setSignupGrade(e.target.value)}>{["중3", "고1", "고2", "고3"].map((grade) => <option key={grade}>{grade}</option>)}</select></label><label>학원 가입 코드<input type="password" value={signupCode} onChange={(e) => setSignupCode(e.target.value)} required /></label></>}<button className="primary" disabled={loading}>{loading ? "확인 중..." : studentAuthTab === "login" ? "로그인" : studentAuthTab === "signup" ? "회원가입" : "재설정 요청"}</button></form>
@@ -197,6 +205,7 @@ export default function Home() {
         )}
         {message && <div className="alert">{message}</div>}
         <p className="safe-note">SG 오답노트 계정으로 로그인하세요.</p>
+        <button type="button" className="ghost" onClick={() => { window.location.hash = "home"; setShowLogin(false); }}>공식 홈페이지로 이동 ↗</button>
       </section>
     </main>
   );
