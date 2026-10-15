@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export default function StudentAttendance({ classes }: { classes: string[] }) {
   const [className, setClassName] = useState(classes[0] || "");
+  const selectedClass = classes.includes(className) ? className : classes[0] || "";
   const [code, setCode] = useState("");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,10 +28,10 @@ export default function StudentAttendance({ classes }: { classes: string[] }) {
   return <section className="panel attendance-panel"><h2>📍 출석 체크 <small>데모</small></h2>
     <p className="attendance-notice">체험 화면입니다. 위치를 확인해도 실제 출석 명단이나 데이터베이스에는 기록되지 않습니다.</p>
     <p>출석 장소 예시: 울산 남구 문수로 374, 5층 SG고등관</p>
-    <label>수업 반<select value={className} onChange={(event) => setClassName(event.target.value)}>{classes.map((name) => <option key={name}>{name}</option>)}</select></label>
+    <label>수업 반<select value={selectedClass} onChange={(event) => setClassName(event.target.value)}>{classes.map((name) => <option key={name}>{name}</option>)}</select></label>
     <label>5층 교실 출석 코드<input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} maxLength={8} autoCapitalize="characters" placeholder="데모 코드: SGDEMO" /></label>
     <p>실제 운영에서는 선생님이 교실에 표시한 당일 코드와 GPS를 함께 확인합니다. GPS만으로 5층은 판별할 수 없습니다.</p>
-    <button className="primary" type="button" disabled={busy || !className} onClick={tryCheckIn}>{busy ? "위치 확인 중…" : "출석 체크 체험하기"}</button>
+    <button className="primary" type="button" disabled={busy || !selectedClass} onClick={tryCheckIn}>{busy ? "위치 확인 중…" : "출석 체크 체험하기"}</button>
     {status && <p role="status" className="workspace-message">{status}</p>}
   </section>;
 }
