@@ -17,6 +17,18 @@ type StudentData = {
 
 const teachers = ["이주백.T", "박병민.T", "노대근.T", "전체 관리자"];
 
+async function fetchForRestore(url: string) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (response.status < 500 || attempt === 1) return response;
+    } catch (error) {
+      if (attempt === 1) throw error;
+    }
+  }
+  throw new Error("서버에 연결하지 못했습니다.");
+}
+
 export default function Home() {
   const [showLogin, setShowLogin] = useState(false);
   const [mode, setMode] = useState<"student" | "teacher">("student");
@@ -32,22 +44,42 @@ export default function Home() {
   const [signupGrade, setSignupGrade] = useState("고1");
   const [signupCode, setSignupCode] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [restoring, setRestoring] = useState(true);
+  const [restoreError, setRestoreError] = useState("");
+  const [restoreAttempt, setRestoreAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
     if (window.location.hash.startsWith("#attendance=")) { setShowLogin(true); setMode("student"); }
-    void fetch("/api/auth/session", { cache: "no-store" }).then((response) => response.json()).then(async (session) => {
-      if (!active || !session.authenticated) return;
-      const role = session.role === "student" ? "student" : "teacher";
-      const response = await fetch(`/api/dashboard/${role}`, { cache: "no-store" });
-      const data = await response.json();
-      if (!active) return;
-      if (!response.ok) { setShowLogin(true); setMode(role); setMessage(data.message || "데이터를 불러오지 못했습니다."); return; }
-      setShowLogin(true); setMode(role); setSessionLabel(role === "student" ? `${session.name} 학생` : session.name);
-      if (role === "student") setStudentData(data); else setTeacherData(data);
-    }).catch(() => {});
+    async function restore() {
+      try {
+        const sessionResponse = await fetchForRestore("/api/auth/session");
+        if (!sessionResponse.ok) throw new Error("로그인 상태를 확인하지 못했습니다.");
+        const session = await sessionResponse.json();
+        if (!active || !session.authenticated) return;
+        const role = session.role === "student" ? "student" : "teacher";
+        const response = await fetchForRestore(`/api/dashboard/${role}`);
+        const data = await response.json();
+        if (!active) return;
+        if (response.status === 401) { setShowLogin(true); setMode(role); setMessage("로그인 시간이 만료되었습니다. 다시 로그인해주세요."); return; }
+        if (!response.ok) throw new Error(data.message || "학습 데이터를 불러오지 못했습니다.");
+        setShowLogin(true); setMode(role); setSessionLabel(role === "student" ? `${session.name} 학생` : session.name);
+        if (role === "student") setStudentData(data); else setTeacherData(data);
+      } catch (error) {
+        if (active) setRestoreError(error instanceof Error ? error.message : "서버 연결을 확인해주세요.");
+      } finally {
+        if (active) setRestoring(false);
+      }
+    }
+    void restore();
     return () => { active = false; };
-  }, []);
+  }, [restoreAttempt]);
+
+  function retryRestore() {
+    setRestoreError("");
+    setRestoring(true);
+    setRestoreAttempt((value) => value + 1);
+  }
 
   async function refreshStudent() {
     const response = await fetch("/api/dashboard/student", { cache: "no-store" });
@@ -144,6 +176,10 @@ export default function Home() {
 
   if (teacherData) return <TeacherWorkspace teacher={sessionLabel} data={teacherData} refresh={refreshTeacher} logout={logout} />;
 
+  if (restoring) return <main className="shell"><section className="login-card" role="status"><div className="brand"><BrandLockup compact /><h1>로그인 상태 확인 중</h1><p>잠시만 기다려주세요.</p></div></section></main>;
+
+  if (restoreError) return <main className="shell"><section className="login-card" role="alert"><div className="brand"><BrandLockup compact /><h1>연결을 다시 확인해주세요</h1><p>일시적인 연결 문제일 수 있습니다. 로그인 정보는 삭제하지 않았습니다.</p></div><p className="alert">{restoreError}</p><div className="learning-actions"><button type="button" className="primary" onClick={retryRestore}>다시 연결</button><button type="button" className="ghost" onClick={() => { setRestoreError(""); setShowLogin(true); }}>로그인 화면</button></div></section></main>;
+
   if (!showLogin) return <Landing onLogin={(selectedMode) => { setMode(selectedMode); setMessage(""); setPassword(""); setShowLogin(true); window.scrollTo(0, 0); }} />;
 
   return (
@@ -165,3 +201,4 @@ export default function Home() {
     </main>
   );
 }
+
