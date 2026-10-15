@@ -5,6 +5,8 @@ import { displayProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
 import BrandLockup from "./brand-lockup";
 import StudentProblemBrowser from "./student-problem-browser";
 import StudentAttendance from "./student-attendance";
+import StudentLearningHub from "./student-learning-hub";
+import { StudentQuestions } from "./learning-questions";
 
 type Row = Record<string, any>;
 type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices: Row[]; mustChangePassword?: boolean; grade?: string };
@@ -19,7 +21,7 @@ async function json(response: Response) {
 }
 
 export default function StudentWorkspace({ name, data, refresh, logout }: { name: string; data: Data; refresh: () => Promise<void>; logout: () => void }) {
-  const [tab, setTab] = useState<"wrong" | "school" | "learn" | "attendance" | "records" | "account">(() => typeof window !== "undefined" && window.location.hash.startsWith("#attendance=") ? "attendance" : "wrong");
+  const [tab, setTab] = useState<"home" | "weekly" | "questions" | "helper" | "wrong" | "school" | "learn" | "attendance" | "records" | "account">(() => typeof window !== "undefined" && window.location.hash.startsWith("#attendance=") ? "attendance" : "home");
   const [books, setBooks] = useState<string[]>([]);
   const [examsByBook, setExamsByBook] = useState<Record<string, ExamOption[]>>({});
   const [schoolExams, setSchoolExams] = useState<Exam[]>([]);
@@ -118,10 +120,12 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   return <main className="shell dashboard-shell study-workspace">
     <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
     <nav className="workspace-tabs" aria-label="학생 메뉴">
-      {[["wrong", "오답 작성"], ["school", "학교 기출"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["records", "내 기록"], ["account", "계정 관리"]].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}
+      {[["home", "오늘의 학습"], ["weekly", "주간 학습기록"], ["questions", "질문함"], ["helper", "결결이"], ["wrong", "오답 작성"], ["school", "학교 기출"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["records", "내 기록"], ["account", "계정 관리"]].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}
     </nav>
     {message && <p className="workspace-message" role="status">{message}</p>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
+    {(tab === "home" || tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={setTab} />}
+    {tab === "questions" && !data.mustChangePassword && <StudentQuestions classes={[...new Map(data.roster.filter((row) => row.enrollment_status !== "퇴원").map((row) => [`${row.teacher_name}\0${row.class_name}`, { teacherName: String(row.teacher_name || ""), className: String(row.class_name || "") }])).values()].filter((item) => item.teacherName && item.className)} />}
     {tab === "wrong" && !data.mustChangePassword && <section className="panel"><h2>오답 작성</h2><form onSubmit={saveWrong} className="form workspace-form">
       <label>교재<select value={book} onChange={(event) => { setBook(event.target.value); setExamId(""); setBookConfirmed(false); }}>{books.map((item) => <option key={item}>{item}</option>)}</select></label>
       {bookExams.length > 0 && <label>학교·시험<select value={examId} required onChange={(event) => { setExamId(event.target.value); setExamConfirmed(false); }}><option value="">선택해주세요</option>{bookExams.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>}

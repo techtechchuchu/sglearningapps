@@ -10,10 +10,11 @@ import BrandLockup from "./brand-lockup";
 import ReportStatusPanel from "./report-status-panel";
 import TeacherExplanations from "./teacher-explanations";
 import TeacherAttendance from "./teacher-attendance";
+import { TeacherQuestions } from "./learning-questions";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; activeBooks: string[] };
-type StaffTab = "home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "explanations" | "detail" | "students" | "attendance" | "register" | "exited" | "reset" | "admin";
+type StaffTab = "home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "explanations" | "detail" | "students" | "attendance" | "questions" | "register" | "exited" | "reset" | "admin";
 const ADMIN_FAVORITES: StaffTab[] = ["attendance", "detail", "reset"];
 const TEACHER_FAVORITES: StaffTab[] = ["attendance", "students", "detail"];
 
@@ -143,15 +144,15 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     });
   }
 
-  const group = ["home", "answers", "weekly", "daily", "school", "missing"].includes(tab) ? "answers" : ["detail", "students", "attendance", "register", "exited", "reset", "admin"].includes(tab) ? "students" : "paper";
+  const group = ["home", "answers", "weekly", "daily", "school", "missing"].includes(tab) ? "answers" : ["detail", "students", "attendance", "questions", "register", "exited", "reset", "admin"].includes(tab) ? "students" : "paper";
   const menus: Array<[typeof tab, string]> = group === "answers"
     ? [["home", "🏠 홈"], ["answers", "📋 전체 오답"], ["weekly", "🗓️ 주간 제출"], ["daily", "🗓️ 날짜별 제출량"], ["school", "🏫 학교 기출"], ["missing", "🚨 미제출"]]
     : group === "students"
-      ? [["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["exited", "🚪 퇴원생 관리"], ["reset", "🔑 비밀번호 관리"], ...(admin ? [["admin", "⚙️ 관리자 설정"] as [typeof tab, string]] : [])]
+      ? [["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["questions", "💬 학생 질문함"], ["exited", "🚪 퇴원생 관리"], ["reset", "🔑 비밀번호 관리"], ...(admin ? [["admin", "⚙️ 관리자 설정"] as [typeof tab, string]] : [])]
       : [["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"]];
   const favoriteOptions: Array<[StaffTab, string]> = [
     ["home", "🏠 홈"], ["answers", "📋 전체 오답"], ["weekly", "🗓️ 주간 제출"], ["daily", "🗓️ 날짜별 제출량"], ["school", "🏫 학교 기출"], ["missing", "🚨 미제출"],
-    ["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["exited", "🚪 퇴원생 관리"], ["reset", "🔑 비밀번호 관리"],
+    ["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["questions", "💬 학생 질문함"], ["exited", "🚪 퇴원생 관리"], ["reset", "🔑 비밀번호 관리"],
     ...(admin ? [["admin", "⚙️ 관리자 설정"] as [StaffTab, string]] : []), ["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"],
   ];
   const favoriteMenu = favorites.map((value) => favoriteOptions.find(([key]) => key === value)).filter((item): item is [StaffTab, string] => Boolean(item));
@@ -199,6 +200,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {tab === "explanations" && <TeacherExplanations books={[...new Set([...(data.activeBooks || []), ...data.roster.flatMap((row) => splitRosterBooks(row.book_name))])]} schoolExams={data.schoolExams || []} />}
     {tab === "students" && <section className="panel"><h2>담당 학생 명단·가입 현황</h2>{visibleRoster.map((row) => <div className="row" key={row.id}><strong>{row.student_name} · {row.class_name}</strong><span>{row.school_name} · {row.grade} · {splitRosterBooks(row.book_name).join(", ")} · {data.users.some((user) => user.username === row.student_name) ? "가입 완료" : "미가입"}</span></div>)}</section>}
     {tab === "attendance" && <TeacherAttendance teacher={teacher} roster={activeRoster.map((row) => ({ student_name: String(row.student_name || ""), class_name: String(row.class_name || ""), teacher_name: String(row.teacher_name || "") }))} />}
+    {tab === "questions" && <TeacherQuestions />}
     {tab === "detail" && <StudentDetail teacher={teacher} roster={data.roster} answers={matchingAnswers} users={data.users} files={data.wrongNoteFiles} schoolAnswers={data.schoolWrongAnswers} schoolExams={data.schoolExams} />}
     {(tab === "register" || tab === "exited") && <RosterActions mode={tab} teacher={teacher} roster={data.roster} activeBooks={data.activeBooks || []} refresh={refresh} />}
     {tab === "reset" && <section className="panel"><h2>학생 비밀번호 관리</h2><h3>처리 대기 요청</h3>{data.resetRequests.length ? data.resetRequests.map((row) => <div className="row" key={row.id}><strong>{row.username}</strong><span>{new Date(row.requested_at).toLocaleString("ko-KR")}</span></div>) : <p>대기 중인 요청이 없습니다.</p>}<h3>임시 비밀번호 발급</h3><form onSubmit={resetPassword} className="form workspace-form"><label>학생<select value={resetStudent} onChange={(event) => setResetStudent(event.target.value)} required><option value="">선택해주세요</option>{data.users.map((user) => <option key={user.username}>{user.username}</option>)}</select></label><label>새 임시 비밀번호<input type="password" minLength={4} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><label>임시 비밀번호 확인<input type="password" minLength={4} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label><button className="primary" disabled={busy}>임시 비밀번호 발급</button></form></section>}
