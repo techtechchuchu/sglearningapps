@@ -1,17 +1,19 @@
 import { ArrowUpRight, ArrowRight, BookOpen, GraduationCap, Layers3, Building2 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./landing-motion.css";
 import LearningScene from "./learning-scene";
 import "./partners.css";
+import "./company.css";
 
 type Props = { onLogin: (mode: "student" | "teacher") => void };
 
 export default function Landing({ onLogin }: Props) {
   const landingRef = useRef<HTMLElement>(null);
+  const [companyTab, setCompanyTab] = useState<"company" | "ceo">("company");
   useEffect(() => {
     const root = landingRef.current;
     if (!root || !("IntersectionObserver" in window)) return;
-    const elements = root.querySelectorAll(".g-section-head, .g-path, .g-detail-title, .g-feature-list article, .g-faq, .g-partner-card");
+    const elements = root.querySelectorAll(".g-section-head, .g-path, .g-detail-title, .g-feature-list article, .g-faq, .g-partner-card, .g-company-card");
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) {
@@ -31,11 +33,34 @@ export default function Landing({ onLogin }: Props) {
       <a className="g-skip" href="#choose">본문으로 바로가기</a>
       <header className="g-nav">
         <a className="g-brand" href="/" aria-label="스터디결 홈"><span className="g-mark" aria-hidden="true">결</span>스터디결<span className="g-beta">BETA</span></a>
-        <nav aria-label="주요 메뉴"><a href="#personal">개인을 위한 결</a><a href="#academy">학원을 위한 결</a></nav>
+        <nav aria-label="주요 메뉴"><a href="#personal">개인을 위한 결</a><a href="#academy">학원을 위한 결</a><a href="#company">회사소개</a></nav>
         <button className="g-login" onClick={() => onLogin("student")}>지금 시작하기 <ArrowUpRight size={15}/></button>
       </header>
 
       <LearningScene />
+      <section className="g-company g-wrap" id="company" aria-labelledby="company-title">
+        <div className="g-section-head"><p className="g-eyebrow">ABOUT STUDY GYEOL</p><h2 id="company-title">스터디결을 소개합니다.</h2><p>배움의 기록이 다음 성장을 이어 주도록.</p></div>
+        <div className="g-company-tabs" role="tablist" aria-label="회사소개 메뉴">
+          <button type="button" role="tab" id="company-tab" aria-controls="company-panel" aria-selected={companyTab === "company"} onClick={() => setCompanyTab("company")}>회사소개</button>
+          <button type="button" role="tab" id="ceo-tab" aria-controls="ceo-panel" aria-selected={companyTab === "ceo"} onClick={() => setCompanyTab("ceo")}>대표소개</button>
+        </div>
+        {companyTab === "company" ? (
+          <div className="g-company-card" id="company-panel" role="tabpanel" aria-labelledby="company-tab">
+            <div className="g-company-copy"><p className="g-eyebrow">OUR STORY</p><h3>흩어진 학습 기록을<br/>하나의 흐름으로.</h3><p>스터디결은 학생의 오답과 공부 기록을 모으고, 선생님이 학생의 배움을 더 깊이 살필 수 있도록 돕는 학습 관리 서비스입니다.</p><p>교육 현장의 반복 업무에서 출발해, 학생에게는 스스로 돌아볼 수 있는 기록을, 선생님에게는 다음 수업을 준비할 실마리를 전합니다.</p><a href="#choose" className="g-company-link">서비스 살펴보기 <ArrowUpRight size={17}/></a></div>
+            <div className="g-company-values" aria-label="스터디결의 방향"><span>기록</span><span>이해</span><span>성장</span></div>
+          </div>
+        ) : (
+          <div className="g-company-card g-ceo-card" id="ceo-panel" role="tabpanel" aria-labelledby="ceo-tab">
+            <div className="g-ceo-photo"><img src="/ceo/choo-jaehyun.png" alt="스터디결 대표 추재현" width="1180" height="1333" loading="lazy"/></div>
+            <div className="g-company-copy"><p className="g-eyebrow">FOUNDER & CEO</p><h3>추재현</h3><strong>현장의 불편을 서비스로 바꿉니다.</strong><p>울산대학교 ICT융합학부에서 산업ICT공학과 컴퓨터공학을 전공할 예정입니다. 교육 현장에서 발견한 문제를 서비스와 프로젝트로 구현하고 있습니다.</p><p>SG 오답노트에서 시작한 학습 관리의 경험을 스터디결로 이어가며, 배우고 만들고 기록하는 일을 계속하고 있습니다.</p><a href="https://jaehyun-portfolio.k88yjdr4bb.chatgpt.site/" className="g-company-link" target="_blank" rel="noopener noreferrer">추재현 포트폴리오 보기 <ArrowUpRight size={17}/></a></div>
+          </div>
+        )}
+      </section>
+
+      <div className="g-company-contact g-wrap" aria-label="인재영입 및 협업 문의">
+        <a href="mailto:cjh1645@naver.com?subject=%5B%EC%8A%A4%ED%84%B0%EB%94%94%EA%B2%B0%5D%20%EC%9D%B8%EC%9E%AC%EC%98%81%EC%9E%85%20%EB%AC%B8%EC%9D%98"><span>JOIN US</span><strong>인재영입</strong><p>함께 교육의 다음 장면을 만들어 갈 분을 기다립니다.</p><ArrowUpRight size={20}/></a>
+        <a href="mailto:cjh1645@naver.com?subject=%5B%EC%8A%A4%ED%84%B0%EB%94%94%EA%B2%B0%5D%20%ED%98%91%EC%97%85%20%EB%AC%B8%EC%9D%98"><span>PARTNERSHIP</span><strong>협업문의</strong><p>교육 현장의 문제를 함께 해결할 제안을 들려주세요.</p><ArrowUpRight size={20}/></a>
+      </div>
 
       <section className="g-partners g-wrap" aria-labelledby="partners-title" id="partners">
         <div className="g-section-head"><p className="g-eyebrow">LEARNING, TOGETHER</p><h2 id="partners-title">지금, 스터디결과 함께하고 있어요.</h2><p>현대해상 이주배경 청소년 멘토링과 SG 고등관에서 스터디결을 이용하고 있습니다.</p></div>
@@ -78,4 +103,3 @@ export default function Landing({ onLogin }: Props) {
     </main>
   );
 }
-
