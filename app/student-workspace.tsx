@@ -118,9 +118,9 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   }
 
   return <main className="shell dashboard-shell study-workspace">
-    <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
+    <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions"><button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => { setTab("helper"); setMessage(""); }}>✦ AI 상담사 결결이</button><button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
     <nav className="workspace-tabs" aria-label="학생 메뉴">
-      {[["home", "오늘의 학습"], ["weekly", "주간 학습기록"], ["questions", "질문함"], ["helper", "결결이"], ["wrong", "오답 작성"], ["school", "학교 기출"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["records", "내 기록"], ["account", "계정 관리"]].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}
+      {[["home", "오늘의 학습"], ["weekly", "주간 학습기록"], ["questions", "질문함"], ["wrong", "오답 작성"], ["school", "학교 기출"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["records", "내 기록"], ["account", "계정 관리"]].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}
     </nav>
     {message && <p className="workspace-message" role="status">{message}</p>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
