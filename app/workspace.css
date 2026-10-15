@@ -10,6 +10,7 @@
 .brand-lockup-compact{gap:8px;font-size:18px}
 .brand-lockup-compact img,.staff-header .brand-lockup-compact img{width:110px;max-height:30px}
 .brand-lockup-compact .brand-gyeol-mark{width:23px;height:25px;font-size:16px}
+.workspace-branding{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0}.workspace-branding p,.staff-header .workspace-branding p{margin:0;color:#687b70;font-size:12px;font-weight:600;line-height:1.45;white-space:normal}
 .g-nav .brand-lockup{font-size:18px}
 .g-nav .brand-lockup img{width:104px;max-height:28px}
 .study-workspace{width:min(100%,1180px);min-width:0}
