@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { displayProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
 import BrandLockup from "./brand-lockup";
 import StudentProblemBrowser from "./student-problem-browser";
+import StudentAttendance from "./student-attendance";
 
 type Row = Record<string, any>;
 type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices: Row[]; mustChangePassword?: boolean; grade?: string };
@@ -18,7 +19,7 @@ async function json(response: Response) {
 }
 
 export default function StudentWorkspace({ name, data, refresh, logout }: { name: string; data: Data; refresh: () => Promise<void>; logout: () => void }) {
-  const [tab, setTab] = useState<"wrong" | "school" | "learn" | "records" | "account">("wrong");
+  const [tab, setTab] = useState<"wrong" | "school" | "learn" | "attendance" | "records" | "account">("wrong");
   const [books, setBooks] = useState<string[]>([]);
   const [examsByBook, setExamsByBook] = useState<Record<string, ExamOption[]>>({});
   const [schoolExams, setSchoolExams] = useState<Exam[]>([]);
@@ -117,7 +118,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   return <main className="shell dashboard-shell study-workspace">
     <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
     <nav className="workspace-tabs" aria-label="학생 메뉴">
-      {[["wrong", "오답 작성"], ["school", "학교 기출"], ["learn", "문제별 해설"], ["records", "내 기록"], ["account", "계정 관리"]].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}
+      {[["wrong", "오답 작성"], ["school", "학교 기출"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["records", "내 기록"], ["account", "계정 관리"]].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}
     </nav>
     {message && <p className="workspace-message" role="status">{message}</p>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
@@ -142,6 +143,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     </form><h3>내 학교 기출 기록</h3>{schoolAnswers.map((answer) => <div className="row" key={answer.id}><strong>{schoolExams.find((exam) => exam.id === answer.exam_id)?.display_name || `시험 ${answer.exam_id}`} · {answer.problem}번</strong><span>{answer.memo}</span></div>)}</section>}
     {tab === "records" && <><section className="metrics"><article><b>{data.wrongAnswers.length}</b><span>오답 기록</span></article><article><b>{schoolAnswers.length}</b><span>학교 기출</span></article><article><b>{assignedBooks.length}</b><span>명단 교재</span></article><article><b>{data.wrongNoteFiles.length}</b><span>PDF</span></article></section><section className="panel"><h2>내 수업·교재</h2>{data.roster.map((row, index) => <div className="row" key={row.id || index}><strong>{row.class_name || "반 미지정"}</strong><span>{row.teacher_name} · {splitRosterBooks(row.book_name).join(" · ") || "교재 미지정"}</span></div>)}</section><section className="panel"><h2>내 오답 목록</h2>{data.wrongAnswers.length ? data.wrongAnswers.map((row) => <div className="row workspace-record" key={row.id}><div><strong>{row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""} · {new Date(row.created_at).toLocaleString("ko-KR")}</span></div>{editId === row.id ? <div><textarea value={editMemo} onChange={(event) => setEditMemo(event.target.value)} /><button disabled={busy} onClick={() => void updateMemo(row.id)}>저장</button><button onClick={() => setEditId(null)}>취소</button></div> : <div><button onClick={() => { setEditId(row.id); setEditMemo(row.memo || ""); }}>비고 수정</button><button disabled={busy} onClick={() => void removeWrong(row.id)}>삭제</button></div>}</div>) : <p>저장된 오답이 없습니다.</p>}</section><section className="panel"><h2>오답노트 PDF 기록</h2>{data.wrongNoteFiles.map((row, index) => <div className="row" key={row.id || index}><strong>{row.original_filename || "오답노트"}</strong><span>{row.subject_name || ""} {row.round_number ? `· ${row.round_number}회` : ""} {row.id && <a href={`/api/files/wrong-note/${row.id}`} target="_blank" rel="noopener noreferrer">PDF 열기</a>}</span></div>)}</section></>}
     {tab === "account" && <section className="panel"><h2>비밀번호 변경</h2>{data.mustChangePassword && <p>임시 비밀번호로 로그인했습니다. 새 비밀번호를 설정해주세요.</p>}<form onSubmit={changePassword} className="form workspace-form"><label>현재 비밀번호<input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label><label>새 비밀번호<input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={4} required /></label><label>새 비밀번호 확인<input type="password" value={newPasswordAgain} onChange={(event) => setNewPasswordAgain(event.target.value)} minLength={4} required /></label><button className="primary" disabled={busy}>비밀번호 변경</button></form></section>}
+    {tab === "attendance" && !data.mustChangePassword && <StudentAttendance classes={[...new Set(data.roster.map((row) => String(row.class_name || "")).filter(Boolean))]} />}
     {tab === "learn" && !data.mustChangePassword && <StudentProblemBrowser studentName={name} books={books} schoolExams={schoolExams} wrongAnswers={data.wrongAnswers} schoolAnswers={schoolAnswers} onWrite={(kind, selectedBook, selectedExam, number) => {
       if (kind === "xpattern") { setBook(selectedBook); setExamId(selectedExam); setProblem(String(number)); setBookConfirmed(false); setExamConfirmed(false); setTab("wrong"); }
       else { setSchoolExamId(selectedExam); setSchoolProblem(String(number)); setSchoolConfirmed(false); setTab("school"); }
