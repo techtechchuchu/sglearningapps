@@ -1,0 +1,8 @@
+.attendance-qr{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:14px 0}
+.attendance-qr img{width:min(240px,100%);height:auto;border:1px solid #e1d9ef;border-radius:12px;background:#fff}
+.attendance-qr span{font-size:13px;color:#5d31ae}
+.attendance-scan-button{display:block;width:min(100%,560px);margin:16px 0;padding:13px;border:1px solid #7641d3;border-radius:11px;background:#f5f0ff;color:#5d31ae;font:inherit;font-weight:800;cursor:pointer}
+.attendance-camera{width:min(100%,560px);margin:12px 0;padding:10px;border-radius:14px;background:#1b1823;color:#fff;text-align:center}
+.attendance-camera video{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:10px}
+.attendance-camera p{margin:9px 0 2px;font-size:13px}
+

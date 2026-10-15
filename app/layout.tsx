@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./landing.css";
 import "./workspace.css";
+import "./attendance-qr.css";
 
 export const metadata: Metadata = {
   title: "스터디결 | 나만의 공부, 나만의 결",
@@ -15,3 +16,4 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     </html>
   );
 }
+
