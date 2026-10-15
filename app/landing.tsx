@@ -97,6 +97,7 @@ export default function Landing({ onLogin }: Props) {
             <p>호스팅 서비스 제공: Vercel</p>
             <p>고객 문의: <a href="mailto:cjh1645@gmail.com">cjh1645@gmail.com</a></p>
           </div>
+          <nav aria-label="서비스 정책" style={{ display: "flex", flexWrap: "wrap", gap: "10px 20px", margin: "20px 0" }}><a href="/terms">이용약관</a><a href="/privacy">개인정보 처리방침</a><a href="/content-policy">자체교재·PDF 이용 및 보관 원칙</a></nav>
           <p className="g-copyright">Copyright © 2026 스터디결. All rights reserved.</p>
         </div>
       </footer>
