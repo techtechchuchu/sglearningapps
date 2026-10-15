@@ -36,6 +36,16 @@ export default function StudentLearningHub({ view, name, answers, schoolAnswers,
     review: ["정답을 가리고 처음부터 다시 풀어 보세요.", "틀린 이유를 계산·개념·문제 해석 중 하나로 적어 보세요.", "막히는 부분은 질문함에 남겨 선생님에게 확인하세요."],
     habit: ["매일 같은 시간에 짧게 시작해 보세요.", "오늘 한 일 한 가지와 내일 할 일 한 가지를 적어 보세요.", "일주일 기록을 보고 빈 날이 있으면 무리하지 않는 분량으로 다시 시작하세요."],
   };
-  return <div className="learning-hub"><section className="panel"><span className="badge">결결이 · 학습 도우미 미리보기</span><h2>공부를 이어 가는 작은 도움</h2><p>현재는 AI 상담이 연결되지 않은 화면입니다. 아래는 미리 작성된 학습 팁이며, 질문을 입력해 AI 답변을 받는 기능은 추후 제공됩니다.</p><div className="learning-actions">{[["plan", "학습 계획"], ["review", "오답 복습"], ["habit", "공부 습관"]].map(([key, label]) => <button type="button" key={key} aria-pressed={topic === key} className={topic === key ? "selected" : ""} onClick={() => setTopic(key)}>{label}</button>)}</div>{topic && <div className="learning-guidance"><h3>{topic === "plan" ? "학습 계획" : topic === "review" ? "오답 복습" : "공부 습관"} 팁</h3><ol>{guidance[topic].map((line) => <li key={line}>{line}</li>)}</ol></div>}<p className="learning-note">개인정보나 비밀번호는 입력하지 마세요. 긴급한 고민은 보호자·선생님께 직접 이야기해 주세요.</p></section></div>;
+  const topics = [["plan", "학습 계획 세우기"], ["review", "오답 복습하기"], ["habit", "공부 습관 만들기"]];
+  const selectedLabel = topics.find(([key]) => key === topic)?.[1];
+  return <section className="gyeolgyeoli-chat" aria-label="AI 상담사 결결이 미리보기">
+    <header className="gyeolgyeoli-chat-header"><span className="gyeolgyeoli-avatar" aria-hidden="true">결</span><div><strong>AI 상담사 결결이</strong><small>학습 도우미 미리보기 · AI 연결 전</small></div></header>
+    <div className="gyeolgyeoli-chat-body"><div className="gyeolgyeoli-welcome"><span className="gyeolgyeoli-avatar" aria-hidden="true">결</span><div><h2>{name} 학생, 반가워요!</h2><p>오늘은 어떤 공부가 궁금한가요?</p></div></div>
+      <div className="gyeolgyeoli-suggestions" aria-label="추천 학습 주제">{topics.map(([key, label]) => <button type="button" key={key} aria-pressed={topic === key} onClick={() => setTopic(key)}>{label}</button>)}</div>
+      <p className="gyeolgyeoli-preview-note">아래 내용은 미리 작성된 학습 팁입니다. 실제 AI 상담과 자유로운 질문 기능은 아직 연결되지 않았습니다.</p>
+      {topic && <div className="gyeolgyeoli-conversation" role="status"><div className="gyeolgyeoli-message student"><span>{selectedLabel}</span></div><div className="gyeolgyeoli-message assistant"><small>결결이 · 미리 작성된 학습 팁</small><p>{selectedLabel}에 도움이 되는 방법을 살펴볼까요?</p><ol>{guidance[topic].map((line) => <li key={line}>{line}</li>)}</ol></div></div>}
+    </div>
+    <footer className="gyeolgyeoli-chat-footer"><div className="gyeolgyeoli-composer"><input aria-label="질문 입력" placeholder="AI 상담 기능을 준비 중입니다" disabled /><button type="button" disabled aria-label="질문 보내기">➤</button></div><p>개인정보나 비밀번호는 입력하지 마세요. 긴급한 고민은 보호자·선생님께 직접 이야기해 주세요.</p></footer>
+  </section>;
 }
 
