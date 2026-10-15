@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { displayProblemNumbers, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
 import AdminPanel from "./admin-panel";
 import SubmissionReportUpload from "./submission-report-upload";
@@ -13,6 +13,9 @@ import TeacherAttendance from "./teacher-attendance";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; activeBooks: string[] };
+type StaffTab = "home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "explanations" | "detail" | "students" | "attendance" | "register" | "exited" | "reset" | "admin";
+const ADMIN_FAVORITES: StaffTab[] = ["attendance", "detail", "reset"];
+const TEACHER_FAVORITES: StaffTab[] = ["attendance", "students", "detail"];
 
 async function readJson(response: Response) {
   const result = await response.json().catch(() => ({}));
@@ -28,7 +31,10 @@ function koreanDate(value: Date) {
 
 export default function TeacherWorkspace({ teacher, data, refresh, logout }: { teacher: string; data: TeacherData; refresh: () => Promise<void>; logout: () => void }) {
   const admin = teacher === "전체 관리자";
-  const [tab, setTab] = useState<"home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "explanations" | "detail" | "students" | "attendance" | "register" | "exited" | "reset" | "admin">("home");
+  const [tab, setTab] = useState<StaffTab>("home");
+  const [favorites, setFavorites] = useState<StaffTab[]>(admin ? ADMIN_FAVORITES : TEACHER_FAVORITES);
+  const [favoriteDraft, setFavoriteDraft] = useState<StaffTab[]>([]);
+  const [editingFavorites, setEditingFavorites] = useState(false);
   const [studentFilter, setStudentFilter] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [submissionDate, setSubmissionDate] = useState(() => koreanDate(new Date()));
@@ -43,6 +49,16 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   const [paperWeek, setPaperWeek] = useState(Math.min(5, Math.floor((new Date().getDate() - 1) / 7) + 1));
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(`sg-staff-favorites:${teacher}`);
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is StaffTab => typeof item === "string" && (admin || item !== "admin")).slice(0, 5));
+      } else setFavorites(admin ? ADMIN_FAVORITES : TEACHER_FAVORITES);
+    } catch { setFavorites(admin ? ADMIN_FAVORITES : TEACHER_FAVORITES); }
+  }, [admin, teacher]);
 
   const activeRoster = data.roster.filter((row) => !row.enrollment_status || row.enrollment_status === "재원");
   const students = [...new Set(activeRoster.map((row) => String(row.student_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
@@ -133,11 +149,28 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     : group === "students"
       ? [["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["exited", "🚪 퇴원생 관리"], ["reset", "🔑 비밀번호 관리"], ...(admin ? [["admin", "⚙️ 관리자 설정"] as [typeof tab, string]] : [])]
       : [["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"]];
+  const favoriteOptions: Array<[StaffTab, string]> = [
+    ["home", "🏠 홈"], ["answers", "📋 전체 오답"], ["weekly", "🗓️ 주간 제출"], ["daily", "🗓️ 날짜별 제출량"], ["school", "🏫 학교 기출"], ["missing", "🚨 미제출"],
+    ["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["exited", "🚪 퇴원생 관리"], ["reset", "🔑 비밀번호 관리"],
+    ...(admin ? [["admin", "⚙️ 관리자 설정"] as [StaffTab, string]] : []), ["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"],
+  ];
+  const favoriteMenu = favorites.map((value) => favoriteOptions.find(([key]) => key === value)).filter((item): item is [StaffTab, string] => Boolean(item));
+
+  function saveFavorites() {
+    try {
+      window.localStorage.setItem(`sg-staff-favorites:${teacher}`, JSON.stringify(favoriteDraft));
+      setFavorites(favoriteDraft);
+      setEditingFavorites(false);
+      setMessage("이 브라우저에 자주 쓰는 메뉴를 저장했습니다.");
+    } catch { setMessage("메뉴를 저장하지 못했습니다. 브라우저 저장 권한을 확인해주세요."); }
+  }
 
   return <main className="shell dashboard-shell study-workspace">
     <section className="staff-header"><BrandLockup /><div className="staff-heading"><h1>👨‍🏫 선생님 관리</h1><p>현재 로그인: {teacher}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
+    <section className="staff-favorites" aria-label="자주 쓰는 메뉴"><div className="staff-favorites-heading"><strong>자주 쓰는 메뉴</strong><button type="button" onClick={() => { setFavoriteDraft(favorites); setEditingFavorites(true); }}>편집하기</button></div><nav className="staff-favorites-links" aria-label="고정 메뉴">{favoriteMenu.length ? favoriteMenu.map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value); setMessage(""); }}>{label}</button>) : <span>고정한 메뉴가 없습니다. 편집하기에서 추가하세요.</span>}</nav></section>
     <nav className="workspace-group-tabs" aria-label="관리 영역"><button className={group === "answers" ? "active" : ""} onClick={() => setTab("home")}>📝 오답 관리</button><button className={group === "students" ? "active" : ""} onClick={() => setTab("students")}>👥 학생 관리</button><button className={group === "paper" ? "active" : ""} onClick={() => setTab("paper")}>🖨️ 오답노트 · 출력</button></nav>
     <nav className="workspace-tabs staff-subtabs" aria-label="세부 메뉴">{menus.map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value); setMessage(""); }}>{label}</button>)}</nav>
+    {editingFavorites && <div className="staff-favorites-backdrop"><section className="staff-favorites-dialog" role="dialog" aria-modal="true" aria-labelledby="favorites-title"><div className="staff-favorites-dialog-heading"><h2 id="favorites-title">자주 쓰는 메뉴 편집</h2><button type="button" aria-label="닫기" onClick={() => setEditingFavorites(false)}>×</button></div><p>최대 5개까지 고정할 수 있습니다. 이 브라우저에서 로그인한 {teacher} 계정에 적용됩니다.</p><div className="staff-favorites-options">{favoriteOptions.map(([value, label]) => <label key={value}><input type="checkbox" checked={favoriteDraft.includes(value)} disabled={!favoriteDraft.includes(value) && favoriteDraft.length >= 5} onChange={(event) => setFavoriteDraft((current) => event.target.checked ? current.length < 5 ? [...current, value] : current : current.filter((item) => item !== value))} />{label}</label>)}</div><small>{favoriteDraft.length}/5개 선택</small><div className="staff-favorites-actions"><button type="button" onClick={() => setEditingFavorites(false)}>취소</button><button type="button" className="primary" onClick={saveFavorites}>저장</button></div></section></div>}
     {message && <p className="workspace-message" role="status">{message}</p>}
     {(tab === "answers" || tab === "weekly" || tab === "daily" || tab === "missing" || tab === "students") && <section className="panel workspace-filters">{(tab === "daily" || tab === "missing") && <label>기준 날짜<input type="date" value={submissionDate} onChange={(event) => setSubmissionDate(event.target.value)} /></label>}<label>학생<select value={studentFilter} onChange={(event) => setStudentFilter(event.target.value)}><option value="">전체</option>{students.map((student) => <option key={student}>{student}</option>)}</select></label><label>반<select value={classFilter} onChange={(event) => setClassFilter(event.target.value)}><option value="">전체</option>{classes.map((className) => <option key={className}>{className}</option>)}</select></label></section>}
     {tab === "home" && <>
