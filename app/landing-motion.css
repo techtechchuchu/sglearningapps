@@ -10,15 +10,18 @@
 .g-footer-services strong { color: #eff3e9; font-size: 15px; }
 .g-footer-services > div { display: flex; flex-wrap: wrap; gap: 12px 24px; font-size: 13px; margin-top: 16px; }
 .g-business-details { font-size: 13px; line-height: 2; }
-.g-business-details p { margin: 0; }
-.g-business-details span { padding: 0 8px; }
-.g-business-details address { font-style: normal; }
+.g-business-details strong { display: block; color: #eff3e9; margin-bottom: 12px; }
+.g-business-details dl { display: grid; gap: 4px; margin: 0; }
+.g-business-details dl > div { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; }
+.g-business-details dt { color: #939e94; }
+.g-business-details dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .g-copyright { color: #939e94; font-size: 12px; margin: 32px 0 0; }
 @media(max-width:640px) {
   .g-business-footer { padding: 38px 0 30px; }
   .g-footer-heading { flex-direction: column; gap: 22px; padding-bottom: 28px; }
   .g-footer-heading nav { gap: 16px; font-size: 13px; }
   .g-business-details { font-size: 12px; }
+  .g-business-details dl > div { grid-template-columns: 112px minmax(0, 1fr); gap: 10px; }
 }
 /* Animate content on arrival without hiding it when JavaScript is unavailable. */
 .gyeol .g-hero { min-height: min(850px, calc(100svh - 94px)); }
