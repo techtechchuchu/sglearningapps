@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { NextRequest, NextResponse } from "next/server";
 
 export const SESSION_COOKIE = "sg_session";
-const TTL_SECONDS = 12 * 60 * 60;
+const TTL_SECONDS = 7 * 24 * 60 * 60;
 
 type Session = { role: "student" | "teacher"; name: string; expires: number };
 
@@ -54,3 +54,4 @@ export function getSession(request: NextRequest): Session | null {
     return null;
   }
 }
+
