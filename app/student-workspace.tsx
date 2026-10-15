@@ -19,7 +19,7 @@ async function json(response: Response) {
 }
 
 export default function StudentWorkspace({ name, data, refresh, logout }: { name: string; data: Data; refresh: () => Promise<void>; logout: () => void }) {
-  const [tab, setTab] = useState<"wrong" | "school" | "learn" | "attendance" | "records" | "account">("wrong");
+  const [tab, setTab] = useState<"wrong" | "school" | "learn" | "attendance" | "records" | "account">(() => typeof window !== "undefined" && window.location.hash.startsWith("#attendance=") ? "attendance" : "wrong");
   const [books, setBooks] = useState<string[]>([]);
   const [examsByBook, setExamsByBook] = useState<Record<string, ExamOption[]>>({});
   const [schoolExams, setSchoolExams] = useState<Exam[]>([]);

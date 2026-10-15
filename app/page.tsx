@@ -35,6 +35,7 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
+    if (window.location.hash.startsWith("#attendance=")) { setShowLogin(true); setMode("student"); }
     void fetch("/api/auth/session", { cache: "no-store" }).then((response) => response.json()).then(async (session) => {
       if (!active || !session.authenticated) return;
       const role = session.role === "student" ? "student" : "teacher";

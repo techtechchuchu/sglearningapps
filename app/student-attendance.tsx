@@ -57,7 +57,13 @@ export default function StudentAttendance({ classes }: { classes: ClassOption[] 
           const qr = jsQR(image.data, canvas.width, canvas.height, { inversionAttempts: "dontInvert" });
           if (!qr || completed) return;
           try {
-            const payload = JSON.parse(qr.data);
+            let payload;
+            if (qr.data.startsWith("https://studygyeol.vercel.app/#attendance=")) {
+              const url = new URL(qr.data);
+              payload = { type: "sg-attendance", version: 2, teacherName: "전체 관리자", className: "출석 데모반", qrToken: url.hash.slice("#attendance=".length) };
+            } else {
+              payload = JSON.parse(qr.data);
+            }
             if (payload.type !== "sg-attendance" || ![1, 2].includes(payload.version)) throw new Error("출석용 QR이 아닙니다.");
             if (payload.version === 1) {
               if (!/^\d{6}$/.test(payload.code)) throw new Error("출석용 QR이 아닙니다.");
@@ -115,6 +121,18 @@ export default function StudentAttendance({ classes }: { classes: ClassOption[] 
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
   }
 
+  useEffect(() => {
+    const token = window.location.hash.startsWith("#attendance=") ? window.location.hash.slice("#attendance=".length) : "";
+    if (!token) return;
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    if (!/^[A-Za-z0-9_-]{32}$/.test(token)) { setStage("failure"); setResult("출석용 QR 주소가 올바르지 않습니다."); return; }
+    const target = classes.find((item) => item.teacherName === "전체 관리자" && item.className === "출석 데모반");
+    if (!target) { setStage("failure"); setResult("출석 데모반에 등록된 학생만 출석할 수 있습니다."); return; }
+    setSelectedKey(`${target.teacherName}\0${target.className}`);
+    void checkIn(target, "", token);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function closeDialog() { requestId.current += 1; setStage("idle"); setResult(""); }
 
   return <section className="panel attendance-panel">
@@ -123,11 +141,11 @@ export default function StudentAttendance({ classes }: { classes: ClassOption[] 
     <article className="attendance-course"><span>출석할 수업</span><strong>{chosen?.className || "등록된 반이 없습니다"}</strong><small>{chosen?.teacherName || "담당 선생님 미지정"} · 울산 남구 문수로 374, 5층 SG고등관</small></article>
     {classes.length > 1 && <label>수업 선택<select value={`${chosen.teacherName}\0${chosen.className}`} onChange={(event) => { setSelectedKey(event.target.value); setCode(""); }}>{classes.map((item) => <option value={`${item.teacherName}\0${item.className}`} key={`${item.teacherName}-${item.className}`}>{item.className} · {item.teacherName}</option>)}</select></label>}
     <button className="attendance-scan-button" type="button" disabled={!chosen || stage === "progress"} onClick={() => { setScanError(""); setScanning((value) => !value); }}>{scanning ? "카메라 닫기" : "카메라로 QR 스캔"}</button>
-    {scanning && <div className="attendance-camera"><video ref={videoRef} playsInline muted aria-label="출석 QR 스캔 카메라" /><p>선생님 화면의 QR을 카메라에 맞춰주세요.</p></div>}
+    {scanning && <div className="attendance-camera"><video ref={videoRef} playsInline muted aria-label="출석 QR 스캔 카메라" /><p>교실에 붙인 출석 QR을 카메라에 맞춰주세요.</p></div>}
     {scanError && <p className="workspace-message" role="alert">{scanError}</p>}
     <label>교실 출석 코드<input inputMode={chosen?.demo ? "text" : "numeric"} autoCapitalize="characters" maxLength={chosen?.demo ? 8 : 6} value={code} onChange={(event) => setCode(chosen?.demo ? event.target.value.toUpperCase() : event.target.value.replace(/\D/g, ""))} placeholder={chosen?.demo ? "데모 코드 SGDEMO" : "선생님이 안내한 6자리 코드"} /></label>
     <button className="primary attendance-check-button" type="button" disabled={!chosen || stage === "progress"} onClick={() => void checkIn()}>출석 체크</button>
-    <p className="attendance-help">위치 정보의 좌표는 저장하지 않습니다. 데모반은 화면 체험만 가능하며 출석 이력에 남지 않습니다.</p>
+    <p className="attendance-help">위치 정보의 좌표는 저장하지 않습니다. 출석 데모반의 QR은 출석 이력에 바로 기록됩니다.</p>
 
     <section className="attendance-history" aria-label="내 출석 이력"><h3>내 출석 이력</h3>{historyError ? <p role="alert">{historyError}</p> : records.length ? <div className="attendance-history-list">{records.map((record) => <div className="attendance-history-row" key={record.id}><div><strong>{record.class_name}</strong><small>{record.attendance_date} · {record.teacher_name}</small></div><span className={`attendance-status attendance-status-${record.status}`}>{STATUS[record.status] || record.status}</span></div>)}</div> : <p>아직 저장된 출석 이력이 없습니다.</p>}</section>
 
