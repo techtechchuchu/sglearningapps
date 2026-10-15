@@ -184,17 +184,16 @@ export default function Home() {
 
   if (teacherData) return <TeacherWorkspace teacher={sessionLabel} data={teacherData} refresh={refreshTeacher} logout={logout} />;
 
-  if (restoring) return <main className="shell"><section className="login-card" role="status"><div className="brand"><BrandLockup compact /><h1>로그인 상태 확인 중</h1><p>잠시만 기다려주세요.</p></div></section></main>;
+  if (restoring) return <main className="shell"><section className="login-card" role="status"><div className="brand"><BrandLockup compact solo /><h1>로그인 상태 확인 중</h1><p>잠시만 기다려주세요.</p></div></section></main>;
 
-  if (restoreError) return <main className="shell"><section className="login-card" role="alert"><div className="brand"><BrandLockup compact /><h1>연결을 다시 확인해주세요</h1><p>일시적인 연결 문제일 수 있습니다. 로그인 정보는 삭제하지 않았습니다.</p></div><p className="alert">{restoreError}</p><div className="learning-actions"><button type="button" className="primary" onClick={retryRestore}>다시 연결</button><button type="button" className="ghost" onClick={() => { setRestoreError(""); setShowLogin(true); }}>로그인 화면</button></div></section></main>;
+  if (restoreError) return <main className="shell"><section className="login-card" role="alert"><div className="brand"><BrandLockup compact solo /><h1>연결을 다시 확인해주세요</h1><p>일시적인 연결 문제일 수 있습니다. 로그인 정보는 삭제하지 않았습니다.</p></div><p className="alert">{restoreError}</p><div className="learning-actions"><button type="button" className="primary" onClick={retryRestore}>다시 연결</button><button type="button" className="ghost" onClick={() => { setRestoreError(""); setShowLogin(true); }}>로그인 화면</button></div></section></main>;
 
   if (!showLogin) return <Landing onLogin={(selectedMode) => { setMode(selectedMode); setMessage(""); setPassword(""); setShowLogin(true); window.location.hash = `login-${selectedMode}`; window.scrollTo(0, 0); }} />;
 
   return (
     <main className="shell">
       <section className="login-card">
-        <button className="ghost" onClick={() => { window.location.hash = "home"; setShowLogin(false); }}>홈으로</button>
-        <div className="brand"><BrandLockup compact /><h1>학습 노트 시작하기</h1><p>기존 학원 계정으로 로그인해 오답을 기록하고 수업 현황을 확인하세요.</p></div>
+        <div className="brand"><BrandLockup compact solo /><h1>학습 노트 시작하기</h1><p>기존 학원 계정으로 로그인해 오답을 기록하고 수업 현황을 확인하세요.</p></div>
         <div className="tabs"><button className={mode === "student" ? "active" : ""} onClick={() => { setMode("student"); window.location.hash = "login-student"; }}>👩‍🎓 학생</button><button className={mode === "teacher" ? "active" : ""} onClick={() => { setMode("teacher"); window.location.hash = "login-teacher"; }}>👨‍🏫 선생님·관리자</button></div>
         {mode === "student" ? (<>
           <div className="tabs account-tabs"><button className={studentAuthTab === "login" ? "active" : ""} onClick={() => { setStudentAuthTab("login"); setMessage(""); }}>로그인</button><button className={studentAuthTab === "signup" ? "active" : ""} onClick={() => { setStudentAuthTab("signup"); setMessage(""); }}>회원가입</button><button className={studentAuthTab === "reset" ? "active" : ""} onClick={() => { setStudentAuthTab("reset"); setMessage(""); }}>비밀번호 재설정</button></div>
