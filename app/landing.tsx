@@ -38,9 +38,10 @@ export default function Landing({ onLogin }: Props) {
       <LearningScene />
 
       <section className="g-partners g-wrap" aria-labelledby="partners-title" id="partners">
-        <div className="g-section-head"><p className="g-eyebrow">LEARNING, TOGETHER</p><h2 id="partners-title">지금, 스터디결과 함께하고 있어요.</h2><p>스터디결은 학생의 기록을 더 나은 배움으로 연결하고 있습니다.</p></div>
+        <div className="g-section-head"><p className="g-eyebrow">LEARNING, TOGETHER</p><h2 id="partners-title">지금, 스터디결과 함께하고 있어요.</h2><p>현대해상 이주배경 청소년 멘토링과 SG 고등관에서 스터디결을 이용하고 있습니다.</p></div>
         <div className="g-partner-grid">
           <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>이용 중</span><div className="g-partner-logo g-partner-collab"><img src="/partners/hyundai.png" alt="현대해상" width="319" height="102" loading="lazy"/><span aria-hidden="true">×</span><img src="/partners/jump.png" alt="JUMP" width="293" height="107" loading="lazy"/></div><h3>현대해상 이주배경 청소년 멘토링</h3><p>현대해상 · JUMP와 함께하는 멘토링 현장</p></div></article>
+          <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>이용 중</span><div className="g-partner-logo"><img src="/partners/sg.png" alt="SG 고등관" width="309" height="70" loading="lazy"/></div><h3>SG 고등관</h3><p>학원 수업 현장에서 함께하는 스터디결</p></div></article>
         </div>
       </section>
 
@@ -57,7 +58,7 @@ export default function Landing({ onLogin }: Props) {
 
       <div className="g-academy-band"><section className="g-detail g-wrap" id="academy"><div className="g-detail-title"><span className="g-section-icon"><Layers3/></span><p className="g-eyebrow">02 / FOR OUR CLASS</p><h2>기록을 살피는 시간을,<br/>학생을 이해하는 시간으로.</h2><p>학생의 오답에서 다음 수업의 실마리를.<br/>선생님과 학생을 잇는 학습 관리 공간입니다.</p><button className="g-button" onClick={() => onLogin("teacher")}>선생님·관리자로 지금 시작하기 <ArrowRight size={17}/></button><p className="g-availability">현재 연결된 학원의 기존 계정으로 이용할 수 있습니다.<br/>새 학원 등록과 학원별 독립 운영은 준비 중입니다.</p></div><div className="g-feature-list"><article><span>01</span><div><h3>학생과 수업 현황 확인</h3><p>학생 명단과 반·학교·교재 정보를 확인해 수업을 준비하세요.</p></div></article><article><span>02</span><div><h3>오답 제출 기록 함께 보기</h3><p>조회 가능한 학생의 오답과 PDF 기록, 제출 보고서를 한곳에서 살펴보세요.</p></div></article><article><span>03</span><div><h3>우리 학원만의 운영 공간 <small>준비 중</small></h3><p>학원별 데이터 분리와 선생님 초대, 반별 학습 분석을 지원하는 구조로 확장할 예정입니다.</p></div></article></div></section></div>
 
-      <section className="g-faq g-wrap"><div><p className="g-eyebrow">GOOD TO KNOW</p><h2>시작하기 전에.</h2></div><div><details><summary>수학만을 위한 서비스인가요?</summary><p>전 과목 학습 플랫폼을 목표로 합니다. 현재 연결된 서비스는 수학 오답·수업 기록 조회를 중심으로 제공하며, 전 과목 기능은 순차적으로 준비합니다.</p></details><details><summary>지금 개인이나 다른 학원이 가입할 수 있나요?</summary><p>현재는 기존 학원 계정으로 로그인할 수 있습니다. 개인 회원가입과 신규 학원 도입은 아직 제공되지 않습니다.</p></details><details><summary>기존 학원 계정을 사용할 수 있나요?</summary><p>네. 기존 학생 계정 또는 선생님·관리자 로그인으로 연결된 학습 기록을 확인할 수 있습니다.</p></details></div></section>
+      <section className="g-faq g-wrap"><div><p className="g-eyebrow">GOOD TO KNOW</p><h2>시작하기 전에.</h2></div><div><details><summary>수학만을 위한 서비스인가요?</summary><p>전 과목 학습 플랫폼을 목표로 합니다. 현재 연결된 서비스는 수학 오답·수업 기록 조회를 중심으로 제공하며, 전 과목 기능은 순차적으로 준비합니다.</p></details><details><summary>지금 개인이나 다른 학원이 가입할 수 있나요?</summary><p>현재는 기존 학원 계정으로 로그인할 수 있습니다. 개인 회원가입과 신규 학원 도입은 아직 제공되지 않습니다.</p></details><details><summary>기존 SG 오답노트 계정을 사용할 수 있나요?</summary><p>네. 기존 학생 계정 또는 선생님·관리자 로그인으로 연결된 학습 기록을 확인할 수 있습니다.</p></details></div></section>
       <footer className="g-business-footer">
         <div className="g-wrap">
           <div className="g-footer-heading">
