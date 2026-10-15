@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(session ? { authenticated: true, role: session.role, name: session.name } : { authenticated: false });
   } catch (error) {
     console.error("[session restore] failed", error);
-    return NextResponse.json({ authenticated: false });
+    return NextResponse.json({ message: "로그인 상태를 확인하지 못했습니다." }, { status: 503 });
   }
 }
+
