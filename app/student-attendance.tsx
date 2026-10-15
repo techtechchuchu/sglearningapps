@@ -58,19 +58,23 @@ export default function StudentAttendance({ classes }: { classes: ClassOption[] 
           if (!qr || completed) return;
           try {
             const payload = JSON.parse(qr.data);
-            if (payload.type !== "sg-attendance" || payload.version !== 1 || !/^\d{6}$/.test(payload.code)) throw new Error("출석용 QR이 아닙니다.");
-            const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
-            const part = (type: string) => parts.find((item) => item.type === type)?.value || "";
-            const today = `${part("year")}-${part("month")}-${part("day")}`;
-            if (payload.date !== today) throw new Error("오늘 발급된 QR이 아닙니다.");
+            if (payload.type !== "sg-attendance" || ![1, 2].includes(payload.version)) throw new Error("출석용 QR이 아닙니다.");
+            if (payload.version === 1) {
+              if (!/^\d{6}$/.test(payload.code)) throw new Error("출석용 QR이 아닙니다.");
+              const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+              const part = (type: string) => parts.find((item) => item.type === type)?.value || "";
+              if (payload.date !== `${part("year")}-${part("month")}-${part("day")}`) throw new Error("오늘 발급된 QR이 아닙니다.");
+            } else if (payload.teacherName !== "전체 관리자" || payload.className !== "출석 데모반" || !/^[A-Za-z0-9_-]{32}$/.test(payload.qrToken)) {
+              throw new Error("출석 데모반 QR이 아닙니다.");
+            }
             const match = classes.find((item) => item.teacherName === payload.teacherName && item.className === payload.className);
             if (!match) throw new Error("내가 등록된 반의 QR이 아닙니다.");
             completed = true;
             setSelectedKey(`${match.teacherName}\0${match.className}`);
-            setCode(payload.code);
+            setCode(payload.version === 1 ? payload.code : "");
             setScanError("");
             setScanning(false);
-            void checkIn(match, payload.code);
+            void checkIn(match, payload.version === 1 ? payload.code : "", payload.version === 2 ? payload.qrToken : "");
           } catch (cause) { setScanError(cause instanceof Error ? cause.message : "QR을 읽지 못했습니다."); }
         }, 250);
       } catch { if (!cancelled) { setScanError("카메라를 열지 못했습니다. 권한을 허용하거나 수동 코드를 입력해주세요."); setScanning(false); } }
@@ -80,9 +84,9 @@ export default function StudentAttendance({ classes }: { classes: ClassOption[] 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanning, classes]);
 
-  async function checkIn(target = chosen, enteredCode = code) {
+  async function checkIn(target = chosen, enteredCode = code, qrToken = "") {
     if (!target) return;
-    if (target.demo ? enteredCode.trim().toUpperCase() !== "SGDEMO" : !/^\d{6}$/.test(enteredCode.trim())) {
+    if (!qrToken && (target.demo ? enteredCode.trim().toUpperCase() !== "SGDEMO" : !/^\d{6}$/.test(enteredCode.trim()))) {
       setStage("failure"); setResult(target.demo ? "데모 코드는 SGDEMO입니다." : "선생님이 안내한 6자리 출석 코드를 입력해주세요."); return;
     }
     if (!navigator.geolocation) { setStage("failure"); setResult("이 브라우저는 위치 확인을 지원하지 않습니다."); return; }
@@ -94,7 +98,7 @@ export default function StudentAttendance({ classes }: { classes: ClassOption[] 
         setStage("success"); setResult("출석 완료 화면 예시입니다. 데모반은 실제 출석 기록으로 저장되지 않습니다."); return;
       }
       try {
-        const response = await fetch("/api/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "checkIn", teacherName: target.teacherName, className: target.className, code: enteredCode.trim(), accuracy: Math.round(position.coords.accuracy) }) });
+        const response = await fetch("/api/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "checkIn", teacherName: target.teacherName, className: target.className, code: enteredCode.trim(), qrToken, accuracy: Math.round(position.coords.accuracy) }) });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.message || "출석 요청에 실패했습니다.");
         if (current !== requestId.current) return;
@@ -115,7 +119,7 @@ export default function StudentAttendance({ classes }: { classes: ClassOption[] 
 
   return <section className="panel attendance-panel">
     <div className="attendance-heading"><div><span className="attendance-eyebrow">전자출결</span><h2>출석 체크</h2></div><span className="attendance-demo-tag">{chosen?.demo ? "데모반" : "선생님 확인형"}</span></div>
-    <p className="attendance-notice">학생이 체크하면 선생님 확인 대기로 접수됩니다. GPS 권한은 확인하지만 5층 위치를 자동 판별하지는 않습니다.</p>
+    <p className="attendance-notice">출석 데모반의 교실 고정 QR을 스캔하면 출석이 바로 기록됩니다. 다른 반은 선생님 확인 대기로 접수됩니다. GPS 권한은 확인하지만 5층 위치를 자동 판별하지는 않습니다.</p>
     <article className="attendance-course"><span>출석할 수업</span><strong>{chosen?.className || "등록된 반이 없습니다"}</strong><small>{chosen?.teacherName || "담당 선생님 미지정"} · 울산 남구 문수로 374, 5층 SG고등관</small></article>
     {classes.length > 1 && <label>수업 선택<select value={`${chosen.teacherName}\0${chosen.className}`} onChange={(event) => { setSelectedKey(event.target.value); setCode(""); }}>{classes.map((item) => <option value={`${item.teacherName}\0${item.className}`} key={`${item.teacherName}-${item.className}`}>{item.className} · {item.teacherName}</option>)}</select></label>}
     <button className="attendance-scan-button" type="button" disabled={!chosen || stage === "progress"} onClick={() => { setScanError(""); setScanning((value) => !value); }}>{scanning ? "카메라 닫기" : "카메라로 QR 스캔"}</button>

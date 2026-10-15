@@ -1,10 +1,12 @@
-import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "../../../lib/session";
 import { getServerSupabase } from "../../../lib/supabase-server";
 
 const ADMIN = "전체 관리자";
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+// Fixed classroom poster for the attendance demo only. Rotate this hash and reprint the QR if copied.
+const DEMO_QR_HASH = "c50d4a60cd6aceddcb9e987017d2729185b4491acab7cc818d51125287c9e3fe";
 
 function todayKst() {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
@@ -75,25 +77,40 @@ export async function POST(request: NextRequest) {
 
     if (session.role !== "student" || body.action !== "checkIn") return error("지원하지 않는 요청입니다.", 403);
     const code = String(body.code || "").trim();
-    if (!/^\d{6}$/.test(code)) return error("선생님이 안내한 6자리 출석 코드를 입력해주세요.", 400);
+    const qrToken = String(body.qrToken || "").trim();
+    const fixedDemoQr = teacherName === ADMIN && className === "출석 데모반" && /^[A-Za-z0-9_-]{32}$/.test(qrToken);
+    if (!fixedDemoQr && !/^\d{6}$/.test(code)) return error("출석 QR을 스캔하거나 6자리 코드를 입력해주세요.", 400);
     const roster = await db.from("student_roster").select("id,enrollment_status").eq("student_name", session.name).eq("teacher_name", teacherName).eq("class_name", className).limit(100);
     if (roster.error) throw roster.error;
     if (!roster.data?.some((row) => row.enrollment_status !== "퇴원")) return error("등록된 반에서만 출석 체크할 수 있습니다.", 403);
-    const codeRow = await db.from("attendance_codes").select("code_hash").eq("teacher_name", teacherName).eq("class_name", className).eq("attendance_date", date).maybeSingle();
-    if (codeRow.error) throw codeRow.error;
-    if (!codeRow.data) return error("오늘의 출석 코드가 아직 열리지 않았습니다.", 409);
-    const expected = Buffer.from(codeRow.data.code_hash, "hex");
-    const supplied = Buffer.from(codeHash(teacherName, className, date, code), "hex");
-    if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return error("출석 코드가 일치하지 않습니다.", 403);
+    if (fixedDemoQr) {
+      const supplied = createHash("sha256").update(qrToken).digest("hex");
+      if (!timingSafeEqual(Buffer.from(DEMO_QR_HASH, "hex"), Buffer.from(supplied, "hex"))) return error("출석 데모반 QR이 유효하지 않습니다.", 403);
+    } else {
+      const codeRow = await db.from("attendance_codes").select("code_hash").eq("teacher_name", teacherName).eq("class_name", className).eq("attendance_date", date).maybeSingle();
+      if (codeRow.error) throw codeRow.error;
+      if (!codeRow.data) return error("오늘의 출석 코드가 아직 열리지 않았습니다.", 409);
+      const expected = Buffer.from(codeRow.data.code_hash, "hex");
+      const supplied = Buffer.from(codeHash(teacherName, className, date, code), "hex");
+      if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return error("출석 코드가 일치하지 않습니다.", 403);
+    }
     const accuracy = Number(body.accuracy);
     const accuracyValue = Number.isFinite(accuracy) && accuracy >= 0 && accuracy <= 100000 ? Math.round(accuracy) : null;
     const existing = await db.from("attendance_records").select("id,status").eq("student_name", session.name).eq("teacher_name", teacherName).eq("class_name", className).eq("attendance_date", date).maybeSingle();
     if (existing.error) throw existing.error;
-    if (existing.data) return NextResponse.json({ ok: true, alreadyCheckedIn: true, status: existing.data.status, message: "오늘 출석 요청이 이미 접수되어 있습니다." });
-    const inserted = await db.from("attendance_records").insert({ student_name: session.name, teacher_name: teacherName, class_name: className, attendance_date: date, status: "pending", check_in_at: new Date().toISOString(), location_accuracy_m: accuracyValue }).select("id,status").single();
-    if (inserted.error?.code === "23505") return NextResponse.json({ ok: true, alreadyCheckedIn: true, status: "pending", message: "오늘 출석 요청이 이미 접수되어 있습니다." });
+    if (existing.data) {
+      if (fixedDemoQr && existing.data.status === "pending") {
+        const updated = await db.from("attendance_records").update({ status: "present", reviewed_by: "출석 데모반 QR", reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", existing.data.id);
+        if (updated.error) throw updated.error;
+        return NextResponse.json({ ok: true, status: "present", message: "출석이 완료되었습니다." });
+      }
+      return NextResponse.json({ ok: true, alreadyCheckedIn: true, status: existing.data.status, message: "오늘 출석이 이미 기록되어 있습니다." });
+    }
+    const status = fixedDemoQr ? "present" : "pending";
+    const inserted = await db.from("attendance_records").insert({ student_name: session.name, teacher_name: teacherName, class_name: className, attendance_date: date, status, check_in_at: new Date().toISOString(), location_accuracy_m: accuracyValue, ...(fixedDemoQr ? { reviewed_by: "출석 데모반 QR", reviewed_at: new Date().toISOString() } : {}) }).select("id,status").single();
+    if (inserted.error?.code === "23505") return NextResponse.json({ ok: true, alreadyCheckedIn: true, status, message: "오늘 출석이 이미 기록되어 있습니다." });
     if (inserted.error) throw inserted.error;
-    return NextResponse.json({ ok: true, status: "pending", message: "출석 요청이 접수되었습니다. 선생님 확인 후 출석으로 확정됩니다." }, { status: 201 });
+    return NextResponse.json({ ok: true, status, message: fixedDemoQr ? "출석이 완료되었습니다." : "출석 요청이 접수되었습니다. 선생님 확인 후 출석으로 확정됩니다." }, { status: 201 });
   } catch (cause) {
     console.error("[attendance POST]", cause);
     return error("출석 요청을 처리하지 못했습니다.", 500);

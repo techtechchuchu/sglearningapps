@@ -149,7 +149,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
         const teacherName = String(row.teacher_name || "").trim();
         return [`${teacherName}\0${className}`, { className, teacherName }];
       }).filter(([key]) => !String(key).startsWith("\0") && !String(key).endsWith("\0")) as Array<[string, { className: string; teacherName: string }]>).values()];
-      return classes.length ? classes : name === "추재현" ? [{ className: "출석 데모반", teacherName: "전체 관리자", demo: true }] : [];
+      return classes.length ? classes : name === "추재현" ? [{ className: "출석 데모반", teacherName: "전체 관리자" }] : [];
     })()} />}
     {tab === "learn" && !data.mustChangePassword && <StudentProblemBrowser studentName={name} books={books} schoolExams={schoolExams} wrongAnswers={data.wrongAnswers} schoolAnswers={schoolAnswers} onWrite={(kind, selectedBook, selectedExam, number) => {
       if (kind === "xpattern") { setBook(selectedBook); setExamId(selectedExam); setProblem(String(number)); setBookConfirmed(false); setExamConfirmed(false); setTab("wrong"); }
