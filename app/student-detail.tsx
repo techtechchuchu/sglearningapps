@@ -10,10 +10,12 @@ export default function StudentDetail({ teacher, roster, answers, users, files, 
   teacher: string; roster: Row[]; answers: Row[]; users: Row[]; files: Row[]; schoolAnswers: Row[]; schoolExams: Row[]; refresh: () => Promise<void>;
 }) {
   const [selected, setSelected] = useState("");
+  const [search, setSearch] = useState("");
   const [editingAssignment, setEditingAssignment] = useState(false);
   const active = roster.filter((row) => row.enrollment_status !== "퇴원");
   const names = [...new Set(active.map((row) => String(row.student_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
   const name = names.includes(selected) ? selected : names[0] || "";
+  const filteredNames = names.filter((item) => item.toLocaleLowerCase("ko").includes(search.trim().toLocaleLowerCase("ko")));
   const studentRoster = active.filter((row) => row.student_name === name);
   const books = [...new Set(studentRoster.flatMap((row) => splitRosterBooks(row.book_name)))];
   const studentAnswers = answers.filter((row) => row.username === name && (teacher === "전체 관리자" || books.includes(row.unit)));
@@ -26,7 +28,7 @@ export default function StudentDetail({ teacher, roster, answers, users, files, 
   const registered = users.some((row) => row.username === name);
   const lastSubmitted = latest ? new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).format(latest) : "기록 없음";
   return <section className="panel student-detail"><div className="student-detail-title"><h2>👤 학생 상세</h2><p>학생 정보를 확인하고 학습 기록을 살펴봅니다.</p></div>{!names.length ? <p>담당 재원생이 없습니다.</p> : <>
-    <label className="student-picker">학생 선택<select value={name} onChange={(event) => { setSelected(event.target.value); setEditingAssignment(false); }}>{names.map((item) => <option key={item}>{item}</option>)}</select></label>
+    <label className="student-picker">학생 검색<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="학생 이름을 입력하세요" list="student-detail-name-options" autoComplete="off" /><datalist id="student-detail-name-options">{filteredNames.map((item) => <option key={item} value={item} />)}</datalist><div className="student-search-results" role="listbox" aria-label="검색된 학생">{filteredNames.slice(0, 8).map((item) => <button key={item} type="button" role="option" aria-selected={name === item} className={name === item ? "active" : ""} onClick={() => { setSelected(item); setSearch(""); setEditingAssignment(false); }}>{item}</button>)}{search.trim() && filteredNames.length === 0 && <span>검색 결과가 없습니다.</span>}</div><small>현재 선택: <strong>{name}</strong></small></label>
     <section className="student-profile"><div className="student-profile-heading"><div><h3>{name}</h3><span className={`student-status ${registered ? "is-registered" : "is-unregistered"}`}>{registered ? "가입 완료" : "미가입"}</span></div>{studentRoster.length > 0 && <button type="button" className="student-edit-toggle" aria-expanded={editingAssignment} onClick={() => setEditingAssignment((value) => !value)}>{editingAssignment ? "수정 닫기" : "정보 수정"}</button>}</div>
       <dl className="student-facts"><div><dt>학교 · 학년</dt><dd>{[...new Set(studentRoster.map((row) => [row.school_name, row.grade].filter(Boolean).join(" ")).filter(Boolean))].join(" / ") || "미입력"}</dd></div><div><dt>담당 · 반</dt><dd>{[...new Set(studentRoster.map((row) => `${row.teacher_name || "담당 미정"} · ${row.class_name || "반 미정"}`))].join(" / ") || "미배정"}</dd></div><div><dt>교재</dt><dd>{books.join(", ") || "미지정"}</dd></div></dl>
     </section>
