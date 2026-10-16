@@ -3,6 +3,7 @@ import "./globals.css";
 import "./landing.css";
 import "./workspace.css";
 import "./attendance-qr.css";
+import "./university.css";
 
 export const metadata: Metadata = {
   title: "스터디결 | 나만의 공부, 나만의 결",
