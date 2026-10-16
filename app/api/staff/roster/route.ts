@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest) {
     const existing = await db.from("student_roster").select("id,teacher_name,class_name,enrollment_status").eq("id", id).single();
     if (existing.error || !existing.data) return NextResponse.json({ message: "학생을 찾지 못했습니다." }, { status: 404 });
     if (body.action === "update-assignment") {
-      if (teacher !== ADMIN) return NextResponse.json({ message: "전체 관리자만 담당 선생님과 반을 변경할 수 있습니다." }, { status: 403 });
+      if (teacher !== ADMIN && existing.data.teacher_name !== teacher) return NextResponse.json({ message: "본인 담당 학생만 변경할 수 있습니다." }, { status: 403 });
       if (existing.data.enrollment_status === "퇴원") return NextResponse.json({ message: "퇴원 이력은 변경할 수 없습니다." }, { status: 409 });
       const teacherName = cleaned(body.teacherName);
       const className = cleaned(body.className);
