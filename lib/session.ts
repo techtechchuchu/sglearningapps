@@ -4,7 +4,7 @@ import type { NextRequest, NextResponse } from "next/server";
 export const SESSION_COOKIE = "sg_session";
 const TTL_SECONDS = 7 * 24 * 60 * 60;
 
-type Session = { role: "student" | "teacher"; name: string; expires: number };
+type Session = { role: "student" | "teacher" | "university"; name: string; expires: number };
 
 function secret() {
   const candidates = [process.env.SESSION_SECRET, process.env.SUPABASE_SERVICE_ROLE_KEY, process.env.SUPABASE_KEY];
@@ -45,7 +45,7 @@ export function getSession(request: NextRequest): Session | null {
     if (!session || typeof session !== "object") return null;
     const s = session as Partial<Session>;
     if (
-      (s.role !== "student" && s.role !== "teacher") ||
+      (s.role !== "student" && s.role !== "teacher" && s.role !== "university") ||
       typeof s.name !== "string" || !s.name.trim() ||
       typeof s.expires !== "number" || s.expires <= Math.floor(Date.now() / 1000)
     ) return null;
