@@ -71,10 +71,22 @@ export async function PATCH(request: NextRequest) {
     if (!teacher) return NextResponse.json({ message: "선생님 로그인이 필요합니다." }, { status: 401 });
     const body = await request.json();
     const id = Number(body.id);
-    if (body.action !== "exit" || !Number.isSafeInteger(id) || id <= 0) return NextResponse.json({ message: "퇴원 처리할 학생을 선택해주세요." }, { status: 400 });
+    if (!Number.isSafeInteger(id) || id <= 0) return NextResponse.json({ message: "학생 명단을 선택해주세요." }, { status: 400 });
     const db = getServerSupabase();
-    const existing = await db.from("student_roster").select("id,teacher_name,enrollment_status").eq("id", id).single();
+    const existing = await db.from("student_roster").select("id,teacher_name,class_name,enrollment_status").eq("id", id).single();
     if (existing.error || !existing.data) return NextResponse.json({ message: "학생을 찾지 못했습니다." }, { status: 404 });
+    if (body.action === "update-assignment") {
+      if (teacher !== ADMIN && existing.data.teacher_name !== teacher) return NextResponse.json({ message: "본인 담당 학생만 변경할 수 있습니다." }, { status: 403 });
+      if (existing.data.enrollment_status === "퇴원") return NextResponse.json({ message: "퇴원 이력은 변경할 수 없습니다." }, { status: 409 });
+      const teacherName = cleaned(body.teacherName);
+      const className = cleaned(body.className);
+      if (!TEACHERS.includes(teacherName) || !className || className.length > 120) return NextResponse.json({ message: "담당 선생님과 반을 확인해주세요." }, { status: 400 });
+      const updated = await db.from("student_roster").update({ teacher_name: teacherName, class_name: className }).eq("id", id).select("id,teacher_name,class_name").single();
+      if (updated.error) throw updated.error;
+      if (updated.data.teacher_name !== teacherName || updated.data.class_name !== className) throw new Error("Assignment readback mismatch");
+      return NextResponse.json({ ok: true, message: "담당 선생님과 반을 변경했습니다." });
+    }
+    if (body.action !== "exit") return NextResponse.json({ message: "지원하지 않는 요청입니다." }, { status: 400 });
     if (teacher !== ADMIN && existing.data.teacher_name !== teacher) return NextResponse.json({ message: "담당 학생만 퇴원 처리할 수 있습니다." }, { status: 403 });
     if (existing.data.enrollment_status === "퇴원") return NextResponse.json({ message: "이미 퇴원 처리된 이력입니다." }, { status: 409 });
     let updateQuery = db.from("student_roster").update({ enrollment_status: "퇴원", exited_at: new Date().toISOString(), status_note: cleaned(body.note) }).eq("id", id);
@@ -89,3 +101,4 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ message: "퇴원 처리를 저장하거나 검증하지 못했습니다." }, { status: 500 });
   }
 }
+

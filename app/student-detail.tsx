@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { displayProblemNumbers, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
+import AssignmentEditor from "./assignment-editor";
 
 type Row = Record<string, any>;
 
-export default function StudentDetail({ teacher, roster, answers, users, files, schoolAnswers, schoolExams }: {
-  teacher: string; roster: Row[]; answers: Row[]; users: Row[]; files: Row[]; schoolAnswers: Row[]; schoolExams: Row[];
+export default function StudentDetail({ teacher, roster, answers, users, files, schoolAnswers, schoolExams, refresh }: {
+  teacher: string; roster: Row[]; answers: Row[]; users: Row[]; files: Row[]; schoolAnswers: Row[]; schoolExams: Row[]; refresh: () => Promise<void>;
 }) {
   const [selected, setSelected] = useState("");
   const active = roster.filter((row) => row.enrollment_status !== "퇴원");
@@ -26,9 +27,11 @@ export default function StudentDetail({ teacher, roster, answers, users, files, 
     <h3>{name}</h3><p>학교: {[...new Set(studentRoster.map((row) => row.school_name).filter(Boolean))].join(", ") || "-"} · 학년: {[...new Set(studentRoster.map((row) => row.grade).filter(Boolean))].join(", ") || "-"}</p>
     <p>담당: {[...new Set(studentRoster.map((row) => row.teacher_name).filter(Boolean))].join(", ")} · 반: {[...new Set(studentRoster.map((row) => row.class_name).filter(Boolean))].join(", ")}</p>
     <p>교재: {books.join(", ") || "-"}</p>
+    <details><summary>담당 선생님·반 수정</summary><p>교재별 명단이 여러 개면 해당 행을 각각 수정하세요. 선생님은 본인 담당 명단만 수정할 수 있습니다. 기존 오답과 가입 계정은 유지됩니다.</p>{studentRoster.map((row) => <AssignmentEditor key={row.id} row={{ id: Number(row.id), student_name: String(row.student_name || ""), teacher_name: String(row.teacher_name || ""), class_name: String(row.class_name || ""), book_name: String(row.book_name || "") }} refresh={refresh} />)}</details>
     <div className="metrics"><article><b>{users.some((row) => row.username === name) ? "가입 완료" : "미가입"}</b><span>가입 상태</span></article><article><b>{studentAnswers.length}</b><span>오답 기록</span></article><article><b>{problemCount}</b><span>누적 문제 수</span></article><article><b>{latest ? latest.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-"}</b><span>최근 제출</span></article></div>
     <h3>일반 오답</h3>{studentAnswers.map((row) => <div className="row" key={row.id}><strong>{row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""} · {row.created_at ? new Date(row.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : ""}</span></div>)}
     <h3>학교 기출 오답</h3>{studentSchoolAnswers.map((row) => <div className="row" key={row.id}><strong>{schoolExams.find((exam) => exam.id === row.exam_id)?.display_name || `시험 ${row.exam_id}`} · {row.problem}번</strong><span>{row.memo || ""}</span></div>)}
     <h3>오답노트 PDF</h3>{studentFiles.map((row) => <div className="row" key={row.id}><strong>{row.original_filename || "오답노트"}</strong><span><a href={`/api/files/wrong-note/${row.id}`} target="_blank" rel="noopener noreferrer">PDF 열기</a></span></div>)}
   </>}</section>;
 }
+
