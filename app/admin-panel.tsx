@@ -11,9 +11,9 @@ async function parse(response: Response) {
   return body;
 }
 
-export default function AdminPanel({ roster, users, activeBooks, refreshRoster }: { roster: Row[]; users: Row[]; activeBooks: string[]; refreshRoster: () => Promise<void> }) {
+export default function AdminPanel({ roster, users, activeBooks, refreshRoster, initialSection = "roster" }: { roster: Row[]; users: Row[]; activeBooks: string[]; refreshRoster: () => Promise<void>; initialSection?: "roster" | "members" }) {
   const [data, setData] = useState<AdminData>({ books: [], exams: [], notices: [] });
-  const [section, setSection] = useState<"roster" | "members" | "books" | "exams" | "notices">("roster");
+  const [section, setSection] = useState<"roster" | "members" | "books" | "exams" | "notices">(initialSection);
   const [selectedRosterId, setSelectedRosterId] = useState("");
   const [selectedMember, setSelectedMember] = useState("");
   const [memberTeacher, setMemberTeacher] = useState("이주백.T");
