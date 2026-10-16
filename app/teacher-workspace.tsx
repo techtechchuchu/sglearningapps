@@ -11,6 +11,7 @@ import ReportStatusPanel from "./report-status-panel";
 import TeacherExplanations from "./teacher-explanations";
 import TeacherAttendance from "./teacher-attendance";
 import { TeacherQuestions } from "./learning-questions";
+import StaffNotifications from "./staff-notifications";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; activeBooks: string[] };
@@ -33,6 +34,8 @@ function koreanDate(value: Date) {
 export default function TeacherWorkspace({ teacher, data, refresh, logout }: { teacher: string; data: TeacherData; refresh: () => Promise<void>; logout: () => void }) {
   const admin = teacher === "전체 관리자";
   const [tab, setTab] = useState<StaffTab>("home");
+  const [adminPanelKey, setAdminPanelKey] = useState(0);
+  const [adminInitialSection, setAdminInitialSection] = useState<"roster" | "members">("roster");
   const [favorites, setFavorites] = useState<StaffTab[]>(admin ? ADMIN_FAVORITES : TEACHER_FAVORITES);
   const [favoriteDraft, setFavoriteDraft] = useState<StaffTab[]>([]);
   const [editingFavorites, setEditingFavorites] = useState(false);
@@ -167,7 +170,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   }
 
   return <main className="shell dashboard-shell study-workspace">
-    <section className="staff-header"><BrandLockup /><div className="staff-heading"><h1>👨‍🏫 선생님 관리</h1><p>현재 로그인: {teacher}</p></div><button className="ghost" onClick={logout}>로그아웃</button></section>
+    <section className="staff-header"><BrandLockup /><div className="staff-heading"><h1>👨‍🏫 선생님 관리</h1><p>현재 로그인: {teacher}</p></div><StaffNotifications teacher={teacher} roster={data.roster} users={data.users} resetRequests={data.resetRequests} navigate={(target, section) => { if (target === "admin" && section === "members") { setAdminInitialSection("members"); setAdminPanelKey((key) => key + 1); } setTab(target); setMessage(""); }} /><button className="ghost" onClick={logout}>로그아웃</button></section>
     <section className="staff-favorites" aria-label="자주 쓰는 메뉴"><div className="staff-favorites-heading"><strong>자주 쓰는 메뉴</strong><button type="button" onClick={() => { setFavoriteDraft(favorites); setEditingFavorites(true); }}>편집하기</button></div><nav className="staff-favorites-links" aria-label="고정 메뉴">{favoriteMenu.length ? favoriteMenu.map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value); setMessage(""); }}>{label}</button>) : <span>고정한 메뉴가 없습니다. 편집하기에서 추가하세요.</span>}</nav></section>
     <nav className="workspace-group-tabs" aria-label="관리 영역"><button className={group === "answers" ? "active" : ""} onClick={() => setTab("home")}>📝 오답 관리</button><button className={group === "students" ? "active" : ""} onClick={() => setTab("students")}>👥 학생 관리</button><button className={group === "paper" ? "active" : ""} onClick={() => setTab("paper")}>🖨️ 오답노트 · 출력</button></nav>
     <nav className="workspace-tabs staff-subtabs" aria-label="세부 메뉴">{menus.map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value); setMessage(""); }}>{label}</button>)}</nav>
@@ -204,7 +207,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {tab === "detail" && <StudentDetail teacher={teacher} roster={data.roster} answers={matchingAnswers} users={data.users} files={data.wrongNoteFiles} schoolAnswers={data.schoolWrongAnswers} schoolExams={data.schoolExams} refresh={refresh} />}
     {(tab === "register" || tab === "exited") && <RosterActions mode={tab} teacher={teacher} roster={data.roster} activeBooks={data.activeBooks || []} refresh={refresh} />}
     {tab === "reset" && <section className="panel"><h2>학생 비밀번호 관리</h2><h3>처리 대기 요청</h3>{data.resetRequests.length ? data.resetRequests.map((row) => <div className="row" key={row.id}><strong>{row.username}</strong><span>{new Date(row.requested_at).toLocaleString("ko-KR")}</span></div>) : <p>대기 중인 요청이 없습니다.</p>}<h3>임시 비밀번호 발급</h3><form onSubmit={resetPassword} className="form workspace-form"><label>학생<select value={resetStudent} onChange={(event) => setResetStudent(event.target.value)} required><option value="">선택해주세요</option>{data.users.map((user) => <option key={user.username}>{user.username}</option>)}</select></label><label>새 임시 비밀번호<input type="password" minLength={4} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><label>임시 비밀번호 확인<input type="password" minLength={4} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label><button className="primary" disabled={busy}>임시 비밀번호 발급</button></form></section>}
-    {tab === "admin" && admin && <AdminPanel roster={data.roster} users={data.users} activeBooks={data.activeBooks || []} refreshRoster={refresh} />}
+    {tab === "admin" && admin && <AdminPanel key={adminPanelKey} initialSection={adminInitialSection} roster={data.roster} users={data.users} activeBooks={data.activeBooks || []} refreshRoster={refresh} />}
   </main>;
 }
 
