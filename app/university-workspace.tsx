@@ -2,13 +2,16 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import BrandLockup from "./brand-lockup";
+import dynamic from "next/dynamic";
 import "./university.css";
+
+const UniversityMidterm = dynamic(() => import("./university-midterm"), { loading: () => <section className="panel" role="status">퀴즈를 준비하고 있어요.</section> });
 
 type Course = { id: string; title: string; semester: string };
 type Exam = { id: string; course_id: string; title: string; exam_date: string };
 type Mistake = { id: string; course_id: string; problem_label: string; memo: string; reviewed: boolean; created_at: string };
 type Data = { profile: { name: string; email: string }; courses: Course[]; exams: Exam[]; mistakes: Mistake[] };
-type View = "home" | "courses" | "exams" | "mistakes" | "helper";
+type View = "home" | "courses" | "exams" | "mistakes" | "quiz" | "helper";
 
 export default function UniversityWorkspace({ logout }: { logout: () => void }) {
   const [data, setData] = useState<Data | null>(null);
@@ -64,13 +67,15 @@ export default function UniversityWorkspace({ logout }: { logout: () => void }) 
 
   return <main className="shell dashboard-shell university-workspace">
     <header className="topbar university-topbar"><BrandLockup compact solo /><div><span className="badge">대학생 학습 모드</span><h1>{data?.profile.name || "나의 학습"}</h1><p>과목을 정리하고 시험까지 내 오답을 복습하세요.</p></div><button type="button" className="ghost" onClick={logout}>로그아웃</button></header>
-    <nav className="workspace-tabs" aria-label="대학생 메뉴">{([["home", "오늘의 학습"], ["courses", "내 과목"], ["exams", "시험 준비"], ["mistakes", "오답 복습"], ["helper", "결결이"]] as const).map(([id, label]) => <button type="button" key={id} className={view === id ? "active" : ""} onClick={() => setView(id)}>{label}</button>)}</nav>
+    <nav className="workspace-tabs" aria-label="대학생 메뉴">{([["home", "오늘의 학습"], ["courses", "내 과목"], ["exams", "시험 준비"], ["quiz", "변형 퀴즈"], ["mistakes", "오답 복습"], ["helper", "결결이"]] as const).map(([id, label]) => <button type="button" key={id} className={view === id ? "active" : ""} onClick={() => setView(id)}>{label}</button>)}</nav>
+    {view === "quiz" && data && <UniversityMidterm key={data.profile.email} userEmail={data.profile.email} />}
     {error && <p className="workspace-message" role="alert">{error}</p>}
     {!data && !error && <section className="panel" role="status">학습 기록을 불러오는 중입니다.</section>}
     {!data && error && <section className="panel"><button type="button" className="ghost" onClick={() => void refresh().then(() => setError("")).catch((caught) => setError(caught.message))}>다시 불러오기</button></section>}
     {view === "home" && data && <>
       <section className="university-hero panel"><div><span className="badge">오늘의 학습</span><h2>시험 전에, 내가 모르는 것부터.</h2><p>수업별 시험 일정과 아직 복습하지 않은 오답을 한눈에 확인하세요.</p></div><button type="button" className="primary" onClick={() => setView("mistakes")}>오답 복습하기</button></section>
       <section className="metrics university-metrics"><article><b>{courses.length}</b><span>등록한 과목</span></article><article><b>{upcoming.length}</b><span>다가오는 시험</span></article><article><b>{pending.length}</b><span>복습할 오답</span></article></section>
+      <section className="panel university-hero"><div><span className="badge">대학생 공개 데모 · 변형 퀴즈</span><h2>미적분학2, 시험처럼 연습하세요.</h2><p>원본 해설과 동일 형식의 변형 3세트. 단답형·서술형을 풀고 정답과 풀이를 확인하세요.</p></div><button type="button" className="primary" onClick={() => setView("quiz")}>퀴즈 풀어보기 →</button></section>
       <section className="panel"><h2>다가오는 시험</h2>{upcoming.length ? upcoming.slice(0, 5).map((exam) => <div className="row" key={exam.id}><strong>{courseName(exam.course_id)} · {exam.title}</strong><span>{exam.exam_date}</span></div>) : <p>시험 일정을 등록하면 여기에 표시됩니다.</p>}</section>
     </>}
     {view === "courses" && data && <section className="panel"><h2>내 과목</h2><p>학원 반과 별개로 이번 학기 과목을 등록하세요.</p><form className="form university-form" onSubmit={(event) => void save(event, { kind: "course", title: courseTitle, semester }, () => { setCourseTitle(""); setSemester(""); })}><label>과목명<input value={courseTitle} onChange={(event) => setCourseTitle(event.target.value)} placeholder="예: 미적분학Ⅰ" required /></label><label>학기<input value={semester} onChange={(event) => setSemester(event.target.value)} placeholder="예: 2026년 2학기" /></label><button className="primary" disabled={busy}>과목 등록</button></form><div className="university-list">{courses.map((course) => <div className="row" key={course.id}><strong>{course.title}</strong><span>{course.semester || "학기 미지정"} · 오답 {mistakes.filter((item) => item.course_id === course.id).length}개</span></div>)}{!courses.length && <p>아직 등록한 과목이 없습니다.</p>}</div></section>}
@@ -79,4 +84,3 @@ export default function UniversityWorkspace({ logout }: { logout: () => void }) 
     {view === "helper" && data && <section className="panel university-helper"><span className="badge">결결이 · 학습 도우미 미리보기</span><h2>어떤 부분이 가장 막히나요?</h2><p>대학생용 결결이 상담 화면을 준비 중입니다. 현재는 실제 AI 답변이 연결되지 않았으며, 과목·시험·오답 기록은 다른 메뉴에서 이용할 수 있습니다.</p><div className="university-prompts"><span>시험 계획 세우기</span><span>오답 복습하기</span><span>공부 습관 점검하기</span></div></section>}
   </main>;
 }
-
