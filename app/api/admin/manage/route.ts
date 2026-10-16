@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest) {
     if (input.type === "roster") {
       const allowed = ["teacher_name", "class_name", "school_name", "grade", "book_name", "enrollment_status"];
       const payload = Object.fromEntries(allowed.filter((field) => input[field] !== undefined).map((field) => [field, String(input[field] || "").trim()]));
-      if (!Object.keys(payload).length || Object.values(payload).some((value) => !value)) return NextResponse.json({ message: "수정할 정보를 입력해주세요." }, { status: 400 });
+      if (!Object.keys(payload).length || !String(payload.teacher_name || "").trim() || !String(payload.class_name || "").trim() || !String(payload.book_name || "").trim()) return NextResponse.json({ message: "담당 선생님·반·교재를 입력해주세요." }, { status: 400 });
       const updated = await db.from("student_roster").update(payload).eq("id", id).select("*").single();
       if (updated.error) throw updated.error;
       return NextResponse.json({ ok: true, row: updated.data });
@@ -132,3 +132,4 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ message: "수정하지 못했습니다." }, { status: 500 });
   }
 }
+
