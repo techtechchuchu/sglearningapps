@@ -44,7 +44,7 @@ export default function StaffNotifications({ teacher, roster, users, resetReques
       {count === 0 && !loadError && <p>지금 확인할 알림이 없습니다.</p>}
       {admin && unassigned.length > 0 && <button type="button" className="staff-notification-item" onClick={() => go("admin", "members")}><strong>🆕 미배정 신규 회원 {unassigned.length}명</strong><span>{unassigned.slice(0, 3).map((row) => row.username).join(", ")}{unassigned.length > 3 ? " 외" : ""} · 회원 목록에서 배정</span></button>}
       {resetRequests.length > 0 && <button type="button" className="staff-notification-item" onClick={() => go("reset")}><strong>🔑 비밀번호 재설정 요청 {resetRequests.length}건</strong><span>비밀번호 관리에서 확인</span></button>}
-      {unanswered.length > 0 && <button type="button" className="staff-notification-item" onClick={() => go("questions")}><strong>💬 답변 대기 질문 {unanswered.length}건</strong><span>{unanswered.slice(0, 3).map((row) => row.student_name).join(", ")}{unanswered.length > 3 ? " 외" : ""} · 질문함에서 답변</span></button>}
+      {unanswered.length > 0 && <><div className="staff-notification-item"><strong>💬 답변 대기 질문 {unanswered.length}건</strong><span>질문을 열면 질문함에서 학생 정보를 확인하고 답변할 수 있습니다.</span></div>{unanswered.slice(0, 5).map((row) => <button type="button" className="staff-notification-item" key={row.id} onClick={() => go("questions")}><strong>{row.student_name} · {row.class_name}</strong><span>새 질문 · {new Date(row.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} · 학생 정보 보기</span></button>)}</>}
       {loadError && <p role="status">질문 알림을 불러오지 못했습니다. 잠시 후 다시 확인해주세요.</p>}
       <small>알림은 처리 상태를 기준으로 자동 갱신됩니다.</small>
     </section>}
