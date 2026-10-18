@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { pythonLessons } from "./python-lessons";
+import { pythonWalkthroughs } from "./python-walkthroughs";
 import "./python-lab.css";
 
 export default function PythonLab() {
@@ -15,6 +16,7 @@ export default function PythonLab() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const runId = useRef(0);
   const lesson = pythonLessons[chapter];
+  const walkthrough = pythonWalkthroughs[lesson.chapter];
 
   useEffect(() => () => {
     worker.current?.terminate();
@@ -61,8 +63,10 @@ export default function PythonLab() {
     <div className="python-lesson-grid"><div className="python-lesson-copy">
       <span className="python-overline">Chapter {String(lesson.chapter).padStart(2, "0")}</span><h3>{lesson.title}</h3><p>{lesson.summary}</p>
       <h4>핵심 정리</h4><ul>{lesson.points.map((point) => <li key={point}>{point}</li>)}</ul>
-      <div className="python-example"><h4>예제 · {lesson.exampleTitle}</h4><pre><code>{lesson.exampleCode}</code></pre><p>{lesson.exampleExplanation}</p><button type="button" className="ghost" onClick={() => { setCode(lesson.exampleCode); setOutput("예제를 불러왔습니다. 실행 버튼을 눌러보세요."); }}>예제 코드 불러오기</button></div>
-      <div className="python-challenge"><h4>직접 해보기</h4><p>{lesson.challenge}</p><button type="button" className="ghost" onClick={() => { setCode(lesson.starterCode); setOutput("연습 문제를 불러왔습니다."); }}>연습 코드 불러오기</button><div className="python-help"><button type="button" onClick={() => setShowHint(!showHint)} aria-expanded={showHint}>힌트 {showHint ? "접기" : "보기"}</button><button type="button" onClick={() => setShowSolution(!showSolution)} aria-expanded={showSolution}>풀이 {showSolution ? "접기" : "보기"}</button></div>{showHint && <p className="python-note">{lesson.hint}</p>}{showSolution && <div className="python-note"><pre><code>{lesson.solution}</code></pre><p>예상 결과: {lesson.expected}</p></div>}</div>
+      <div className="python-example"><h4>예제 · {lesson.exampleTitle}</h4><pre><code>{lesson.exampleCode}</code></pre><p>{lesson.exampleExplanation}</p><button type="button" className="ghost" onClick={() => { setCode(lesson.exampleCode); setOutput("예제를 불러왔습니다. 실행 버튼을 눌러보세요."); }}>예제 코드 불러오기</button>
+        <details className="python-walkthrough" key={lesson.chapter} open><summary>예제 풀이 · 한 줄씩 이해하기</summary><ol>{walkthrough.steps.map(step => <li key={step}>{step}</li>)}</ol><h4>이 코드의 실행 결과</h4><pre><code>{walkthrough.output}</code></pre><p className="python-note"><strong>자주 틀리는 부분</strong><br />{walkthrough.mistake}</p></details>
+      </div>
+      <div className="python-challenge"><h4>직접 해보기</h4><p>{lesson.challenge}</p><button type="button" className="ghost" onClick={() => { setCode(lesson.starterCode); setOutput("연습 문제를 불러왔습니다."); }}>연습 코드 불러오기</button><div className="python-help"><button type="button" onClick={() => setShowHint(!showHint)} aria-expanded={showHint}>힌트 {showHint ? "접기" : "보기"}</button><button type="button" onClick={() => setShowSolution(!showSolution)} aria-expanded={showSolution}>풀이 {showSolution ? "접기" : "보기"}</button></div>{showHint && <p className="python-note">{lesson.hint}</p>}{showSolution && <div className="python-note"><h4>풀이 과정</h4><ol>{walkthrough.practiceSteps.map(step => <li key={step}>{step}</li>)}</ol><h4>정답 코드 예시</h4><pre><code>{lesson.solution}</code></pre><p>예상 결과: {lesson.expected}</p><button type="button" className="ghost" onClick={() => { setCode(lesson.solution); setOutput("정답 코드를 불러왔습니다. 값을 바꾸어 다시 실행해 보세요."); }}>정답 코드 실행해 보기</button></div>}</div>
     </div><div className="python-editor"><div className="python-editor-title"><h4>코드 작성</h4><span>Python 3 · 브라우저 실행</span></div><label htmlFor="python-code">직접 코드를 수정해 보세요</label><textarea id="python-code" spellCheck={false} value={code} onChange={(event) => setCode(event.target.value)} /><button className="primary" type="button" onClick={run} disabled={running || !code.trim()}>{running ? "실행 중…" : "▶ 코드 실행"}</button><div className="python-output"><h4>실행 결과</h4><pre role="status" aria-live="polite">{output}</pre></div><p className="python-safety">긴 반복은 20초 후 중단됩니다. 이 연습실은 입력창이 필요한 input()과 파일 저장을 지원하지 않습니다.</p></div></div>
   </section>;
 }
