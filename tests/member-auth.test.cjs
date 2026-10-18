@@ -49,6 +49,7 @@ const start=load('app/api/auth/kakao/start/route.ts',{
     let state=initial, updatePayload, insertCalls=0;
     const filters={};
     const db={from(table){
+      if(table==='book_master')return {select(){return this;},eq(){return this;},in(){return Promise.resolve({data:[{book_name:'수학 교재'}],error:null});}};
       assert.equal(table,'sg_academy_requests');
       return {
         update(payload){updatePayload=payload;return {
@@ -67,11 +68,24 @@ const start=load('app/api/auth/kakao/start/route.ts',{
       '../../../../lib/staff-access':{staffSession:()=>null},
       '../../../../lib/supabase-server':{getServerSupabase:()=>db}
     });
-    const request=()=>new NextRequest('https://studygyeol.vercel.app/api/academy/requests',{method:'POST',headers:{origin:'https://studygyeol.vercel.app','content-type':'application/json'},body:JSON.stringify({code:'test-invite',studentName:'학생',teacher:'이주백.T'})});
+    const request=()=>new NextRequest('https://studygyeol.vercel.app/api/academy/requests',{method:'POST',headers:{origin:'https://studygyeol.vercel.app','content-type':'application/json'},body:JSON.stringify({code:'test-invite',studentName:'학생',teacher:'이주백.T',className:'고1반',school:'학교',grade:'고1',books:['수학 교재']})});
     const result=await route.POST(request());
     assert.equal(result.status,initial==='pending'||initial==='approved'?409:200);
     assert.equal(state,initial==='approved'?'approved':'pending');
     if(initial==='rejected'){assert.equal(insertCalls,0);assert.equal(updatePayload.reviewer,null);assert.equal(updatePayload.reviewed_at,null);assert.equal((await route.POST(request())).status,409);}
+  }
+  for(const actor of ['이주백.T','전체 관리자','박병민.T']){
+    let rpc;
+    const route=load('app/api/academy/requests/route.ts',{
+      '../../../../lib/member-auth':auth,
+      '../../../../lib/staff-access':{staffSession:()=>actor},
+      '../../../../lib/supabase-server':{getServerSupabase:()=>({rpc:async(name,args)=>{rpc={name,args};return actor==='박병민.T'?{error:{message:'forbidden'}}:{data:42,error:null};}})}
+    });
+    const request=new NextRequest('https://studygyeol.vercel.app/api/academy/requests',{method:'PATCH',headers:{origin:'https://studygyeol.vercel.app','content-type':'application/json'},body:JSON.stringify({id:'11111111-1111-4111-8111-111111111111',approve:true,newRoster:true,className:'고1반',school:'학교',grade:'고1',books:['수학 교재']})});
+    const response=await route.PATCH(request);
+    assert.equal(rpc.name,'sg_register_and_review_academy');
+    assert.deepEqual(rpc.args.p_books,['수학 교재']);
+    assert.equal(response.status,actor==='박병민.T'?409:200);
   }
   const rejected=await start.POST(new NextRequest('https://studygyeol.vercel.app/api/auth/kakao/start',{method:'POST',headers:{origin:'https://evil.example'}}));
   assert.equal(rejected.status,403);
@@ -84,5 +98,10 @@ const start=load('app/api/auth/kakao/start/route.ts',{
   assert.ok(sql.includes('for update'));
   assert.ok(sql.includes('from public,anon,authenticated'));
   assert.ok(sql.includes('unique(provider,target_role,target_key)'));
+  const registration=fs.readFileSync(path.join(root,'supabase/migrations/20261018_academy_register_and_review.sql'),'utf8');
+  assert.ok(registration.includes('where id=p_request for update'));
+  assert.ok(registration.includes("p_actor<>req.teacher_name"));
+  assert.ok(registration.includes('insert into public.student_roster'));
+  assert.ok(registration.includes('insert into public.users'));
   console.log('PASS: profile validation, role rejection, consent checks, signed member session, CSRF and missing OAuth state; migration security invariants. Database integration and live provider login still require configuration.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
