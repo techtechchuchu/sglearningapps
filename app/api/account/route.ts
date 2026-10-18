@@ -12,7 +12,7 @@ export async function GET(request:NextRequest) {
     const db=getServerSupabase();
     const identity=await db.from("sg_identities").select("provider").eq("target_role",role).eq("target_key",key);
     if(identity.error) throw identity.error;
-    const pending=auth?await db.from("sg_academy_requests").select("id,student_name,teacher_name,status,created_at").eq("user_id",auth.user.id).maybeSingle():null;
+    const pending=auth?await db.from("sg_academy_requests").select("id,student_name,teacher_name,school,grade,requested_class,requested_books,status,created_at").eq("user_id",auth.user.id).maybeSingle():null;
     if(pending?.error) throw pending.error;
     return NextResponse.json({profile:auth?.user||null,providers:identity.data.map(i=>i.provider),request:pending?.data||null},{headers:{"Cache-Control":"no-store"}});
   } catch { return failure("계정 설정을 불러오지 못했습니다. 계정 저장소 설정을 확인해주세요."); }

@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 type Row = Record<string, any>;
 type AdminData = { books: Row[]; exams: Row[]; notices: Row[] };
 type ImportedEnrollment = { student: string; teacher: string; className: string; source: string };
+type AcademyRequest = { id:string; student_name:string; teacher_name:string; school:string; grade:string; requested_class:string; requested_books:string[] };
 
 async function parse(response: Response) {
   const body = await response.json().catch(() => ({}));
@@ -43,9 +44,17 @@ export default function AdminPanel({ roster, users, activeBooks, refreshRoster, 
   const [compareFilter, setCompareFilter] = useState("전체");
   const [compareMessage, setCompareMessage] = useState("");
   const [compareBusy, setCompareBusy] = useState(false);
+  const [academyRequests,setAcademyRequests] = useState<AcademyRequest[]>([]);
 
   async function reload() { setData(await parse(await fetch("/api/admin/manage", { cache: "no-store" }))); }
   useEffect(() => { void reload().catch((error) => setMessage(error.message)); }, []);
+  useEffect(() => {
+    let mounted=true;
+    const load=async()=>{try{const result=await parse(await fetch("/api/academy/requests",{cache:"no-store"}));if(mounted)setAcademyRequests(result.requests||[]);}catch{/* The review panel shows request errors. */}};
+    void load();
+    window.addEventListener("academy-reviewed",load);
+    return()=>{mounted=false;window.removeEventListener("academy-reviewed",load);};
+  },[]);
   async function run(task: () => Promise<void>) { setBusy(true); setMessage(""); try { await task(); } catch (error) { setMessage(error instanceof Error ? error.message : "실패했습니다."); } finally { setBusy(false); } }
   async function create(input: Row, event: FormEvent) { event.preventDefault(); await run(async () => { await parse(await fetch("/api/admin/manage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) })); await reload(); setMessage("등록했습니다."); }); }
   async function update(input: Row) { await run(async () => { await parse(await fetch("/api/admin/manage", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) })); await reload(); await refreshRoster(); setMessage("변경했습니다."); }); }
@@ -55,6 +64,7 @@ export default function AdminPanel({ roster, users, activeBooks, refreshRoster, 
   const member = users.find((row) => row.username === selectedMember);
   const memberRoster = roster.filter((row) => row.student_name === selectedMember && row.enrollment_status !== "퇴원");
   const unassigned = users.filter((row) => !roster.some((item) => item.student_name === row.username && item.enrollment_status !== "퇴원"));
+  const pendingWithoutRoster=academyRequests.filter((request)=>!roster.some((item)=>item.student_name===request.student_name&&item.teacher_name===request.teacher_name&&item.enrollment_status!=="퇴원"));
   const normalize = (value: unknown) => String(value || "").toLowerCase().replace(/[\s._·-]/g, "");
   const centralStudents = [...new Map(importedEnrollments.map((row) => [normalize(row.student), row.student])).values()];
   const portalNames = new Set([...users.map((row) => String(row.username || "")), ...roster.map((row) => String(row.student_name || ""))]);
@@ -97,6 +107,7 @@ export default function AdminPanel({ roster, users, activeBooks, refreshRoster, 
 
   return <section className="panel"><h2>전체 관리자 관리</h2><nav className="workspace-tabs" aria-label="관리 메뉴">{[["matching", "가입·명단 매칭"], ["roster", "학생 정보"], ["members", "회원 목록"], ["books", "교재"], ["exams", "학교 기출"], ["notices", "공지사항"]].map(([value, label]) => <button key={value} className={section === value ? "active" : ""} onClick={() => { setSection(value as typeof section); setMessage(""); }}>{label}</button>)}</nav>
     {message && <p className="workspace-message" role="status">{message}</p>}
+    {(section==="matching"||section==="members")&&<section className="panel"><h3>가입 완료 · 명단 미등록 {pendingWithoutRoster.length}명</h3><p>학원 연결을 신청했지만 해당 담당 선생님 명단에서 아직 찾지 못한 학생입니다. 신청 내용과 실제 재원 여부를 확인한 뒤 명단을 등록하고 승인하세요.</p>{pendingWithoutRoster.map((request)=><div className="row workspace-record" key={request.id}><div><strong>{request.student_name} · {request.teacher_name}</strong><span>{request.school||"학교 미등록"} · {request.grade||"학년 미등록"} · 신청 반 {request.requested_class||"미입력"} · 교재 {(request.requested_books||[]).join(", ")||"미입력"}</span></div><button type="button" onClick={()=>{const review=document.getElementById("academy-review");if(review instanceof HTMLDetailsElement){review.open=true;review.scrollIntoView({behavior:"smooth"});}}}>신청 확인</button></div>)}</section>}
     {section === "matching" && <><h3>중심업무 명단 대조</h3><p>중심업무 Excel 명단을 올리면 가입 여부와 현재 학생·반 배정을 한 화면에서 확인합니다. 이름이 같은 학생은 한 명으로 묶고, 수강 중인 반은 모두 표시합니다. 업로드한 파일은 비교에만 사용됩니다.</p><form className="form workspace-form" onSubmit={(event) => void compareRoster(event)}><label>중심업무 Excel 파일 선택 (선생님별 파일을 여러 개 선택 가능)<input name="files" type="file" accept=".xlsx" multiple required /></label><button className="primary" disabled={compareBusy}>{compareBusy ? "명단 비교 중…" : "명단 비교하기"}</button></form>{compareMessage && <p className="workspace-message" role="status">{compareMessage}</p>}
       {importedEnrollments.length > 0 && <><div className="metrics"><article><b>{centralStudents.length}</b><span>중심업무 학생</span></article><article><b>{compareRows.filter((row) => row.status === "매칭").length}</b><span>배정 매칭</span></article><article><b>{compareRows.filter((row) => row.status !== "매칭").length}</b><span>미매칭·배정 확인</span></article><article><b>{compareRows.filter((row) => !row.account).length}</b><span>미가입</span></article><article><b>{portalOnlyNames.length}</b><span>앱에만 있음</span></article></div><div className="workspace-filters"><label>이름·반 검색<input value={compareQuery} onChange={(event) => setCompareQuery(event.target.value)} placeholder="학생 이름 또는 반 입력" /></label><label>현황 필터<select value={compareFilter} onChange={(event) => setCompareFilter(event.target.value)}>{["전체", "매칭", "미매칭", "배정 확인", "미가입", "앱에만 있음"].map((item) => <option key={item}>{item}</option>)}</select></label></div><h4>중심업무 명단 · {visibleCompareRows.length}명 표시</h4>{visibleCompareRows.map((row) => <article className="question-card" key={row.student}><div className="question-card-head"><strong>{row.student}</strong><span>{row.account ? "가입" : "미가입"} · {row.status}</span></div><div><strong>중심업무 반</strong><ul>{row.central.map((item, index) => <li key={`${item.teacher}-${item.className}-${index}`}>{item.teacher} · {item.className}</li>)}</ul></div><div><strong>스터디결 배정</strong>{row.appRows.length ? <ul>{row.appRows.map((item) => <li key={item.id}>{item.teacher_name} · {item.class_name} · {item.school_name || "학교 미지정"} {item.grade || ""} · {item.book_name || "교재 미지정"}</li>)}</ul> : <p>등록된 반 배정이 없습니다.</p>}</div></article>)}{compareFilter === "앱에만 있음" && <><h4>앱에는 있지만 중심업무 명단에 없는 학생 · {portalOnlyNames.length}명</h4>{portalOnlyNames.map((name) => <div className="row workspace-record" key={name}><div><strong>{name}</strong><span>{roster.filter((row) => normalize(row.student_name) === normalize(name)).map((row) => `${row.teacher_name} · ${row.class_name}`).join(" / ") || "명단 배정 전"} · {users.some((row) => normalize(row.username) === normalize(name)) ? "가입" : "미가입"}</span></div></div>)}</>}</>}
     </>}
@@ -116,4 +127,3 @@ export default function AdminPanel({ roster, users, activeBooks, refreshRoster, 
     </form></div>}
   </section>;
 }
-
