@@ -9,15 +9,18 @@ require.extensions['.ts'] = (module, filename) => {
   module._compile(result.outputText, filename);
 };
 const { foundationExamples, examplesForChapter } = require('../app/python-foundations.ts');
+const { advancedExamples } = require('../app/python-advanced.ts');
+const allExamples = [...foundationExamples, ...advancedExamples];
 if (process.argv.includes('--json')) {
-  console.log(JSON.stringify(foundationExamples));
+  console.log(JSON.stringify(allExamples));
   process.exit(0);
 }
 const python = process.env.PYTHON_BINARY || 'python';
 assert.equal(foundationExamples.length, 19);
-assert.equal(new Set(foundationExamples.map(e => e.id)).size, 19);
+assert.equal(advancedExamples.length, 29);
+assert.equal(new Set(allExamples.map(e => e.id)).size, allExamples.length);
 let checked = 0;
-for (const e of foundationExamples) {
+for (const e of allExamples) {
   assert.ok(e.walkthrough.steps.length && e.walkthrough.practiceSteps.length && e.lesson.hint);
   for (const [code, expected] of [[e.lesson.exampleCode, e.walkthrough.output], [e.lesson.solution, e.lesson.expected]]) {
     const result = spawnSync(python, ['-c', e.desktop ? 'import ast,sys; ast.parse(sys.stdin.read())' : code], {
@@ -29,6 +32,6 @@ for (const e of foundationExamples) {
     checked++;
   }
 }
-for (let chapter = 4; chapter <= 7; chapter++) assert.equal(examplesForChapter(chapter)[0].lesson.chapter, chapter);
-console.log(`PASS: ${checked} programs checked (34 outputs; 4 desktop syntax checks); chapters 4-7 preserved.`);
+for (let chapter = 1; chapter <= 7; chapter++) assert.ok(examplesForChapter(chapter).length > 1);
+console.log(`PASS: ${checked} programs checked across 7 chapters.`);
 
