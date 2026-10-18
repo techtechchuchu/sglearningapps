@@ -16,6 +16,14 @@ export async function POST(request:NextRequest) {
     if(!equalSecret(String(body.code||""),code)) return failure("초대코드를 확인해주세요.",400);
     const name=String(body.studentName||"").trim(), teacher=String(body.teacher||"");
     if(!name||name.length>60||!teachers.includes(teacher)) return failure("학생 이름과 담당 선생님을 확인해주세요.",400);
+    // Compare-and-set: only this member's rejected request may return to pending.
+    // Concurrent retries cannot overwrite a pending or approved request.
+    const retried=await auth.db.from("sg_academy_requests").update({
+      student_name:name,teacher_name:teacher,school:auth.user.school,grade:auth.user.grade,
+      status:"pending",reviewer:null,reviewed_at:null,created_at:new Date().toISOString(),
+    }).eq("user_id",auth.user.id).eq("status","rejected").select("id");
+    if(retried.error) throw retried.error;
+    if(retried.data?.length) return NextResponse.json({ok:true,message:"학원 연결을 다시 신청했습니다. 담당 선생님의 승인을 기다려주세요."});
     const result=await auth.db.from("sg_academy_requests").insert({user_id:auth.user.id,student_name:name,teacher_name:teacher,school:auth.user.school,grade:auth.user.grade});
     if(result.error?.code==="23505") return failure("이미 신청한 내역이 있습니다. 상태를 확인하거나 학원에 문의해주세요.",409);
     if(result.error) throw result.error;
