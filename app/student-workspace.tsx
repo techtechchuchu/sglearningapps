@@ -6,6 +6,7 @@ import BrandLockup from "./brand-lockup";
 import StudentProblemBrowser from "./student-problem-browser";
 import StudentAttendance from "./student-attendance";
 import StudentLearningHub from "./student-learning-hub";
+import { LegacyKakaoLink } from "./member-account";
 import { StudentQuestions } from "./learning-questions";
 
 type Row = Record<string, any>;
@@ -122,6 +123,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     <nav className="workspace-tabs" aria-label="학생 메뉴">
       {[["home", "오늘의 학습"], ["weekly", "주간 학습기록"], ["questions", "질문함"], ["wrong", "오답 작성"], ["school", "학교 기출"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["records", "내 기록"], ["account", "계정 관리"]].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}
     </nav>
+    {tab === "account" && !data.mustChangePassword && <LegacyKakaoLink />}
     {message && <p className="workspace-message" role="status">{message}</p>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
     {(tab === "home" || tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={setTab} />}
@@ -162,4 +164,3 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     }} />}
   </main>;
 }
-

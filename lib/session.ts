@@ -4,7 +4,7 @@ import type { NextRequest, NextResponse } from "next/server";
 export const SESSION_COOKIE = "sg_session";
 const TTL_SECONDS = 7 * 24 * 60 * 60;
 
-type Session = { role: "student" | "teacher" | "university"; name: string; expires: number };
+export type Session = { role: "student" | "teacher" | "university" | "member"; name: string; expires: number; issuedAt?: number };
 
 function secret() {
   const candidates = [process.env.SESSION_SECRET, process.env.SUPABASE_SERVICE_ROLE_KEY, process.env.SUPABASE_KEY];
@@ -21,6 +21,7 @@ export function setSession(response: NextResponse, role: Session["role"], name: 
   const payload = Buffer.from(JSON.stringify({
     role,
     name,
+    issuedAt: Math.floor(Date.now() / 1000),
     expires: Math.floor(Date.now() / 1000) + TTL_SECONDS,
   })).toString("base64url");
   response.cookies.set(SESSION_COOKIE, payload + "." + signature(payload), {
@@ -45,7 +46,7 @@ export function getSession(request: NextRequest): Session | null {
     if (!session || typeof session !== "object") return null;
     const s = session as Partial<Session>;
     if (
-      (s.role !== "student" && s.role !== "teacher" && s.role !== "university") ||
+      (s.role !== "student" && s.role !== "teacher" && s.role !== "university" && s.role !== "member") ||
       typeof s.name !== "string" || !s.name.trim() ||
       typeof s.expires !== "number" || s.expires <= Math.floor(Date.now() / 1000)
     ) return null;
@@ -54,4 +55,3 @@ export function getSession(request: NextRequest): Session | null {
     return null;
   }
 }
-
