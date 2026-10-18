@@ -10,7 +10,7 @@ const UniversityMidterm = dynamic(() => import("./university-midterm"), { loadin
 type Course = { id: string; title: string; semester: string };
 type Exam = { id: string; course_id: string; title: string; exam_date: string };
 type Mistake = { id: string; course_id: string; problem_label: string; memo: string; reviewed: boolean; created_at: string };
-type Data = { profile: { name: string; email: string }; courses: Course[]; exams: Exam[]; mistakes: Mistake[] };
+type Data = { profile: { id: string; name: string; email: string; learnerType: string }; courses: Course[]; exams: Exam[]; mistakes: Mistake[] };
 type View = "home" | "courses" | "exams" | "mistakes" | "quiz" | "helper";
 
 export default function UniversityWorkspace({ logout }: { logout: () => void }) {
@@ -66,8 +66,8 @@ export default function UniversityWorkspace({ logout }: { logout: () => void }) 
   const courseName = (id: string) => courses.find((course) => course.id === id)?.title || "과목";
 
   return <main className="shell dashboard-shell university-workspace">
-    <header className="topbar university-topbar"><BrandLockup compact solo /><div><span className="badge">대학생 학습 모드</span><h1>{data?.profile.name || "나의 학습"}</h1><p>과목을 정리하고 시험까지 내 오답을 복습하세요.</p></div><button type="button" className="ghost" onClick={logout}>로그아웃</button></header>
-    <nav className="workspace-tabs" aria-label="대학생 메뉴">{([["home", "오늘의 학습"], ["courses", "내 과목"], ["exams", "시험 준비"], ["quiz", "변형 퀴즈"], ["mistakes", "오답 복습"], ["helper", "결결이"]] as const).map(([id, label]) => <button type="button" key={id} className={view === id ? "active" : ""} onClick={() => setView(id)}>{label}</button>)}</nav>
+    <header className="topbar university-topbar"><BrandLockup compact solo /><div><span className="badge">{data?.profile.learnerType === "school" ? "학생 개인 학습" : data?.profile.learnerType === "general" ? "개인 학습 공간" : "대학생 학습 모드"}</span><h1>{data?.profile.name || "나의 학습"}</h1><p>과목을 정리하고 시험까지 내 오답을 복습하세요.</p></div><button type="button" className="ghost" onClick={logout}>로그아웃</button></header>
+    <nav className="workspace-tabs" aria-label="개인 학습 메뉴">{([["home", "오늘의 학습"], ["courses", "내 과목"], ["exams", "시험 준비"], ["quiz", "변형 퀴즈"], ["mistakes", "오답 복습"], ["helper", "결결이"]] as const).map(([id, label]) => <button type="button" key={id} className={view === id ? "active" : ""} onClick={() => setView(id)}>{label}</button>)}</nav>
     {view === "quiz" && data && <UniversityMidterm key={data.profile.email} userEmail={data.profile.email} />}
     {error && <p className="workspace-message" role="alert">{error}</p>}
     {!data && !error && <section className="panel" role="status">학습 기록을 불러오는 중입니다.</section>}
