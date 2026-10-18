@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import Landing from "./landing";
 import StudentWorkspace from "./student-workspace";
 import TeacherWorkspace, { type TeacherData } from "./teacher-workspace";
 import BrandLockup from "./brand-lockup";
@@ -32,7 +31,6 @@ async function fetchForRestore(url: string) {
 }
 
 export default function Home() {
-  const [showLogin, setShowLogin] = useState(true);
   const [mode, setMode] = useState<"student" | "teacher" | "university">("student");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -58,7 +56,10 @@ export default function Home() {
     let active = true;
     function syncScreenFromHash() {
       const hash = window.location.hash;
-      setShowLogin(!["#home", "#choose", "#personal", "#academy"].includes(hash));
+      if (["#home", "#choose", "#personal", "#academy", "#company"].includes(hash)) {
+        window.location.replace(`/home${hash === "#home" ? "" : hash}`);
+        return;
+      }
       if (hash === "#login-teacher") setMode("teacher");
       if (hash === "#login-student" || hash.startsWith("#attendance=")) setMode("student");
       if (hash === "#login-university") setMode("university");
@@ -73,14 +74,14 @@ export default function Home() {
         if (!sessionResponse.ok) throw new Error("로그인 상태를 확인하지 못했습니다.");
         const session = await sessionResponse.json();
         if (!active || !session.authenticated) return;
-        if ((session.role === "university" || session.role === "member")) { setShowLogin(true); setMode("university"); setUniversityLoggedIn(true); return; }
+        if ((session.role === "university" || session.role === "member")) { setMode("university"); setUniversityLoggedIn(true); return; }
         const role = session.role === "student" ? "student" : "teacher";
         const response = await fetchForRestore(`/api/dashboard/${role}`);
         const data = await response.json();
         if (!active) return;
-        if (response.status === 401) { setShowLogin(true); setMode(role); setMessage("로그인 시간이 만료되었습니다. 다시 로그인해주세요."); return; }
+        if (response.status === 401) { setMode(role); setMessage("로그인 시간이 만료되었습니다. 다시 로그인해주세요."); return; }
         if (!response.ok) throw new Error(data.message || "학습 데이터를 불러오지 못했습니다.");
-        setShowLogin(true); setMode(role); setSessionLabel(role === "student" ? `${session.name} 학생` : session.name);
+        setMode(role); setSessionLabel(role === "student" ? `${session.name} 학생` : session.name);
         if (role === "student") setStudentData(data); else setTeacherData(data);
       } catch (error) {
         if (active) setRestoreError(error instanceof Error ? error.message : "서버 연결을 확인해주세요.");
@@ -201,7 +202,6 @@ export default function Home() {
     setSessionLabel("");
     setPassword("");
     setMessage("");
-    setShowLogin(true);
     window.location.hash = `login-${nextMode}`;
   }
 
@@ -213,9 +213,7 @@ export default function Home() {
 
   if (restoring) return <main className="shell"><section className="login-card" role="status"><div className="brand"><BrandLockup compact solo /><h1>로그인 상태 확인 중</h1><p>잠시만 기다려주세요.</p></div></section></main>;
 
-  if (restoreError) return <main className="shell"><section className="login-card" role="alert"><div className="brand"><BrandLockup compact solo /><h1>연결을 다시 확인해주세요</h1><p>일시적인 연결 문제일 수 있습니다. 로그인 정보는 삭제하지 않았습니다.</p></div><p className="alert">{restoreError}</p><div className="learning-actions"><button type="button" className="primary" onClick={retryRestore}>다시 연결</button><button type="button" className="ghost" onClick={() => { setRestoreError(""); setShowLogin(true); }}>로그인 화면</button></div></section></main>;
-
-  if (!showLogin) return <Landing onLogin={(selectedMode) => { setMode(selectedMode); setMessage(""); setPassword(""); setShowLogin(true); window.location.hash = `login-${selectedMode}`; window.scrollTo(0, 0); }} />;
+  if (restoreError) return <main className="shell"><section className="login-card" role="alert"><div className="brand"><BrandLockup compact solo /><h1>연결을 다시 확인해주세요</h1><p>일시적인 연결 문제일 수 있습니다. 로그인 정보는 삭제하지 않았습니다.</p></div><p className="alert">{restoreError}</p><div className="learning-actions"><button type="button" className="primary" onClick={retryRestore}>다시 연결</button><button type="button" className="ghost" onClick={() => { setRestoreError(""); }}>로그인 화면</button></div></section></main>;
 
   return (
     <main className="shell">
@@ -238,11 +236,12 @@ export default function Home() {
         {message && <div className="alert">{message}</div>}
         {mode !== "university" && <p className="safe-note">SG 오답노트 계정으로 로그인하세요.</p>}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <button type="button" className="ghost" onClick={() => { window.location.hash = "home"; setShowLogin(false); }}>공식 홈페이지로 이동 ↗</button>
-          <button type="button" className="ghost" onClick={() => { setMode("university"); setMessage(""); setShowLogin(true); window.location.hash = "login-university"; }}>대학생을 위한 스터디결 →</button>
+          <button type="button" className="ghost" onClick={() => { window.location.assign("/home"); }}>공식 홈페이지로 이동 ↗</button>
+          <button type="button" className="ghost" onClick={() => { setMode("university"); setMessage(""); window.location.hash = "login-university"; }}>대학생을 위한 스터디결 →</button>
         </div>
         <nav aria-label="서비스 정책" style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 20, fontSize: 13 }}><a href="/terms">이용약관</a><a href="/privacy">개인정보 처리방침</a><a href="/content-policy">자체교재·PDF 이용 및 보관 원칙</a></nav>
       </section>
     </main>
   );
 }
+
