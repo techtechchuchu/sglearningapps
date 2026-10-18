@@ -6,6 +6,7 @@ import StudentWorkspace from "./student-workspace";
 import TeacherWorkspace, { type TeacherData } from "./teacher-workspace";
 import BrandLockup from "./brand-lockup";
 import UniversityWorkspace from "./university-workspace";
+import { IndependentSignup, KakaoButton, MemberGate } from "./member-account";
 
 type StudentData = {
   roster: any[];
@@ -63,6 +64,8 @@ export default function Home() {
       if (hash === "#login-university") setMode("university");
     }
     syncScreenFromHash();
+    const authMessage = new URLSearchParams(window.location.search).get("auth_message");
+    if (authMessage) { setMessage(authMessage); window.history.replaceState(null, "", window.location.pathname + window.location.hash); }
     window.addEventListener("hashchange", syncScreenFromHash);
     async function restore() {
       try {
@@ -70,7 +73,7 @@ export default function Home() {
         if (!sessionResponse.ok) throw new Error("로그인 상태를 확인하지 못했습니다.");
         const session = await sessionResponse.json();
         if (!active || !session.authenticated) return;
-        if (session.role === "university") { setShowLogin(true); setMode("university"); setUniversityLoggedIn(true); return; }
+        if ((session.role === "university" || session.role === "member")) { setShowLogin(true); setMode("university"); setUniversityLoggedIn(true); return; }
         const role = session.role === "student" ? "student" : "teacher";
         const response = await fetchForRestore(`/api/dashboard/${role}`);
         const data = await response.json();
@@ -206,7 +209,7 @@ export default function Home() {
 
   if (teacherData) return <TeacherWorkspace teacher={sessionLabel} data={teacherData} refresh={refreshTeacher} logout={logout} />;
 
-  if (universityLoggedIn) return <UniversityWorkspace logout={logout} />;
+  if (universityLoggedIn) return <MemberGate logout={logout}><UniversityWorkspace logout={logout} /></MemberGate>;
 
   if (restoring) return <main className="shell"><section className="login-card" role="status"><div className="brand"><BrandLockup compact solo /><h1>로그인 상태 확인 중</h1><p>잠시만 기다려주세요.</p></div></section></main>;
 
@@ -218,16 +221,18 @@ export default function Home() {
     <main className="shell">
       <section className="login-card">
         <div className="brand"><BrandLockup compact solo /><h1>학습 노트 시작하기</h1><p>{mode === "university" ? "대학생을 위한 나만의 과목·시험·오답 기록을 시작하세요." : "기존 학원 계정으로 로그인해 오답을 기록하고 수업 현황을 확인하세요."}</p></div>
-        <div className="tabs login-role-tabs"><button type="button" className={mode === "student" ? "active" : ""} onClick={() => { setMode("student"); setMessage(""); window.location.hash = "login-student"; }}>학원생</button><button type="button" className={mode === "teacher" ? "active" : ""} onClick={() => { setMode("teacher"); setMessage(""); window.location.hash = "login-teacher"; }}>선생님·관리자</button><button type="button" className={mode === "university" ? "active" : ""} onClick={() => { setMode("university"); setMessage(""); window.location.hash = "login-university"; }}>대학생</button></div>
+        <div className="tabs login-role-tabs"><button type="button" className={mode === "student" ? "active" : ""} onClick={() => { setMode("student"); setMessage(""); window.location.hash = "login-student"; }}>학생·일반</button><button type="button" className={mode === "teacher" ? "active" : ""} onClick={() => { setMode("teacher"); setMessage(""); window.location.hash = "login-teacher"; }}>선생님·관리자</button><button type="button" className={mode === "university" ? "active" : ""} onClick={() => { setMode("university"); setMessage(""); window.location.hash = "login-university"; }}>대학생</button></div>
         {mode === "student" ? (<>
           <div className="tabs account-tabs"><button className={studentAuthTab === "login" ? "active" : ""} onClick={() => { setStudentAuthTab("login"); setMessage(""); }}>로그인</button><button className={studentAuthTab === "signup" ? "active" : ""} onClick={() => { setStudentAuthTab("signup"); setMessage(""); }}>회원가입</button><button className={studentAuthTab === "reset" ? "active" : ""} onClick={() => { setStudentAuthTab("reset"); setMessage(""); }}>비밀번호 재설정</button></div>
-          <form onSubmit={studentAuthTab === "login" ? loginStudent : studentAccountAction} className="form"><label>학생 이름<input value={name} onChange={(e) => setName(e.target.value)} placeholder="이름" required /></label>{studentAuthTab !== "reset" && <label>비밀번호<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={studentAuthTab === "signup" ? 4 : undefined} required /></label>}{studentAuthTab === "signup" && <><label>비밀번호 확인<input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={4} required /></label><label>학년<select value={signupGrade} onChange={(e) => setSignupGrade(e.target.value)}>{["중3", "고1", "고2", "고3"].map((grade) => <option key={grade}>{grade}</option>)}</select></label><label>학원 가입 코드<input type="password" value={signupCode} onChange={(e) => setSignupCode(e.target.value)} required /></label></>}<button className="primary" disabled={loading}>{loading ? "확인 중..." : studentAuthTab === "login" ? "로그인" : studentAuthTab === "signup" ? "회원가입" : "재설정 요청"}</button></form>
+          {studentAuthTab === "signup" ? <IndependentSignup /> : <form onSubmit={studentAuthTab === "login" ? loginStudent : studentAccountAction} className="form"><label>학생 이름<input value={name} onChange={e => setName(e.target.value)} autoComplete="username" required /></label>{studentAuthTab === "login" && <label>비밀번호<input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required /></label>}<button className="primary" disabled={loading}>{loading ? "확인 중…" : studentAuthTab === "login" ? "기존 학원 계정 로그인" : "재설정 요청"}</button></form>}
+          {studentAuthTab === "login" && <KakaoButton />}
           {studentAuthTab === "reset" && <p className="safe-note">담당 선생님이 임시 비밀번호를 안내합니다.</p>}
         </>) : mode === "teacher" ? (
           <form onSubmit={loginTeacher} className="form"><label>담당 선생님<select value={teacher} onChange={(e) => setTeacher(e.target.value)}>{teachers.map((item) => <option key={item}>{item}</option>)}</select></label><label>공용 비밀번호<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></label><button className="primary" disabled={loading}>{loading ? "확인 중..." : "로그인"}</button></form>
         ) : (<>
           <div className="tabs account-tabs"><button type="button" className={!universitySignup ? "active" : ""} onClick={() => { setUniversitySignup(false); setMessage(""); }}>로그인</button><button type="button" className={universitySignup ? "active" : ""} onClick={() => { setUniversitySignup(true); setMessage(""); }}>대학생 회원가입</button></div>
-          <form onSubmit={universityAuth} className="form">{universitySignup && <label>이름<input value={universityName} onChange={(event) => setUniversityName(event.target.value)} autoComplete="name" required /></label>}<label>이메일<input type="email" value={universityEmail} onChange={(event) => setUniversityEmail(event.target.value)} autoComplete="email" required /></label><label>비밀번호<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} autoComplete={universitySignup ? "new-password" : "current-password"} required /></label><button className="primary" disabled={loading}>{loading ? "확인 중..." : universitySignup ? "가입하기" : "대학생으로 로그인"}</button></form>
+          {universitySignup ? <IndependentSignup /> : <form onSubmit={universityAuth} className="form">{universitySignup && <label>이름<input value={universityName} onChange={(event) => setUniversityName(event.target.value)} autoComplete="name" required /></label>}<label>이메일<input type="email" value={universityEmail} onChange={(event) => setUniversityEmail(event.target.value)} autoComplete="email" required /></label><label>비밀번호<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} autoComplete={universitySignup ? "new-password" : "current-password"} required /></label><button className="primary" disabled={loading}>{loading ? "확인 중..." : universitySignup ? "가입하기" : "대학생으로 로그인"}</button></form>}
+          {!universitySignup && <KakaoButton />}
           <p className="safe-note">학원 계정과 분리된 대학생용 공간입니다. 과목·시험·오답 기록부터 이용할 수 있습니다.</p>
         </>)}
         {message && <div className="alert">{message}</div>}
@@ -241,4 +246,3 @@ export default function Home() {
     </main>
   );
 }
-
