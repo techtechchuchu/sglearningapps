@@ -1,3 +1,5 @@
+"use client";
+
 import { ArrowUpRight, ArrowRight, BookOpen, GraduationCap, Layers3, Building2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import "./landing-motion.css";
@@ -32,7 +34,7 @@ export default function Landing({ onLogin }: Props) {
     <main className="gyeol" ref={landingRef}>
       <a className="g-skip" href="#choose">본문으로 바로가기</a>
       <header className="g-nav">
-        <a className="g-brand" href="/" aria-label="스터디결 홈"><span className="g-mark" aria-hidden="true">결</span>스터디결<span className="g-beta">BETA</span></a>
+        <a className="g-brand" href="/home" aria-label="스터디결 홈"><span className="g-mark" aria-hidden="true">결</span>스터디결<span className="g-beta">BETA</span></a>
         <nav aria-label="주요 메뉴"><a href="#personal">개인을 위한 결</a><a href="#academy">학원을 위한 결</a><a href="#company">회사소개</a></nav>
         <button className="g-login" onClick={() => onLogin("student")}>지금 시작하기 <ArrowUpRight size={15}/></button>
       </header>
@@ -87,7 +89,7 @@ export default function Landing({ onLogin }: Props) {
       <footer className="g-business-footer">
         <div className="g-wrap">
           <div className="g-footer-heading">
-            <div><a className="g-brand" href="/"><span className="g-mark" aria-hidden="true">결</span>스터디결</a><p>나만의 공부, 나만의 결.</p></div>
+            <div><a className="g-brand" href="/home"><span className="g-mark" aria-hidden="true">결</span>스터디결</a><p>나만의 공부, 나만의 결.</p></div>
             <nav aria-label="하단 서비스 안내"><a href="#choose">서비스 소개</a><a href="#personal">개인용 안내</a><a href="#academy">학원용 안내</a><a href="mailto:cjh1645@naver.com">고객 문의</a><button onClick={() => onLogin("student")}>로그인</button></nav>
           </div>
           <div className="g-footer-services"><strong>배움의 시작부터, 성장의 기록까지.</strong><div><a href="#personal">개인 학습 기록</a><a href="#personal">오답노트</a><a href="#academy">학생·수업 관리</a><a href="#academy">학원 운영</a></div></div>
@@ -112,3 +114,4 @@ export default function Landing({ onLogin }: Props) {
     </main>
   );
 }
+
