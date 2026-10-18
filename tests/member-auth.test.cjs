@@ -44,6 +44,35 @@ const start=load('app/api/auth/kakao/start/route.ts',{
   '../../../../../lib/student-auth':{},'../../../../../lib/university-auth':{}
 });
 (async()=>{
+  process.env.ACADEMY_INVITE_CODE='test-invite';
+  for (const initial of ['rejected','pending','approved',null]) {
+    let state=initial, updatePayload, insertCalls=0;
+    const filters={};
+    const db={from(table){
+      assert.equal(table,'sg_academy_requests');
+      return {
+        update(payload){updatePayload=payload;return {
+          eq(key,value){filters[key]=value;return this;},
+          async select(){assert.equal(filters.user_id,'member-test');assert.equal(filters.status,'rejected');
+            if(state==='rejected'){state='pending';return {data:[{id:'request-test'}],error:null};}
+            return {data:[],error:null};}
+        };},
+        async insert(payload){insertCalls++;assert.equal(payload.user_id,'member-test');
+          if(state)return {error:{code:'23505'}};
+          state='pending';return {error:null};}
+      };
+    }};
+    const route=load('app/api/academy/requests/route.ts',{
+      '../../../../lib/member-auth':{...auth,memberContext:async()=>({db,user:{id:'member-test',onboarding_complete:true,academy_username:null,school:'학교',grade:'고1'}}),rateLimit:async()=>true},
+      '../../../../lib/staff-access':{staffSession:()=>null},
+      '../../../../lib/supabase-server':{getServerSupabase:()=>db}
+    });
+    const request=()=>new NextRequest('https://studygyeol.vercel.app/api/academy/requests',{method:'POST',headers:{origin:'https://studygyeol.vercel.app','content-type':'application/json'},body:JSON.stringify({code:'test-invite',studentName:'학생',teacher:'이주백.T'})});
+    const result=await route.POST(request());
+    assert.equal(result.status,initial==='pending'||initial==='approved'?409:200);
+    assert.equal(state,initial==='approved'?'approved':'pending');
+    if(initial==='rejected'){assert.equal(insertCalls,0);assert.equal(updatePayload.reviewer,null);assert.equal(updatePayload.reviewed_at,null);assert.equal((await route.POST(request())).status,409);}
+  }
   const rejected=await start.POST(new NextRequest('https://studygyeol.vercel.app/api/auth/kakao/start',{method:'POST',headers:{origin:'https://evil.example'}}));
   assert.equal(rejected.status,403);
   const missing=await callback.GET(new NextRequest('https://studygyeol.vercel.app/api/auth/kakao/callback?code=test'));
