@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../lib/session";
+import { memberContext } from "../../../lib/member-auth";
 import { getServerSupabase } from "../../../lib/supabase-server";
 
 async function context(request: NextRequest) {
-  const session = getSession(request);
-  if (session?.role !== "university") return null;
-  const db = getServerSupabase();
-  const { data, error } = await db.from("university_users").select("id,display_name,email").eq("email", session.name).maybeSingle();
-  if (error) throw error;
-  return data ? { db, user: data } : null;
+  const auth = await memberContext(request);
+  return auth?.user.onboarding_complete ? auth : null;
 }
 
 function failure(error: unknown) {
@@ -27,7 +23,7 @@ export async function GET(request: NextRequest) {
       db.from("university_mistakes").select("id,course_id,problem_label,memo,reviewed,created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
     ]);
     if (courses.error || exams.error || mistakes.error) throw courses.error || exams.error || mistakes.error;
-    return NextResponse.json({ profile: { name: user.display_name, email: user.email }, courses: courses.data, exams: exams.data, mistakes: mistakes.data });
+    return NextResponse.json({ profile: { id: user.id, name: user.display_name, email: user.email || user.id, learnerType: user.learner_type }, courses: courses.data, exams: exams.data, mistakes: mistakes.data });
   } catch (error) { return failure(error); }
 }
 
@@ -79,4 +75,3 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (error) { return failure(error); }
 }
-
