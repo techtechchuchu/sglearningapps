@@ -1,5 +1,6 @@
 import { pythonLessons, type PythonLesson } from './python-lessons';
 import { pythonWalkthroughs } from './python-walkthroughs';
+import { advancedExamples } from './python-advanced';
 
 export type FoundationExample = {
   id: string; section: string; source: string; lesson: PythonLesson;
@@ -154,7 +155,7 @@ export const foundationExamples: FoundationExample[] = [
 ];
 
 export function examplesForChapter(chapter: number): FoundationExample[] {
-  const expanded = foundationExamples.filter(item => item.lesson.chapter === chapter);
+  const expanded = [...foundationExamples, ...advancedExamples].filter(item => item.lesson.chapter === chapter);
   if (expanded.length) return expanded;
   const lesson = pythonLessons[chapter - 1];
   return [{ id: `${chapter}-basic`, section: '기본 예제', source: `${chapter}장`, lesson, walkthrough: pythonWalkthroughs[chapter] }];
