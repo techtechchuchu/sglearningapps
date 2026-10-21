@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { displayProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
+import { displayProblemNumbers, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
 import BrandLockup from "./brand-lockup";
 import StudentProblemBrowser from "./student-problem-browser";
 import StudentAttendance from "./student-attendance";
@@ -33,9 +33,10 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const [examId, setExamId] = useState("");
   const [problem, setProblem] = useState("");
   const [memo, setMemo] = useState("");
-  const [bookConfirmed, setBookConfirmed] = useState(false);
   const [examConfirmed, setExamConfirmed] = useState(false);
-  const [requestVariant, setRequestVariant] = useState(false);
+  const [variantChoice, setVariantChoice] = useState<"" | "yes" | "no">("");
+  const [variantProblem, setVariantProblem] = useState("");
+  const [wrongConfirmOpen, setWrongConfirmOpen] = useState(false);
   const [schoolExamId, setSchoolExamId] = useState("");
   const [schoolProblem, setSchoolProblem] = useState("");
   const [schoolMemo, setSchoolMemo] = useState("");
@@ -81,12 +82,31 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const chosenSchoolExam = schoolExams.find((item) => String(item.id) === schoolExamId);
   const assignedBooks = [...new Set(data.roster.flatMap((row) => splitRosterBooks(row.book_name)))];
 
-  async function saveWrong(event: FormEvent) {
+  function reviewWrong(event: FormEvent) {
     event.preventDefault();
+    if (!variantChoice) { setMessage("변형문제가 필요한지 선택해주세요."); return; }
+    if (variantChoice === "yes") {
+      try {
+        const wrongNumbers = new Set(parseProblemNumbers(problem));
+        const variantNumbers = parseProblemNumbers(variantProblem);
+        if (variantNumbers.some((number) => !wrongNumbers.has(number))) {
+          setMessage("변형문제 번호는 위에 입력한 오답 문제번호 중에서 선택해주세요.");
+          return;
+        }
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "변형문제 번호를 확인해주세요.");
+        return;
+      }
+    }
+    setMessage("");
+    setWrongConfirmOpen(true);
+  }
+
+  async function saveWrong() {
     await run(async () => {
-      const result = await json(await fetch("/api/student/wrong-answers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ book, examId, examConfirmed, problem, memo, bookConfirmed, requestVariant }) }));
+      const result = await json(await fetch("/api/student/wrong-answers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ book, examId, examConfirmed, problem, memo, bookConfirmed: true, variantChoice, variantProblem }) }));
       await refresh();
-      setProblem(""); setMemo(""); setBookConfirmed(false); setExamConfirmed(false); setRequestVariant(false);
+      setProblem(""); setMemo(""); setExamConfirmed(false); setVariantChoice(""); setVariantProblem(""); setWrongConfirmOpen(false);
       setMessage(`저장 확인 완료: ${result.saved.join(", ")}${result.duplicate.length ? ` · 중복 제외: ${result.duplicate.join(", ")}` : ""}`);
     });
   }
@@ -137,17 +157,17 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     setMessage("");
   }
 
-  const wrongAnswerPanel = <section className="panel wrong-answer-panel"><h2>{tab === "home" ? "바로 오답 작성" : "오답 작성"}</h2>{tab === "home" && <p className="panel-intro">교재와 문제번호를 선택하면 이 화면에서 바로 오답을 저장할 수 있습니다.</p>}<form onSubmit={saveWrong} className="form workspace-form">
-    <fieldset className="book-period-picker"><legend>시험 시기 선택</legend><p>기말 교재는 현재 학년·반에 맞는 교재만 표시됩니다.</p><div role="group" aria-label="교재 시기 선택">{BOOK_PERIODS.map((period) => <button type="button" key={period} className={bookPeriod === period ? "active" : ""} aria-pressed={bookPeriod === period} onClick={() => { const nextBooks = booksForPeriod(books, period); setBookPeriod(period); setBook(nextBooks[0] || ""); setExamId(""); setBookConfirmed(false); setExamConfirmed(false); }}>{period}</button>)}</div></fieldset>
-    <label>{bookPeriod === "전체 교재" ? "전체 교재" : `${bookPeriod} 교재`}<select value={book} onChange={(event) => { setBook(event.target.value); setExamId(""); setBookConfirmed(false); }} required><option value="">선택해주세요</option><optgroup label={bookPeriod}>{visibleBooks.map((item) => <option key={item}>{item}</option>)}</optgroup></select></label>
+  const wrongAnswerPanel = <section className="panel wrong-answer-panel"><h2>{tab === "home" ? "바로 오답 작성" : "오답 작성"}</h2>{tab === "home" && <p className="panel-intro">교재와 문제번호를 선택하면 이 화면에서 바로 오답을 저장할 수 있습니다.</p>}<form onSubmit={reviewWrong} className="form workspace-form">
+    <fieldset className="book-period-picker"><legend>시험 시기 선택</legend><p>기말 교재는 현재 학년·반에 맞는 교재만 표시됩니다.</p><div role="group" aria-label="교재 시기 선택">{BOOK_PERIODS.map((period) => <button type="button" key={period} className={bookPeriod === period ? "active" : ""} aria-pressed={bookPeriod === period} onClick={() => { const nextBooks = booksForPeriod(books, period); setBookPeriod(period); setBook(nextBooks[0] || ""); setExamId(""); setExamConfirmed(false); }}>{period}</button>)}</div></fieldset>
+    <label>{bookPeriod === "전체 교재" ? "전체 교재" : `${bookPeriod} 교재`}<select value={book} onChange={(event) => { setBook(event.target.value); setExamId(""); }} required><option value="">선택해주세요</option><optgroup label={bookPeriod}>{visibleBooks.map((item) => <option key={item}>{item}</option>)}</optgroup></select></label>
     {bookExams.length > 0 && <label>학교·시험<select value={examId} required onChange={(event) => { setExamId(event.target.value); setExamConfirmed(false); }}><option value="">선택해주세요</option>{bookExams.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>}
     {chosenBookExam && <p>{chosenBookExam.label} · 원래 시험지 번호 1~{chosenBookExam.max}번을 입력하세요.</p>}
     <label>문제번호<input value={problem} onChange={(event) => setProblem(event.target.value)} placeholder="예: 3, 7, 12" required /></label>
     <label>비고<textarea value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="계산 실수, 개념 헷갈림 등" /></label>
-    <label className="workspace-check"><input type="checkbox" checked={requestVariant} onChange={(event) => setRequestVariant(event.target.checked)} /> 변형문제 요청</label>
-    <label className="workspace-check"><input type="checkbox" checked={bookConfirmed} onChange={(event) => setBookConfirmed(event.target.checked)} required /> {book} 교재가 맞습니다.</label>
+    <fieldset className="variant-choice"><legend>변형문제가 필요하세요?</legend><p>필요 여부를 반드시 선택해주세요.</p><div role="group" aria-label="변형문제 필요 여부"><button type="button" className={variantChoice === "yes" ? "active" : ""} aria-pressed={variantChoice === "yes"} onClick={() => setVariantChoice("yes")}>네, 필요해요</button><button type="button" className={variantChoice === "no" ? "active" : ""} aria-pressed={variantChoice === "no"} onClick={() => { setVariantChoice("no"); setVariantProblem(""); }}>아니요, 필요 없어요</button></div></fieldset>
+    {variantChoice === "yes" && <label className="variant-number-input">변형문제가 필요한 번호를 입력해주세요<input value={variantProblem} onChange={(event) => setVariantProblem(event.target.value)} placeholder="예: 3, 12" required /><small>위에서 입력한 오답 문제번호 중 변형문제가 필요한 번호만 입력해주세요.</small></label>}
     {chosenBookExam?.requiresConfirmation && <label className="workspace-check"><input type="checkbox" checked={examConfirmed} onChange={(event) => setExamConfirmed(event.target.checked)} required /> 시험 시기를 확인했습니다.</label>}
-    <button className="primary" disabled={busy || !book}>저장하고 확인하기</button>
+    <button className="primary" disabled={busy || !book || !variantChoice}>제출 내용 확인하기</button>
   </form></section>;
 
   return <main className="shell dashboard-shell study-workspace">
@@ -163,6 +183,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ["learn", "문제별 해설"], ["attendance", "출석 체크"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
     {tab === "account" && !data.mustChangePassword && <LegacyKakaoLink />}
     {message && <p className="workspace-message" role="status">{message}</p>}
+    {wrongConfirmOpen && <div className="wrong-confirm-backdrop" role="presentation"><section className="wrong-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="wrong-confirm-title"><span className="wrong-confirm-icon" aria-hidden="true">!</span><h2 id="wrong-confirm-title">오답 제출 내용을 확인해주세요</h2><dl><div><dt>시험 시기</dt><dd>{bookPeriod}</dd></div><div><dt>교재</dt><dd>{book}</dd></div>{chosenBookExam && <div><dt>학교·시험</dt><dd>{chosenBookExam.label}</dd></div>}<div><dt>오답 문제번호</dt><dd>{problem}번</dd></div><div className={variantChoice === "yes" ? "is-variant" : ""}><dt>변형문제</dt><dd>{variantChoice === "yes" ? `${variantProblem}번 요청` : "요청하지 않음"}</dd></div>{memo && <div><dt>비고</dt><dd>{memo}</dd></div>}</dl><p>선택한 교재와 문제번호가 실제 오답과 일치하나요?</p><div className="wrong-confirm-actions"><button type="button" className="ghost" onClick={() => setWrongConfirmOpen(false)} disabled={busy}>다시 수정하기</button><button type="button" className="primary" onClick={() => void saveWrong()} disabled={busy}>{busy ? "제출 중..." : "맞습니다 · 제출하기"}</button></div></section></div>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
     {tab === "home" && !data.mustChangePassword && <StudentLearningHub view="home" name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
     {(tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
@@ -187,7 +208,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
       return classes.length ? classes : name === "추재현" ? [{ className: "출석 데모반", teacherName: "전체 관리자" }] : [];
     })()} />}
     {tab === "learn" && !data.mustChangePassword && <StudentProblemBrowser studentName={name} books={books} schoolExams={schoolExams} wrongAnswers={data.wrongAnswers} schoolAnswers={schoolAnswers} onWrite={(kind, selectedBook, selectedExam, number) => {
-      if (kind === "xpattern") { setBook(selectedBook); setExamId(selectedExam); setProblem(String(number)); setBookConfirmed(false); setExamConfirmed(false); setTab("wrong"); }
+      if (kind === "xpattern") { setBook(selectedBook); setExamId(selectedExam); setProblem(String(number)); setExamConfirmed(false); setTab("wrong"); }
       else { setSchoolExamId(selectedExam); setSchoolProblem(String(number)); setSchoolConfirmed(false); setTab("school"); }
       setMessage("선택한 문제번호를 입력했습니다. 내용을 확인하고 저장해주세요.");
     }} />}
