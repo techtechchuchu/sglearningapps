@@ -33,9 +33,8 @@ export async function POST(request: NextRequest) {
     const db = getServerSupabase();
     const activeBook = await db.from("book_master").select("id").eq("book_name", book).eq("is_active", true).limit(1);
     if (activeBook.error || !activeBook.data?.length) {
-      const catalogue = await db.from("book_master").select("id").limit(1);
-      if ((catalogue.error || !catalogue.data?.length) && FALLBACK_BOOKS.includes(book)) {
-        // The old app permits its built-in books before book_master is populated.
+      if (FALLBACK_BOOKS.includes(book)) {
+        // Built-in books remain usable while book_master is being populated.
       } else {
         return NextResponse.json({ message: "현재 사용 중인 교재를 선택해주세요." }, { status: 400 });
       }
@@ -106,3 +105,4 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: "삭제하지 못했습니다." }, { status: 500 });
   }
 }
+
