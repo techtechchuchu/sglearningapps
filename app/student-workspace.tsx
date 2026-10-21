@@ -15,6 +15,9 @@ type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices
 type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number };
 type SchoolAnswer = { id: number; exam_id: number; problem: string; memo: string; created_at: string };
 type ExamOption = { id: string; label: string; max: number; requiresConfirmation: boolean };
+type ChannelRequest = { teacherName: string; channelName: string; channelUrl: string; book: string; problem: string; variantProblem: string; memo: string; requestId?: number };
+
+const TEACHER_KAKAO_CHANNELS = [{ teacher: "이주백", channelName: "SG수학학원 이주백T", channelUrl: "https://pf.kakao.com/_hmxdiK/chat" }];
 
 async function json(response: Response) {
   const body = await response.json().catch(() => ({}));
@@ -37,6 +40,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const [variantChoice, setVariantChoice] = useState<"" | "yes" | "no">("");
   const [variantProblem, setVariantProblem] = useState("");
   const [wrongConfirmOpen, setWrongConfirmOpen] = useState(false);
+  const [channelRequest, setChannelRequest] = useState<ChannelRequest | null>(null);
   const [schoolExamId, setSchoolExamId] = useState("");
   const [schoolProblem, setSchoolProblem] = useState("");
   const [schoolMemo, setSchoolMemo] = useState("");
@@ -105,10 +109,31 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   async function saveWrong() {
     await run(async () => {
       const result = await json(await fetch("/api/student/wrong-answers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ book, examId, examConfirmed, problem, memo, bookConfirmed: true, variantChoice, variantProblem }) }));
+      const rosterRow = data.roster.find((row) => splitRosterBooks(row.book_name).includes(book));
+      const teacherName = String(rosterRow?.teacher_name || "").trim();
+      const channel = TEACHER_KAKAO_CHANNELS.find((item) => teacherName.includes(item.teacher));
+      setChannelRequest(variantChoice === "yes" && channel ? { teacherName, channelName: channel.channelName, channelUrl: channel.channelUrl, book, problem, variantProblem, memo, requestId: Number(result.row?.id) || undefined } : null);
       await refresh();
       setProblem(""); setMemo(""); setExamConfirmed(false); setVariantChoice(""); setVariantProblem(""); setWrongConfirmOpen(false);
       setMessage(`저장 확인 완료: ${result.saved.join(", ")}${result.duplicate.length ? ` · 중복 제외: ${result.duplicate.join(", ")}` : ""}`);
     });
+  }
+
+  function sendChannelRequest() {
+    if (!channelRequest) return;
+    const lines = [
+      "[변형문제 요청]",
+      `학생: ${name}`,
+      `담당: ${channelRequest.teacherName}`,
+      `교재: ${channelRequest.book}`,
+      `오답 문제번호: ${channelRequest.problem}번`,
+      `변형 요청번호: ${channelRequest.variantProblem}번`,
+      channelRequest.memo ? `비고: ${channelRequest.memo}` : "",
+      channelRequest.requestId ? `요청번호: ${channelRequest.requestId}` : "",
+    ].filter(Boolean).join("\n");
+    const copyAttempt = navigator.clipboard?.writeText(lines);
+    window.open(channelRequest.channelUrl, "_blank", "noopener,noreferrer");
+    if (copyAttempt) void copyAttempt.then(() => setMessage("요청 내용을 복사했습니다. 열린 카카오채널 채팅방에 붙여넣어 전송해주세요.")).catch(() => setMessage("카카오채널이 열렸습니다. 아래 요청 내용을 직접 복사해 전송해주세요."));
   }
 
   async function saveSchool(event: FormEvent) {
@@ -183,6 +208,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ["learn", "문제별 해설"], ["attendance", "출석 체크"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
     {tab === "account" && !data.mustChangePassword && <LegacyKakaoLink />}
     {message && <p className="workspace-message" role="status">{message}</p>}
+    {channelRequest && <section className="channel-request-card" aria-labelledby="channel-request-title"><div><span>변형문제 요청 저장 완료</span><h2 id="channel-request-title">{channelRequest.channelName} 채널로 보내주세요</h2><p>버튼을 누르면 요청 내용이 복사되고 담당 선생님 카카오채널이 열립니다. 채팅방에 붙여넣어 전송하면 접수가 완료됩니다.</p></div><dl><div><dt>교재</dt><dd>{channelRequest.book}</dd></div><div><dt>오답 번호</dt><dd>{channelRequest.problem}번</dd></div><div><dt>변형 요청</dt><dd>{channelRequest.variantProblem}번</dd></div></dl><button type="button" className="channel-request-button" onClick={sendChannelRequest}>카카오채널로 요청 보내기</button></section>}
     {wrongConfirmOpen && <div className="wrong-confirm-backdrop" role="presentation"><section className="wrong-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="wrong-confirm-title"><span className="wrong-confirm-icon" aria-hidden="true">!</span><h2 id="wrong-confirm-title">오답 제출 내용을 확인해주세요</h2><dl><div><dt>시험 시기</dt><dd>{bookPeriod}</dd></div><div><dt>교재</dt><dd>{book}</dd></div>{chosenBookExam && <div><dt>학교·시험</dt><dd>{chosenBookExam.label}</dd></div>}<div><dt>오답 문제번호</dt><dd>{problem}번</dd></div><div className={variantChoice === "yes" ? "is-variant" : ""}><dt>변형문제</dt><dd>{variantChoice === "yes" ? `${variantProblem}번 요청` : "요청하지 않음"}</dd></div>{memo && <div><dt>비고</dt><dd>{memo}</dd></div>}</dl><p>선택한 교재와 문제번호가 실제 오답과 일치하나요?</p><div className="wrong-confirm-actions"><button type="button" className="ghost" onClick={() => setWrongConfirmOpen(false)} disabled={busy}>다시 수정하기</button><button type="button" className="primary" onClick={() => void saveWrong()} disabled={busy}>{busy ? "제출 중..." : "맞습니다 · 제출하기"}</button></div></section></div>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
     {tab === "home" && !data.mustChangePassword && <StudentLearningHub view="home" name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
