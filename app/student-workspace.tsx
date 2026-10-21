@@ -40,6 +40,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const [variantChoice, setVariantChoice] = useState<"" | "yes" | "no">("");
   const [variantProblem, setVariantProblem] = useState("");
   const [wrongFormError, setWrongFormError] = useState("");
+  const [wrongReviewReady, setWrongReviewReady] = useState(false);
   const [channelRequest, setChannelRequest] = useState<ChannelRequest | null>(null);
   const [schoolExamId, setSchoolExamId] = useState("");
   const [schoolProblem, setSchoolProblem] = useState("");
@@ -107,19 +108,8 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     }
     setWrongFormError("");
     setMessage("");
-    const confirmed = window.confirm([
-      "오답 제출 내용을 확인해주세요.",
-      "",
-      `시험 시기: ${bookPeriod}`,
-      `교재: ${book}`,
-      chosenBookExam ? `학교·시험: ${chosenBookExam.label}` : "",
-      `오답 문제번호: ${problem}번`,
-      `변형문제: ${variantChoice === "yes" ? `${variantProblem}번 요청` : "요청하지 않음"}`,
-      memo ? `비고: ${memo}` : "",
-      "",
-      "선택한 교재와 문제번호가 실제 오답과 일치하나요?",
-    ].filter((line, index, lines) => line || (index > 0 && lines[index - 1])).join("\n"));
-    if (confirmed) void saveWrong();
+    setWrongReviewReady(true);
+    window.setTimeout(() => document.getElementById("wrong-inline-confirm")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
   }
 
   async function saveWrong() {
@@ -130,7 +120,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
       const channel = TEACHER_KAKAO_CHANNELS.find((item) => teacherName.includes(item.teacher));
       setChannelRequest(variantChoice === "yes" && channel ? { teacherName, channelName: channel.channelName, channelUrl: channel.channelUrl, book, problem, variantProblem, memo, requestId: Number(result.row?.id) || undefined } : null);
       await refresh();
-      setProblem(""); setMemo(""); setExamConfirmed(false); setVariantChoice(""); setVariantProblem("");
+      setProblem(""); setMemo(""); setExamConfirmed(false); setVariantChoice(""); setVariantProblem(""); setWrongReviewReady(false);
       setMessage(`저장 확인 완료: ${result.saved.join(", ")}${result.duplicate.length ? ` · 중복 제외: ${result.duplicate.join(", ")}` : ""}`);
     });
   }
@@ -209,7 +199,8 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     {variantChoice === "yes" && <label className="variant-number-input">변형문제가 필요한 번호를 입력해주세요<input value={variantProblem} onChange={(event) => setVariantProblem(event.target.value)} placeholder="예: 3, 12" required /><small>위에서 입력한 오답 문제번호 중 변형문제가 필요한 번호만 입력해주세요.</small></label>}
     {chosenBookExam?.requiresConfirmation && <label className="workspace-check"><input type="checkbox" checked={examConfirmed} onChange={(event) => setExamConfirmed(event.target.checked)} required /> 시험 시기를 확인했습니다.</label>}
     {wrongFormError && <p className="wrong-form-error" role="alert">{wrongFormError}</p>}
-    <button type="button" className="primary" onClick={reviewWrong} disabled={busy}>제출 내용 확인하기</button>
+    {!wrongReviewReady && <button type="button" className="primary" onClick={reviewWrong} disabled={busy}>제출 내용 확인하기</button>}
+    {wrongReviewReady && <section id="wrong-inline-confirm" className="wrong-inline-confirm" aria-labelledby="wrong-inline-title"><span>최종 확인</span><h3 id="wrong-inline-title">이 내용으로 제출할까요?</h3><dl><div><dt>시험 시기</dt><dd>{bookPeriod}</dd></div><div><dt>교재</dt><dd>{book}</dd></div>{chosenBookExam && <div><dt>학교·시험</dt><dd>{chosenBookExam.label}</dd></div>}<div><dt>오답 문제번호</dt><dd>{problem}번</dd></div><div className={variantChoice === "yes" ? "is-variant" : ""}><dt>변형문제</dt><dd>{variantChoice === "yes" ? `${variantProblem}번 요청` : "요청하지 않음"}</dd></div>{memo && <div><dt>비고</dt><dd>{memo}</dd></div>}</dl><p>선택한 교재와 문제번호가 실제 오답과 일치하는지 확인해주세요.</p><div><button type="button" className="ghost" onClick={() => setWrongReviewReady(false)} disabled={busy}>다시 수정하기</button><button type="button" className="primary" onClick={() => void saveWrong()} disabled={busy}>{busy ? "제출 중..." : "맞습니다 · 제출하기"}</button></div></section>}
   </form></section>;
 
   return <main className="shell dashboard-shell study-workspace">
