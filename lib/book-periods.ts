@@ -11,6 +11,7 @@ export const FINAL_TERM_BOOKS = [
   "X-패턴 미적분2",
   "X-패턴 확통",
   "기하끝",
+  "X-패턴 기하",
 ] as const;
 
 export const MIDTERM_BOOKS = [
@@ -47,5 +48,29 @@ export function filterBooksByPeriod(books: string[], period: BookPeriod) {
   const sorted = sortBooksForDisplay(books);
   if (period === "전체 교재") return sorted;
   return sorted.filter((book) => bookPeriodOf(book) === period);
+}
+
+type RosterBookRow = { class_name?: unknown; grade?: unknown };
+
+const FINAL_BOOKS_BY_CLASS: Array<{ matches: string[]; books: string[] }> = [
+  { matches: ["탑티어"], books: ["울산N제 공통수학2", "백미 공통수학2"] },
+  { matches: ["내신심화"], books: ["UNIT N제 공통수학2", "X-패턴 공통수학2"] },
+  { matches: ["드릴"], books: ["UNIT N제 공통수학2", "X-패턴 공통수학2"] },
+  { matches: ["미적분1"], books: ["X-패턴 미적분1"] },
+  { matches: ["확통", "확률과통계"], books: ["X-패턴 확통"] },
+  { matches: ["기하"], books: ["기하끝", "X-패턴 기하"] },
+  { matches: ["미적분2"], books: ["X-패턴 미적분2"] },
+];
+
+export function finalBooksForRoster(books: string[], roster: RosterBookRow[]) {
+  const assigned = new Set<string>();
+  for (const row of roster) {
+    const classLabel = `${String(row.grade || "")} ${String(row.class_name || "")}`.replaceAll(" ", "");
+    for (const rule of FINAL_BOOKS_BY_CLASS) {
+      if (rule.matches.some((keyword) => classLabel.includes(keyword))) rule.books.forEach((book) => assigned.add(book));
+    }
+  }
+  if (!assigned.size) return books;
+  return books.filter((book) => assigned.has(book));
 }
 
