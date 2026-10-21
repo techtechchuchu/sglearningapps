@@ -8,7 +8,7 @@ import StudentAttendance from "./student-attendance";
 import StudentLearningHub from "./student-learning-hub";
 import { LegacyKakaoLink } from "./member-account";
 import { StudentQuestions } from "./learning-questions";
-import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod } from "../lib/book-periods";
+import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod, finalBooksForRoster } from "../lib/book-periods";
 
 type Row = Record<string, any>;
 type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices: Row[]; mustChangePassword?: boolean; grade?: string };
@@ -48,6 +48,11 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
+  function booksForPeriod(sourceBooks: string[], period: BookPeriod) {
+    const periodBooks = filterBooksByPeriod(sourceBooks, period);
+    return period === "2학기 기말" ? finalBooksForRoster(periodBooks, data.roster) : periodBooks;
+  }
+
   useEffect(() => {
     void Promise.all([
       fetch("/api/student/books").then(json),
@@ -55,7 +60,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     ]).then(([bookData, examData]) => {
       setBooks(bookData.books || []);
       setExamsByBook(bookData.exams || {});
-      const finalBooks = filterBooksByPeriod(bookData.books || [], "2학기 기말");
+      const finalBooks = booksForPeriod(bookData.books || [], "2학기 기말");
       setBook((current) => current || finalBooks[0] || bookData.books?.[0] || "");
       setSchoolExams(examData.exams || []);
       setSchoolAnswers(examData.answers || []);
@@ -70,7 +75,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   }
 
   const bookExams = examsByBook[book] || [];
-  const visibleBooks = filterBooksByPeriod(books, bookPeriod);
+  const visibleBooks = booksForPeriod(books, bookPeriod);
   const chosenBookExam = bookExams.find((item) => item.id === examId);
   const chosenSchoolExam = schoolExams.find((item) => String(item.id) === schoolExamId);
   const assignedBooks = [...new Set(data.roster.flatMap((row) => splitRosterBooks(row.book_name)))];
@@ -133,7 +138,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     {(tab === "home" || tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={setTab} />}
     {tab === "questions" && !data.mustChangePassword && <StudentQuestions classes={[...new Map(data.roster.filter((row) => row.enrollment_status !== "퇴원").map((row) => [`${row.teacher_name}\0${row.class_name}`, { teacherName: String(row.teacher_name || ""), className: String(row.class_name || "") }])).values()].filter((item) => item.teacherName && item.className)} />}
     {tab === "wrong" && !data.mustChangePassword && <section className="panel"><h2>오답 작성</h2><form onSubmit={saveWrong} className="form workspace-form">
-      <fieldset className="book-period-picker"><legend>시험 시기 선택</legend><p>중간고사와 기말고사 교재를 나누어 확인할 수 있습니다.</p><div role="group" aria-label="교재 시기 선택">{BOOK_PERIODS.map((period) => <button type="button" key={period} className={bookPeriod === period ? "active" : ""} aria-pressed={bookPeriod === period} onClick={() => { const nextBooks = filterBooksByPeriod(books, period); setBookPeriod(period); setBook(nextBooks[0] || ""); setExamId(""); setBookConfirmed(false); setExamConfirmed(false); }}>{period}</button>)}</div></fieldset>
+      <fieldset className="book-period-picker"><legend>시험 시기 선택</legend><p>기말 교재는 현재 학년·반에 맞는 교재만 표시됩니다.</p><div role="group" aria-label="교재 시기 선택">{BOOK_PERIODS.map((period) => <button type="button" key={period} className={bookPeriod === period ? "active" : ""} aria-pressed={bookPeriod === period} onClick={() => { const nextBooks = booksForPeriod(books, period); setBookPeriod(period); setBook(nextBooks[0] || ""); setExamId(""); setBookConfirmed(false); setExamConfirmed(false); }}>{period}</button>)}</div></fieldset>
       <label>{bookPeriod === "전체 교재" ? "전체 교재" : `${bookPeriod} 교재`}<select value={book} onChange={(event) => { setBook(event.target.value); setExamId(""); setBookConfirmed(false); }} required><option value="">선택해주세요</option><optgroup label={bookPeriod}>{visibleBooks.map((item) => <option key={item}>{item}</option>)}</optgroup></select></label>
       {bookExams.length > 0 && <label>학교·시험<select value={examId} required onChange={(event) => { setExamId(event.target.value); setExamConfirmed(false); }}><option value="">선택해주세요</option>{bookExams.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>}
       {chosenBookExam && <p>{chosenBookExam.label} · 원래 시험지 번호 1~{chosenBookExam.max}번을 입력하세요.</p>}
