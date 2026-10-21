@@ -40,11 +40,27 @@ export async function POST(request: NextRequest) {
       }
     }
     const normalized = normalizeSubmittedNumbers(book, input.problem, input.examId, input.examConfirmed === true);
+    const variantChoice = String(input.variantChoice || (input.requestVariant === true ? "yes" : "no"));
+    if (variantChoice !== "yes" && variantChoice !== "no") return NextResponse.json({ message: "변형문제가 필요한지 선택해주세요." }, { status: 400 });
+    let variantNumbers: string[] = [];
+    let variantDisplayNumbers: string[] = [];
+    if (variantChoice === "yes") {
+      variantDisplayNumbers = parseProblemNumbers(input.variantProblem);
+      const submittedDisplayNumbers = new Set(parseProblemNumbers(input.problem));
+      if (variantDisplayNumbers.some((number) => !submittedDisplayNumbers.has(number))) {
+        return NextResponse.json({ message: "변형문제 번호는 입력한 오답 문제번호 중에서 선택해주세요." }, { status: 400 });
+      }
+      variantNumbers = normalizeSubmittedNumbers(book, input.variantProblem, input.examId, input.examConfirmed === true).numbers;
+    }
     const existing = await existingNumbers(db, username, book);
     const fresh = normalized.numbers.filter((number) => !existing.has(number));
     const duplicate = normalized.numbers.filter((number) => existing.has(number));
     if (!fresh.length) return NextResponse.json({ message: "입력한 문제번호가 모두 이미 저장되어 있습니다.", duplicate }, { status: 409 });
-    const memo = [normalized.memoPrefix, String(input.memo || "").trim(), input.requestVariant === true ? "[변형문제 요청]" : ""].filter(Boolean).join(" ");
+    if (variantNumbers.some((number) => !fresh.includes(number))) {
+      return NextResponse.json({ message: "이미 저장된 오답은 이번 변형문제 요청에서 제외해주세요." }, { status: 409 });
+    }
+    const variantMemo = variantChoice === "yes" ? `[변형문제 요청: ${variantDisplayNumbers.join(", ")}번]` : "";
+    const memo = [normalized.memoPrefix, String(input.memo || "").trim(), variantMemo].filter(Boolean).join(" ");
     const payload = { username, unit: book, problem: fresh.join(", "), memo, created_at: new Date().toISOString() };
     const inserted = await db.from("wrong_answers").insert(payload).select("id,username,unit,problem,memo,created_at").single();
     if (inserted.error) throw inserted.error;
