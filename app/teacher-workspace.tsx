@@ -13,6 +13,7 @@ import TeacherAttendance from "./teacher-attendance";
 import { TeacherQuestions } from "./learning-questions";
 import StaffNotifications from "./staff-notifications";
 import AcademyReview from "./academy-review";
+import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod } from "../lib/book-periods";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; activeBooks: string[] };
@@ -49,6 +50,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   const [paperTeacher, setPaperTeacher] = useState(admin ? "" : teacher);
   const [paperClass, setPaperClass] = useState("");
   const [paperBook, setPaperBook] = useState("");
+  const [paperBookPeriod, setPaperBookPeriod] = useState<BookPeriod>("2학기 기말");
   const [paperStudents, setPaperStudents] = useState<string[]>([]);
   const [paperMonth, setPaperMonth] = useState(new Date().getMonth() + 1);
   const [paperWeek, setPaperWeek] = useState(Math.min(5, Math.floor((new Date().getDate() - 1) / 7) + 1));
@@ -89,6 +91,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   const visibleDaily = dailyByStudent.filter((row) => (!studentFilter || row.name === studentFilter) && (!classFilter || visibleRoster.some((item) => item.student_name === row.name)));
   const paperRoster = activeRoster.filter((row) => row.teacher_name === paperTeacher && row.class_name === paperClass);
   const paperBooks = [...new Set(paperRoster.flatMap((row) => splitRosterBooks(row.book_name)))];
+  const visiblePaperBooks = filterBooksByPeriod(paperBooks, paperBookPeriod);
   const eligiblePaperStudents = [...new Set(paperRoster.filter((row) => splitRosterBooks(row.book_name).includes(paperBook)).map((row) => row.student_name))];
 
   const week = useMemo(() => {
@@ -196,7 +199,8 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {tab === "paper" && <section className="panel"><h2>오답 Paper 생성용 엑셀</h2><p>학생·반·교재를 선택하면 기존 앱과 같은 열 형식의 엑셀을 만듭니다. 다운로드 시 출력 대기 목록에도 등록됩니다.</p><form onSubmit={downloadPaper} className="form workspace-form">
       {admin && <label>담당 선생님<select value={paperTeacher} onChange={(event) => { setPaperTeacher(event.target.value); setPaperClass(""); setPaperBook(""); setPaperStudents([]); }} required><option value="">선택해주세요</option>{[...new Set(data.roster.map((row) => row.teacher_name).filter(Boolean))].map((item) => <option key={item}>{item}</option>)}</select></label>}
       <label>반<select value={paperClass} onChange={(event) => { setPaperClass(event.target.value); setPaperBook(""); setPaperStudents([]); }} required><option value="">선택해주세요</option>{[...new Set(activeRoster.filter((row) => row.teacher_name === paperTeacher).map((row) => row.class_name).filter(Boolean))].map((item) => <option key={item}>{item}</option>)}</select></label>
-      <label>교재<select value={paperBook} onChange={(event) => { setPaperBook(event.target.value); setPaperStudents([]); }} required><option value="">선택해주세요</option>{paperBooks.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <fieldset className="book-period-picker"><legend>교재 시기</legend><div role="group" aria-label="교재 시기 선택">{BOOK_PERIODS.map((period) => <button type="button" key={period} className={paperBookPeriod === period ? "active" : ""} aria-pressed={paperBookPeriod === period} onClick={() => { setPaperBookPeriod(period); setPaperBook(filterBooksByPeriod(paperBooks, period)[0] || ""); setPaperStudents([]); }}>{period}</button>)}</div></fieldset>
+      <label>교재<select value={paperBook} onChange={(event) => { setPaperBook(event.target.value); setPaperStudents([]); }} required><option value="">선택해주세요</option>{visiblePaperBooks.map((item) => <option key={item}>{item}</option>)}</select></label>
       <fieldset><legend>학생 선택</legend>{eligiblePaperStudents.map((student) => <label className="workspace-check" key={student}><input type="checkbox" checked={paperStudents.includes(student)} onChange={(event) => setPaperStudents(event.target.checked ? [...paperStudents, student] : paperStudents.filter((name) => name !== student))} /> {student}</label>)}</fieldset>
       <label>월<select value={paperMonth} onChange={(event) => setPaperMonth(Number(event.target.value))}>{Array.from({ length: 12 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}월</option>)}</select></label><label>주차<select value={paperWeek} onChange={(event) => setPaperWeek(Number(event.target.value))}>{[1, 2, 3, 4, 5].map((weekNumber) => <option key={weekNumber} value={weekNumber}>{weekNumber}주차</option>)}</select></label>
       <button className="primary" disabled={busy || !paperStudents.length}>엑셀 다운로드</button>
@@ -212,3 +216,4 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {tab === "admin" && admin && <AdminPanel key={adminPanelKey} initialSection={adminInitialSection} roster={data.roster} users={data.users} activeBooks={data.activeBooks || []} refreshRoster={refresh} />}
   </main>;
 }
+
