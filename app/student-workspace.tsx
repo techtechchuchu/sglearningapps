@@ -47,6 +47,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const [editMemo, setEditMemo] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   function booksForPeriod(sourceBooks: string[], period: BookPeriod) {
     const periodBooks = filterBooksByPeriod(sourceBooks, period);
@@ -127,28 +128,46 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     });
   }
 
+  const myPageActive = tab === "records" || tab === "account";
+  const moreActive = tab === "weekly" || tab === "questions" || tab === "learn" || tab === "attendance";
+
+  function openTab(nextTab: typeof tab) {
+    setTab(nextTab);
+    setMoreOpen(false);
+    setMessage("");
+  }
+
+  const wrongAnswerPanel = <section className="panel wrong-answer-panel"><h2>{tab === "home" ? "바로 오답 작성" : "오답 작성"}</h2>{tab === "home" && <p className="panel-intro">교재와 문제번호를 선택하면 이 화면에서 바로 오답을 저장할 수 있습니다.</p>}<form onSubmit={saveWrong} className="form workspace-form">
+    <fieldset className="book-period-picker"><legend>시험 시기 선택</legend><p>기말 교재는 현재 학년·반에 맞는 교재만 표시됩니다.</p><div role="group" aria-label="교재 시기 선택">{BOOK_PERIODS.map((period) => <button type="button" key={period} className={bookPeriod === period ? "active" : ""} aria-pressed={bookPeriod === period} onClick={() => { const nextBooks = booksForPeriod(books, period); setBookPeriod(period); setBook(nextBooks[0] || ""); setExamId(""); setBookConfirmed(false); setExamConfirmed(false); }}>{period}</button>)}</div></fieldset>
+    <label>{bookPeriod === "전체 교재" ? "전체 교재" : `${bookPeriod} 교재`}<select value={book} onChange={(event) => { setBook(event.target.value); setExamId(""); setBookConfirmed(false); }} required><option value="">선택해주세요</option><optgroup label={bookPeriod}>{visibleBooks.map((item) => <option key={item}>{item}</option>)}</optgroup></select></label>
+    {bookExams.length > 0 && <label>학교·시험<select value={examId} required onChange={(event) => { setExamId(event.target.value); setExamConfirmed(false); }}><option value="">선택해주세요</option>{bookExams.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>}
+    {chosenBookExam && <p>{chosenBookExam.label} · 원래 시험지 번호 1~{chosenBookExam.max}번을 입력하세요.</p>}
+    <label>문제번호<input value={problem} onChange={(event) => setProblem(event.target.value)} placeholder="예: 3, 7, 12" required /></label>
+    <label>비고<textarea value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="계산 실수, 개념 헷갈림 등" /></label>
+    <label className="workspace-check"><input type="checkbox" checked={requestVariant} onChange={(event) => setRequestVariant(event.target.checked)} /> 변형문제 요청</label>
+    <label className="workspace-check"><input type="checkbox" checked={bookConfirmed} onChange={(event) => setBookConfirmed(event.target.checked)} required /> {book} 교재가 맞습니다.</label>
+    {chosenBookExam?.requiresConfirmation && <label className="workspace-check"><input type="checkbox" checked={examConfirmed} onChange={(event) => setExamConfirmed(event.target.checked)} required /> 시험 시기를 확인했습니다.</label>}
+    <button className="primary" disabled={busy || !book}>저장하고 확인하기</button>
+  </form></section>;
+
   return <main className="shell dashboard-shell study-workspace">
-    <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions"><button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => { setTab("helper"); setMessage(""); }}>✦ AI 상담사 결결이</button><button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
-    <nav className="workspace-tabs" aria-label="학생 메뉴">
-      {[["home", "오늘의 학습"], ["weekly", "주간 학습기록"], ["questions", "질문함"], ["wrong", "오답 작성"], ["school", "학교 기출"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["records", "내 기록"], ["account", "계정 관리"]].map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value as typeof tab); setMessage(""); }}>{label}</button>)}
+    <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions"><button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => openTab("helper")}>✦ AI 상담사 결결이</button><button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
+    <nav className="workspace-tabs student-primary-tabs" aria-label="학생 주요 메뉴">
+      <button type="button" className={tab === "home" ? "active" : ""} aria-current={tab === "home" ? "page" : undefined} onClick={() => openTab("home")}>홈</button>
+      <button type="button" className={tab === "wrong" ? "active" : ""} aria-current={tab === "wrong" ? "page" : undefined} onClick={() => openTab("wrong")}>오답 작성</button>
+      <button type="button" className={tab === "school" ? "active" : ""} aria-current={tab === "school" ? "page" : undefined} onClick={() => openTab("school")}>학교 기출</button>
+      <button type="button" className={myPageActive ? "active" : ""} aria-expanded={myPageActive} onClick={() => openTab("records")}>마이페이지</button>
+      <button type="button" className={moreOpen || moreActive ? "active" : ""} aria-expanded={moreOpen || moreActive} onClick={() => { setMoreOpen((current) => !current); setMessage(""); }}>기능 더보기</button>
     </nav>
+    {myPageActive && <nav className="student-secondary-menu" aria-label="마이페이지 메뉴"><button type="button" className={tab === "records" ? "active" : ""} onClick={() => openTab("records")}>내 기록</button><button type="button" className={tab === "account" ? "active" : ""} onClick={() => openTab("account")}>계정 관리</button></nav>}
+    {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ["learn", "문제별 해설"], ["attendance", "출석 체크"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
     {tab === "account" && !data.mustChangePassword && <LegacyKakaoLink />}
     {message && <p className="workspace-message" role="status">{message}</p>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
-    {(tab === "home" || tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={setTab} />}
+    {tab === "home" && !data.mustChangePassword && <StudentLearningHub view="home" name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
+    {(tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
+    {(tab === "home" || tab === "wrong") && !data.mustChangePassword && wrongAnswerPanel}
     {tab === "questions" && !data.mustChangePassword && <StudentQuestions classes={[...new Map(data.roster.filter((row) => row.enrollment_status !== "퇴원").map((row) => [`${row.teacher_name}\0${row.class_name}`, { teacherName: String(row.teacher_name || ""), className: String(row.class_name || "") }])).values()].filter((item) => item.teacherName && item.className)} />}
-    {tab === "wrong" && !data.mustChangePassword && <section className="panel"><h2>오답 작성</h2><form onSubmit={saveWrong} className="form workspace-form">
-      <fieldset className="book-period-picker"><legend>시험 시기 선택</legend><p>기말 교재는 현재 학년·반에 맞는 교재만 표시됩니다.</p><div role="group" aria-label="교재 시기 선택">{BOOK_PERIODS.map((period) => <button type="button" key={period} className={bookPeriod === period ? "active" : ""} aria-pressed={bookPeriod === period} onClick={() => { const nextBooks = booksForPeriod(books, period); setBookPeriod(period); setBook(nextBooks[0] || ""); setExamId(""); setBookConfirmed(false); setExamConfirmed(false); }}>{period}</button>)}</div></fieldset>
-      <label>{bookPeriod === "전체 교재" ? "전체 교재" : `${bookPeriod} 교재`}<select value={book} onChange={(event) => { setBook(event.target.value); setExamId(""); setBookConfirmed(false); }} required><option value="">선택해주세요</option><optgroup label={bookPeriod}>{visibleBooks.map((item) => <option key={item}>{item}</option>)}</optgroup></select></label>
-      {bookExams.length > 0 && <label>학교·시험<select value={examId} required onChange={(event) => { setExamId(event.target.value); setExamConfirmed(false); }}><option value="">선택해주세요</option>{bookExams.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>}
-      {chosenBookExam && <p>{chosenBookExam.label} · 원래 시험지 번호 1~{chosenBookExam.max}번을 입력하세요.</p>}
-      <label>문제번호<input value={problem} onChange={(event) => setProblem(event.target.value)} placeholder="예: 3, 7, 12" required /></label>
-      <label>비고<textarea value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="계산 실수, 개념 헷갈림 등" /></label>
-      <label className="workspace-check"><input type="checkbox" checked={requestVariant} onChange={(event) => setRequestVariant(event.target.checked)} /> 변형문제 요청</label>
-      <label className="workspace-check"><input type="checkbox" checked={bookConfirmed} onChange={(event) => setBookConfirmed(event.target.checked)} required /> {book} 교재가 맞습니다.</label>
-      {chosenBookExam?.requiresConfirmation && <label className="workspace-check"><input type="checkbox" checked={examConfirmed} onChange={(event) => setExamConfirmed(event.target.checked)} required /> 시험 시기를 확인했습니다.</label>}
-      <button className="primary" disabled={busy || !book}>저장하고 확인하기</button>
-    </form></section>}
     {tab === "school" && !data.mustChangePassword && <section className="panel"><h2>학교 기출 오답</h2><form onSubmit={saveSchool} className="form workspace-form">
       <label>학교·시험<select value={schoolExamId} required onChange={(event) => setSchoolExamId(event.target.value)}><option value="">선택해주세요</option>{schoolExams.map((exam) => <option key={exam.id} value={exam.id}>{exam.display_name || `${exam.exam_year} ${exam.school_name} ${exam.exam_type}`}</option>)}</select></label>
       {chosenSchoolExam && <p>총 {chosenSchoolExam.question_count || "?"}문항</p>}
