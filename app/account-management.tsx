@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
-type AccountInfo = { role: "student" | "member"; name: string; email?: string; phone: string; school: string; grade: string; className?: string; schoolEditable: boolean; academyConnected?: boolean };
+type AccountInfo = { role: "student" | "member"; name: string; loginId?: string; email?: string; phone: string; school: string; grade: string; className?: string; schoolEditable: boolean; academyConnected?: boolean };
 
 export default function AccountManagement({ logout }: { logout: () => void }) {
   const [info, setInfo] = useState<AccountInfo | null>(null);
@@ -52,6 +52,7 @@ export default function AccountManagement({ logout }: { logout: () => void }) {
   return <>
     <section className="panel"><h2>내 정보</h2>{!info ? <p role={loadError ? "alert" : "status"}>{loadError || "계정 정보를 불러오는 중입니다."}</p> : <>
       <div className="row"><strong>이름</strong><span>{info.name || "미설정"}</span></div>
+      {info.loginId && <div className="row"><strong>로그인 아이디</strong><span>{info.loginId}</span></div>}
       {info.email && <div className="row"><strong>이메일</strong><span>{info.email}</span></div>}
       <div className="row"><strong>학교</strong><span>{info.school || "미등록"}{info.grade ? ` · ${info.grade}` : ""}</span></div>
       {info.className && <div className="row"><strong>학원 반</strong><span>{info.className}</span></div>}

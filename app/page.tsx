@@ -43,6 +43,7 @@ export default function Home() {
   const [studentAuthTab, setStudentAuthTab] = useState<"login" | "signup" | "reset">("login");
   const [signupGrade, setSignupGrade] = useState("고1");
   const [signupCode, setSignupCode] = useState("");
+  const [studentLoginId, setStudentLoginId] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [restoring, setRestoring] = useState(true);
   const [restoreError, setRestoreError] = useState("");
@@ -180,15 +181,16 @@ export default function Home() {
 
   async function studentAccountAction(event: FormEvent) {
     event.preventDefault();
+    const consent = new FormData(event.currentTarget as HTMLFormElement);
     setLoading(true); setMessage("");
     try {
       if (studentAuthTab === "signup" && password !== confirmPassword) throw new Error("비밀번호 확인이 일치하지 않습니다.");
       const url = studentAuthTab === "signup" ? "/api/auth/student/signup" : "/api/auth/student/reset-request";
-      const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: name, password, grade: signupGrade, signupCode }) });
+      const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: name, loginId: studentLoginId, password, grade: signupGrade, signupCode, email: consent.get("email"), phone: consent.get("phone"), age14: consent.get("age14") === "on", acceptTerms: consent.get("terms") === "on", acceptPrivacy: consent.get("privacy") === "on" }) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message || "요청을 처리하지 못했습니다.");
       setMessage(result.message);
-      if (studentAuthTab === "signup") { setStudentAuthTab("login"); setPassword(""); setConfirmPassword(""); setSignupCode(""); }
+      if (studentAuthTab === "signup") { setName(studentLoginId); setStudentAuthTab("login"); setPassword(""); setConfirmPassword(""); setSignupCode(""); }
     } catch (error) { setMessage(error instanceof Error ? error.message : "오류가 발생했습니다."); }
     finally { setLoading(false); }
   }
@@ -222,7 +224,25 @@ export default function Home() {
         <div className="tabs login-role-tabs"><button type="button" className={mode === "student" ? "active" : ""} onClick={() => { setMode("student"); setMessage(""); window.location.hash = "login-student"; }}>학생·일반</button><button type="button" className={mode === "teacher" ? "active" : ""} onClick={() => { setMode("teacher"); setMessage(""); window.location.hash = "login-teacher"; }}>선생님·관리자</button><button type="button" className={mode === "university" ? "active" : ""} onClick={() => { setMode("university"); setMessage(""); window.location.hash = "login-university"; }}>대학생</button></div>
         {mode === "student" ? (<>
           <div className="tabs account-tabs"><button className={studentAuthTab === "login" ? "active" : ""} onClick={() => { setStudentAuthTab("login"); setMessage(""); }}>로그인</button><button className={studentAuthTab === "signup" ? "active" : ""} onClick={() => { setStudentAuthTab("signup"); setMessage(""); }}>회원가입</button><button className={studentAuthTab === "reset" ? "active" : ""} onClick={() => { setStudentAuthTab("reset"); setMessage(""); }}>비밀번호 재설정</button></div>
-          {studentAuthTab === "signup" ? <IndependentSignup /> : <form onSubmit={studentAuthTab === "login" ? loginStudent : studentAccountAction} className="form"><label>학생 이름<input value={name} onChange={e => setName(e.target.value)} autoComplete="username" required /></label>{studentAuthTab === "login" && <label>비밀번호<input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required /></label>}<button className="primary" disabled={loading}>{loading ? "확인 중…" : studentAuthTab === "login" ? "기존 학원 계정 로그인" : "재설정 요청"}</button></form>}
+          <form onSubmit={studentAuthTab === "login" ? loginStudent : studentAccountAction} className="form">
+            <label>{studentAuthTab === "signup" ? "학생 이름 (명단 확인용)" : studentAuthTab === "reset" ? "학생 이름" : "아이디 또는 기존 학생 이름"}<input value={name} onChange={e => setName(e.target.value)} autoComplete={studentAuthTab === "signup" ? "name" : "username"} maxLength={60} required /></label>
+            {studentAuthTab === "signup" && <>
+              <label>로그인 아이디<input value={studentLoginId} onChange={e => setStudentLoginId(e.target.value)} autoComplete="username" minLength={4} maxLength={20} pattern="[A-Za-z][A-Za-z0-9_]{3,19}" placeholder="영문자로 시작하는 4~20자" required /></label>
+              <label>학년<select value={signupGrade} onChange={e => setSignupGrade(e.target.value)}>{["중3", "고1", "고2", "고3"].map(grade => <option key={grade}>{grade}</option>)}</select></label>
+              <label>이메일<input type="email" name="email" autoComplete="email" maxLength={254} required /></label>
+              <label>휴대전화 번호<input type="tel" name="phone" autoComplete="tel" inputMode="tel" pattern="0[0-9 -]{9,18}" placeholder="01012345678" required /></label>
+            </>}
+            {studentAuthTab !== "reset" && <label>비밀번호<input type="password" value={password} onChange={e => setPassword(e.target.value)} minLength={studentAuthTab === "signup" ? 8 : undefined} maxLength={128} autoComplete={studentAuthTab === "signup" ? "new-password" : "current-password"} required /></label>}
+            {studentAuthTab === "signup" && <>
+              <label>비밀번호 확인<input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} minLength={8} maxLength={128} autoComplete="new-password" required /></label>
+              <label>학원 가입코드<input type="password" value={signupCode} onChange={e => setSignupCode(e.target.value)} required /></label>
+              <label className="member-check"><input type="checkbox" name="age14" required />만 14세 이상입니다.</label>
+              <label className="member-check"><input type="checkbox" name="terms" required /><a href="/terms" target="_blank" rel="noreferrer">이용약관</a>에 동의합니다.</label>
+              <label className="member-check"><input type="checkbox" name="privacy" required /><a href="/privacy" target="_blank" rel="noreferrer">개인정보 처리방침</a>에 동의합니다.</label>
+              <p className="safe-note">아이디·비밀번호를 정해 가입코드로 신청합니다. 전체관리자가 명단을 확인해 승인한 뒤 로그인할 수 있습니다. 승인 전에는 카카오를 연결할 수 없습니다. 이메일·휴대전화 번호는 현재 인증 전 연락처입니다.</p>
+            </>}
+            <button className="primary" disabled={loading}>{loading ? "확인 중…" : studentAuthTab === "login" ? "로그인" : studentAuthTab === "signup" ? "가입코드로 승인 신청" : "재설정 요청"}</button>
+          </form>
           {studentAuthTab === "login" && <KakaoButton />}
           {studentAuthTab === "reset" && <p className="safe-note">담당 선생님이 임시 비밀번호를 안내합니다.</p>}
         </>) : mode === "teacher" ? (

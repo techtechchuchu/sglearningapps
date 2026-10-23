@@ -21,12 +21,12 @@ export async function GET(request: NextRequest) {
     const db = getServerSupabase();
     if (session.role === "student") {
       const [user, roster] = await Promise.all([
-        db.from("users").select("username,phone,grade").eq("username", session.name).single(),
+        db.from("users").select("username,login_id,email,phone,grade").eq("username", session.name).single(),
         db.from("student_roster").select("school_name,grade,class_name,teacher_name,enrollment_status").eq("student_name", session.name).order("created_at", { ascending: false }).limit(100),
       ]);
       if (user.error || roster.error) throw user.error || roster.error;
       const current = (roster.data || []).find((row) => row.enrollment_status !== "퇴원") || roster.data?.[0];
-      return NextResponse.json({ role: "student", name: user.data.username, phone: user.data.phone || "", school: current?.school_name || "", grade: current?.grade || user.data.grade || "", className: current?.class_name || "", schoolEditable: false }, { headers: { "Cache-Control": "no-store" } });
+      return NextResponse.json({ role: "student", name: user.data.username, loginId: user.data.login_id || "", email: user.data.email || "", phone: user.data.phone || "", school: current?.school_name || "", grade: current?.grade || user.data.grade || "", className: current?.class_name || "", schoolEditable: false }, { headers: { "Cache-Control": "no-store" } });
     }
     const user = await db.from("university_users").select("id,email,display_name,school,grade,phone,academy_username").eq(session.role === "member" ? "id" : "email", session.name).single();
     if (user.error) throw user.error;

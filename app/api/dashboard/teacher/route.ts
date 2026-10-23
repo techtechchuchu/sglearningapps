@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
           ? Promise.all(Array.from({ length: Math.ceil(studentNames.length / 100) }, (_, index) => studentNames.slice(index * 100, index * 100 + 100)).map((names) => fetchPagedRows((start, end) => supabase.from("school_exam_wrong_answers").select("*").in("username", names).order("created_at", { ascending: false }).range(start, end)))).then((groups) => groups.flat().sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || ""))))
           : Promise.resolve([]),
       supabase.from("password_reset_requests").select("id,username,status,requested_at,processed_at,processed_by").eq("status", "pending").order("requested_at", { ascending: false }).limit(500),
-      fetchPagedRows((start, end) => supabase.from("users").select("username,grade,created_at,withdrawn_at").order("created_at", { ascending: false }).range(start, end)),
+      fetchPagedRows((start, end) => supabase.from("users").select("username,grade,created_at,withdrawn_at,signup_status").order("created_at", { ascending: false }).range(start, end)),
       teacher === ALL_TEACHER_ADMIN ? fetchPagedRows((start, end) => supabase.from("university_users").select("id,email,display_name,school,withdrawn_at").not("withdrawn_at", "is", null).order("withdrawn_at", { ascending: false }).range(start, end)) : Promise.resolve([]),
       supabase.from("school_exam_master").select("id,display_name,school_name,exam_year,exam_type,question_count").limit(1000),
       supabase.from("book_master").select("book_name").eq("is_active", true).order("book_name").limit(2000),

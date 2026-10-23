@@ -47,9 +47,10 @@ export async function GET(request:NextRequest) {
       identity={role:linked.data.target_role,key:linked.data.target_key};
     }
     if(!identity||!["student","member"].includes(identity.role)) return finish("계정 정보를 확인하지 못했습니다.");
-    const exists=identity.role==="student"?await db.from("users").select("username,withdrawn_at").eq("username",identity.key).maybeSingle():await db.from("university_users").select("id,withdrawn_at,academy_username").eq("id",identity.key).maybeSingle();
+    const exists=identity.role==="student"?await db.from("users").select("username,withdrawn_at,signup_status").eq("username",identity.key).maybeSingle():await db.from("university_users").select("id,withdrawn_at,academy_username").eq("id",identity.key).maybeSingle();
     if(exists.error||!exists.data) return finish("연결된 계정을 찾지 못했습니다. 관리자에게 문의해주세요.");
     if(exists.data.withdrawn_at) return finish("탈퇴한 계정입니다. 관리자에게 문의해주세요.");
+    if(identity.role==="student"&&!('signup_status' in exists.data&&exists.data.signup_status==="approved")) return finish("가입 승인 후 카카오 로그인을 이용할 수 있습니다.");
     if(identity.role==="member"&&!('academy_username' in exists.data&&exists.data.academy_username)) return finish("학원 연결 승인 후 카카오 로그인을 이용할 수 있습니다.");
     const response=finish(attempt.target_role?"카카오 연결을 완료했습니다. 기존 로그인도 계속 사용할 수 있습니다.":undefined);
     setSession(response,identity.role==="student"?"student":"member",identity.key);return response;

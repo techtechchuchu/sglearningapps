@@ -8,8 +8,8 @@ export async function getActiveSession(request: NextRequest): Promise<Session | 
   if (!session || session.role === "teacher") return session;
   const db = getServerSupabase();
   const result = session.role === "student"
-    ? await db.from("users").select("withdrawn_at").eq("username", session.name).maybeSingle()
+    ? await db.from("users").select("withdrawn_at,signup_status").eq("username", session.name).maybeSingle()
     : await db.from("university_users").select("withdrawn_at").eq(session.role === "member" ? "id" : "email", session.name).maybeSingle();
   if (result.error) throw result.error;
-  return result.data && !result.data.withdrawn_at ? session : null;
+  return result.data && !result.data.withdrawn_at && (session.role !== "student" || ("signup_status" in result.data && result.data.signup_status === "approved")) ? session : null;
 }
