@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const contactEmail = String(email || "").trim().toLowerCase();
     const rawPhone = String(phone || "").trim();
     const contactPhone = rawPhone.replace(/\D/g, "");
-    const code = process.env.STUDENT_SIGNUP_CODE;
+    const code = process.env.STUDENT_SIGNUP_CODE || process.env.ACADEMY_INVITE_CODE;
     if (!code) return failure("학생 가입코드 설정을 확인해주세요.");
     if (!equalSecret(String(signupCode || ""), code)) return failure("학원 가입코드가 올바르지 않습니다.", 403);
     if (!name || name.length > 60 || pw.length < 8 || pw.length > 128 || !GRADES.has(String(grade)))
