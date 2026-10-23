@@ -42,6 +42,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const [wrongFormError, setWrongFormError] = useState("");
   const [wrongReviewReady, setWrongReviewReady] = useState(false);
   const [channelRequest, setChannelRequest] = useState<ChannelRequest | null>(null);
+  const [channelOpened, setChannelOpened] = useState(false);
   const [schoolExamId, setSchoolExamId] = useState("");
   const [schoolProblem, setSchoolProblem] = useState("");
   const [schoolMemo, setSchoolMemo] = useState("");
@@ -117,11 +118,12 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
       const result = await json(await fetch("/api/student/wrong-answers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ book, examId, examConfirmed, problem, memo, bookConfirmed: true, variantChoice, variantProblem }) }));
       const rosterRow = data.roster.find((row) => splitRosterBooks(row.book_name).includes(book));
       const teacherName = String(rosterRow?.teacher_name || "").trim();
-      const channel = TEACHER_KAKAO_CHANNELS.find((item) => teacherName.includes(item.teacher));
-      setChannelRequest(variantChoice === "yes" && channel ? { teacherName, channelName: channel.channelName, channelUrl: channel.channelUrl, book, problem, variantProblem, memo, requestId: Number(result.row?.id) || undefined } : null);
+      const channel = TEACHER_KAKAO_CHANNELS.find((item) => teacherName.includes(item.teacher)) || TEACHER_KAKAO_CHANNELS[0];
+      setChannelOpened(false);
+      setChannelRequest(variantChoice === "yes" ? { teacherName: teacherName || `${channel.teacher}T`, channelName: channel.channelName, channelUrl: channel.channelUrl, book, problem, variantProblem, memo, requestId: Number(result.row?.id) || undefined } : null);
       await refresh();
       setProblem(""); setMemo(""); setExamConfirmed(false); setVariantChoice(""); setVariantProblem(""); setWrongReviewReady(false);
-      setMessage(`저장 확인 완료: ${result.saved.join(", ")}${result.duplicate.length ? ` · 중복 제외: ${result.duplicate.join(", ")}` : ""}`);
+      setMessage(variantChoice === "yes" ? "오답을 저장했습니다. 카카오채널 전송을 완료해야 다음 화면으로 이동할 수 있습니다." : `저장 확인 완료: ${result.saved.join(", ")}${result.duplicate.length ? ` · 중복 제외: ${result.duplicate.join(", ")}` : ""}`);
     });
   }
 
@@ -137,9 +139,21 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
       channelRequest.memo ? `비고: ${channelRequest.memo}` : "",
       channelRequest.requestId ? `요청번호: ${channelRequest.requestId}` : "",
     ].filter(Boolean).join("\n");
-    const copyAttempt = navigator.clipboard?.writeText(lines);
+    setChannelOpened(true);
     window.open(channelRequest.channelUrl, "_blank", "noopener,noreferrer");
-    if (copyAttempt) void copyAttempt.then(() => setMessage("요청 내용을 복사했습니다. 열린 카카오채널 채팅방에 붙여넣어 전송해주세요.")).catch(() => setMessage("카카오채널이 열렸습니다. 아래 요청 내용을 직접 복사해 전송해주세요."));
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(lines).then(() => setMessage("요청 내용을 복사했습니다. 카카오채널 채팅방에 붙여넣어 전송해주세요.")).catch(() => setMessage("카카오채널이 열렸습니다. 아래 요청 내용을 직접 입력해 전송해주세요."));
+    } else {
+      setMessage("카카오채널이 열렸습니다. 아래 요청 내용을 직접 입력해 전송해주세요.");
+    }
+  }
+
+  function completeChannelRequest() {
+    if (!channelOpened) { setMessage("먼저 카카오채널을 열어 요청을 전송해주세요."); return; }
+    setChannelRequest(null);
+    setChannelOpened(false);
+    setTab("home");
+    setMessage("변형문제 요청 접수를 완료했습니다.");
   }
 
   async function saveSchool(event: FormEvent) {
@@ -200,7 +214,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     {chosenBookExam?.requiresConfirmation && <label className="workspace-check"><input type="checkbox" checked={examConfirmed} onChange={(event) => setExamConfirmed(event.target.checked)} required /> 시험 시기를 확인했습니다.</label>}
     {wrongFormError && <p className="wrong-form-error" role="alert">{wrongFormError}</p>}
     {!wrongReviewReady && <button type="button" className="primary" onClick={reviewWrong} disabled={busy}>제출 내용 확인하기</button>}
-    {wrongReviewReady && <section id="wrong-inline-confirm" className="wrong-inline-confirm" aria-labelledby="wrong-inline-title"><span>최종 확인</span><h3 id="wrong-inline-title">이 내용으로 제출할까요?</h3><dl><div><dt>시험 시기</dt><dd>{bookPeriod}</dd></div><div><dt>교재</dt><dd>{book}</dd></div>{chosenBookExam && <div><dt>학교·시험</dt><dd>{chosenBookExam.label}</dd></div>}<div><dt>오답 문제번호</dt><dd>{problem}번</dd></div><div className={variantChoice === "yes" ? "is-variant" : ""}><dt>변형문제</dt><dd>{variantChoice === "yes" ? `${variantProblem}번 요청` : "요청하지 않음"}</dd></div>{memo && <div><dt>비고</dt><dd>{memo}</dd></div>}</dl><p>선택한 교재와 문제번호가 실제 오답과 일치하는지 확인해주세요.</p><div><button type="button" className="ghost" onClick={() => setWrongReviewReady(false)} disabled={busy}>다시 수정하기</button><button type="button" className="primary" onClick={() => void saveWrong()} disabled={busy}>{busy ? "제출 중..." : "맞습니다 · 제출하기"}</button></div></section>}
+    {wrongReviewReady && <section id="wrong-inline-confirm" className="wrong-inline-confirm" aria-labelledby="wrong-inline-title"><span>최종 확인</span><h3 id="wrong-inline-title">이 내용으로 제출할까요?</h3><dl><div><dt>시험 시기</dt><dd>{bookPeriod}</dd></div><div><dt>교재</dt><dd>{book}</dd></div>{chosenBookExam && <div><dt>학교·시험</dt><dd>{chosenBookExam.label}</dd></div>}<div><dt>오답 문제번호</dt><dd>{problem}번</dd></div><div className={variantChoice === "yes" ? "is-variant" : ""}><dt>변형문제</dt><dd>{variantChoice === "yes" ? `${variantProblem}번 요청` : "요청하지 않음"}</dd></div>{memo && <div><dt>비고</dt><dd>{memo}</dd></div>}</dl><p>선택한 교재와 문제번호가 실제 오답과 일치하는지 확인해주세요.</p><div><button type="button" className="ghost" onClick={() => setWrongReviewReady(false)} disabled={busy}>다시 수정하기</button><button type="button" className="primary" onClick={() => void saveWrong()} disabled={busy}>{busy ? "제출 중..." : variantChoice === "yes" ? "맞습니다 · 채널 전송 단계로" : "맞습니다 · 제출하기"}</button></div></section>}
   </form></section>;
 
   return <main className="shell dashboard-shell study-workspace">
@@ -216,7 +230,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ["learn", "문제별 해설"], ["attendance", "출석 체크"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
     {tab === "account" && !data.mustChangePassword && <LegacyKakaoLink />}
     {message && <p className="workspace-message" role="status">{message}</p>}
-    {channelRequest && <section className="channel-request-card" aria-labelledby="channel-request-title"><div><span>변형문제 요청 저장 완료</span><h2 id="channel-request-title">{channelRequest.channelName} 채널로 보내주세요</h2><p>버튼을 누르면 요청 내용이 복사되고 담당 선생님 카카오채널이 열립니다. 채팅방에 붙여넣어 전송하면 접수가 완료됩니다.</p></div><dl><div><dt>교재</dt><dd>{channelRequest.book}</dd></div><div><dt>오답 번호</dt><dd>{channelRequest.problem}번</dd></div><div><dt>변형 요청</dt><dd>{channelRequest.variantProblem}번</dd></div></dl><button type="button" className="channel-request-button" onClick={sendChannelRequest}>카카오채널로 요청 보내기</button></section>}
+    {channelRequest && <div className="channel-request-lock"><section className="channel-request-card" role="dialog" aria-modal="true" aria-labelledby="channel-request-title"><div><span>필수 전송 단계</span><h2 id="channel-request-title">{channelRequest.channelName} 채널로 보내주세요</h2><p>다음 화면으로 이동하려면 카카오채널에서 변형문제 요청을 전송해야 합니다. 아래 버튼을 누르면 요청 내용이 복사되고 채널이 열립니다.</p></div><dl><div><dt>담당</dt><dd>{channelRequest.teacherName}</dd></div><div><dt>교재</dt><dd>{channelRequest.book}</dd></div><div><dt>오답 번호</dt><dd>{channelRequest.problem}번</dd></div><div><dt>변형 요청</dt><dd>{channelRequest.variantProblem}번</dd></div></dl><div className="channel-request-actions"><button type="button" className="channel-request-button" onClick={sendChannelRequest}>{channelOpened ? "카카오채널 다시 열기" : "카카오채널로 요청 보내기"}</button>{channelOpened && <button type="button" className="channel-request-complete" onClick={completeChannelRequest}>카카오채널에서 전송했습니다</button>}</div><small>카카오 정책상 실제 메시지 전송 여부는 자동으로 확인할 수 없습니다. 채팅방에서 붙여넣기 후 전송 버튼을 꼭 눌러주세요.</small></section></div>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
     {tab === "home" && !data.mustChangePassword && <StudentLearningHub view="home" name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
     {(tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
