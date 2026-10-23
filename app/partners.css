@@ -9,42 +9,54 @@
 }
 
 .g-partner-grid {
+  --ring-radius: 390px;
+  position: relative;
+  height: 330px;
   max-width: 1120px;
   margin: 38px auto 0;
   overflow: hidden;
+  perspective: 1100px;
+  isolation: isolate;
+  border-radius: 24px;
+  background: radial-gradient(ellipse at center, #f8fbf7 0%, #fff 72%);
+}
+
+.g-partner-grid::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(88%, 780px);
+  height: 240px;
+  border: 1px solid #d9e7dd;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotateX(66deg);
 }
 
 .g-partner-track {
-  display: flex;
-  width: max-content;
-  animation: partner-loop 32s linear infinite;
-  will-change: transform;
-}
-
-.g-partner-grid:hover .g-partner-track,
-.g-partner-grid:focus-within .g-partner-track {
-  animation-play-state: paused;
-}
-
-.g-partner-set {
-  display: flex;
-  flex: none;
-  gap: 20px;
-  padding-right: 20px;
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 1s cubic-bezier(.22,.65,.25,1);
 }
 
 .g-partner-card {
-  flex: none;
-  width: clamp(260px, 26vw, 310px);
+  position: absolute;
+  top: 34px;
+  left: 50%;
+  width: 260px;
+  min-height: 250px;
+  margin-left: -130px;
   border: 1px solid #e0e6d8;
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 12px 32px #234a3410;
+  box-shadow: 0 16px 38px #234a3420;
   overflow: hidden;
+  backface-visibility: hidden;
 }
 
 .g-partner-inner {
-  padding: 24px 24px 28px;
+  padding: 20px 20px 24px;
   text-align: center;
 }
 
@@ -65,19 +77,19 @@
 }
 
 .g-partner-logo {
-  height: 115px;
+  height: 102px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 8px 0 15px;
+  margin: 7px 0 13px;
 }
 
 .g-partner-logo img {
   display: block;
   width: 100%;
-  max-width: 260px;
+  max-width: 220px;
   height: auto;
-  max-height: 92px;
+  max-height: 88px;
   object-fit: contain;
 }
 
@@ -86,13 +98,20 @@
 }
 
 .g-partner-collab span {
-  padding: 0 8px;
+  padding: 0 6px;
   color: #9aaa94;
 }
 
+.g-partner-logo-dark {
+  padding: 10px;
+  border-radius: 12px;
+  background: #061f43;
+}
+
 .g-partner-card h3 {
-  font-size: 18px;
+  font-size: 16px;
   margin: 0 0 6px;
+  line-height: 1.35;
   letter-spacing: -.5px;
 }
 
@@ -100,13 +119,14 @@
   font-size: 12px;
   color: #74816c;
   margin: 0;
+  line-height: 1.45;
 }
 
 /* The university's original file contains several signatures. Show its first, complete mark. */
 .g-partner-uou-mark {
   display: block;
   position: relative;
-  width: min(100%, 299px);
+  width: min(100%, 220px);
   aspect-ratio: 299 / 70;
   overflow: hidden;
 }
@@ -121,8 +141,41 @@
   height: auto;
 }
 
-@keyframes partner-loop {
-  to { transform: translateX(-50%); }
+.g-partner-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.g-partner-controls button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #d9e5db;
+  border-radius: 50%;
+  background: #fff;
+  color: #235541;
+  cursor: pointer;
+}
+
+.g-partner-controls button:hover {
+  background: #edf7ef;
+}
+
+.g-partner-controls button:focus-visible {
+  outline: 3px solid #54a97b;
+  outline-offset: 2px;
+}
+
+.g-partner-controls span {
+  min-width: 200px;
+  text-align: center;
+  font-size: 13px;
+  color: #415b4b;
 }
 
 @media (max-width: 640px) {
@@ -132,39 +185,45 @@
   }
 
   .g-partner-grid {
+    --ring-radius: 230px;
+    height: 300px;
     margin-top: 25px;
+    perspective: 850px;
+  }
+
+  .g-partner-grid::before {
+    height: 150px;
   }
 
   .g-partner-card {
-    width: min(78vw, 300px);
+    top: 34px;
+    width: 210px;
+    min-height: 224px;
+    margin-left: -105px;
   }
 
   .g-partner-inner {
-    padding: 20px 20px 24px;
+    padding: 16px 15px 18px;
   }
 
   .g-partner-logo {
-    height: 95px;
+    height: 86px;
+  }
+
+  .g-partner-card h3 {
+    font-size: 14px;
+  }
+
+  .g-partner-controls span {
+    min-width: 135px;
+    max-width: 180px;
+    font-size: 11px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .g-partner-grid {
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-  }
-
   .g-partner-track {
-    animation: none;
-    will-change: auto;
-  }
-
-  .g-partner-set[aria-hidden="true"] {
-    display: none;
-  }
-
-  .g-partner-card {
-    scroll-snap-align: start;
+    transition: none;
   }
 }
 
