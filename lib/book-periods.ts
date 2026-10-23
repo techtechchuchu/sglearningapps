@@ -2,15 +2,16 @@ export const BOOK_PERIODS = ["2학기 기말", "2학기 중간", "전체 교재"
 
 export type BookPeriod = (typeof BOOK_PERIODS)[number];
 
+// 2학기 기말 대비용 교재(범위만 골라 재구성해 번호를 새로 매긴 "기말판"). 오답노트 생성기의 UNITS 이름과 같아야 한다.
 export const FINAL_TERM_BOOKS = [
-  "울산N제 공통수학2",
-  "UNIT N제 공통수학2",
-  "X-패턴 공통수학2",
-  "백미 공통수학2",
-  "X-패턴 미적분1",
-  "X-패턴 미적분2",
-  "X-패턴 확통",
-  "기하끝",
+  "울산N제 공통수학2 기말",
+  "UNIT N제 공통수학2 기말",
+  "X-패턴 공통수학2 기말",
+  "백미 공통수학2 기말",
+  "X-패턴 미적분1 기말",
+  "X-패턴 미적분2 기말",
+  "X-패턴 확통 기말",
+  "기하끝 기말",
   "X-패턴 기하",
 ] as const;
 
@@ -21,6 +22,15 @@ export const MIDTERM_BOOKS = [
   "확통 고쟁이",
   "미적분2 쎈",
   "기하 쎈",
+  // 기말판이 새 이름으로 분리되면서 기존(중간 범위 포함) 교재는 중간 쪽으로 이동. 과거 오답 기록은 이 이름으로 남아 있다.
+  "울산N제 공통수학2",
+  "UNIT N제 공통수학2",
+  "X-패턴 공통수학2",
+  "백미 공통수학2",
+  "X-패턴 미적분1",
+  "X-패턴 미적분2",
+  "X-패턴 확통",
+  "기하끝",
 ] as const;
 
 const finalRank = new Map<string, number>(FINAL_TERM_BOOKS.map((book, index) => [book, index]));
@@ -53,13 +63,13 @@ export function filterBooksByPeriod(books: string[], period: BookPeriod) {
 type RosterBookRow = { class_name?: unknown; grade?: unknown };
 
 const FINAL_BOOKS_BY_CLASS: Array<{ matches: string[]; books: string[] }> = [
-  { matches: ["탑티어"], books: ["울산N제 공통수학2", "백미 공통수학2"] },
-  { matches: ["내신심화"], books: ["UNIT N제 공통수학2", "X-패턴 공통수학2"] },
-  { matches: ["드릴"], books: ["UNIT N제 공통수학2", "X-패턴 공통수학2"] },
-  { matches: ["미적분1"], books: ["X-패턴 미적분1"] },
-  { matches: ["확통", "확률과통계"], books: ["X-패턴 확통"] },
-  { matches: ["기하"], books: ["기하끝", "X-패턴 기하"] },
-  { matches: ["미적분2"], books: ["X-패턴 미적분2"] },
+  { matches: ["탑티어"], books: ["울산N제 공통수학2 기말", "백미 공통수학2 기말"] },
+  { matches: ["내신심화"], books: ["UNIT N제 공통수학2 기말", "X-패턴 공통수학2 기말"] },
+  { matches: ["드릴"], books: ["UNIT N제 공통수학2 기말", "X-패턴 공통수학2 기말"] },
+  { matches: ["미적분1"], books: ["X-패턴 미적분1 기말"] },
+  { matches: ["확통", "확률과통계"], books: ["X-패턴 확통 기말"] },
+  { matches: ["기하"], books: ["기하끝 기말", "X-패턴 기하"] },
+  { matches: ["미적분2"], books: ["X-패턴 미적분2 기말"] },
 ];
 
 export function finalBooksForRoster(books: string[], roster: RosterBookRow[]) {
