@@ -996,98 +996,98 @@
       {
         "offset": 1900,
         "max": 12,
-        "exam_type": "2학기기말"
+        "exam_type": "내신기출"
       }
     ],
     "23 다운고": [
       {
         "offset": 2000,
         "max": 17,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
     "23 달천고": [
       {
         "offset": 2100,
         "max": 2,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
-    "21 대현고": [
+    "23 대현고": [
       {
         "offset": 2200,
         "max": 25,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
     "23 동천고": [
       {
         "offset": 2300,
         "max": 2,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
     "23 무거고": [
       {
         "offset": 2400,
         "max": 23,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
     "23 문수고": [
       {
         "offset": 2500,
         "max": 9,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
     "23 범서고": [
       {
         "offset": 2600,
         "max": 14,
-        "exam_type": "2학기기말"
+        "exam_type": "내신기출"
       }
     ],
     "23 삼산고": [
       {
         "offset": 2700,
         "max": 8,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
     "23 성광여고": [
       {
         "offset": 2800,
         "max": 26,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
     "23 성신고": [
       {
         "offset": 2900,
         "max": 10,
-        "exam_type": "2학기기말"
+        "exam_type": "내신기출"
       }
     ],
     "23 우신고": [
       {
         "offset": 3000,
         "max": 20,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
     "23 울산고": [
       {
         "offset": 3100,
         "max": 14,
-        "exam_type": "2학기기말"
+        "exam_type": "내신기출"
       }
     ],
     "23 울산여고": [
       {
         "offset": 3200,
         "max": 10,
-        "exam_type": "2학기중간"
+        "exam_type": "내신기출"
       }
     ],
     "22~23 천상고+학성고": [
