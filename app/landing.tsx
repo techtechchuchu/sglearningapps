@@ -15,6 +15,7 @@ function PartnerCardSet() {
     <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>이용 중</span><div className="g-partner-logo"><img src="/partners/sg.png" alt="SG 고등관" width="309" height="70" loading="lazy"/></div><h3>SG 고등관</h3><p>학원 수업 현장에서 함께하는 스터디결</p></div></article>
     <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>공식 협력·도입</span><div className="g-partner-logo"><span className="g-partner-uou-mark"><img src="/partners/ulsan-university.gif" alt="울산대학교" width="299" height="427" loading="lazy"/></span></div><h3>울산대학교</h3><p>대학 학습 현장에서 함께하는 스터디결</p></div></article>
     <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>이용 중</span><div className="g-partner-logo"><img src="/partners/ulsan-donggu-family-center.png" alt="울산동구가족센터" width="417" height="120" loading="lazy"/></div><h3>울산동구가족센터</h3><p>지역 가족과 청소년의 배움을 함께합니다</p></div></article>
+    <article className="g-partner-card"><div className="g-partner-inner"><span className="g-partner-status"><i aria-hidden="true"/>함께하는 학원</span><div className="g-partner-logo"><img src="/partners/myungin-centum.png" alt="대치명인학원 센텀직영점" width="566" height="73" loading="lazy"/></div><h3>대치명인학원 센텀직영점</h3><p>부산 센텀의 학습 현장</p></div></article>
   </>;
 }
 
