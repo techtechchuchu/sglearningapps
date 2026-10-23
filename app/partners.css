@@ -1,17 +1,170 @@
-.g-partners{padding-top:75px;padding-bottom:75px;scroll-margin-top:24px}.g-partners .g-section-head h2{font-size:clamp(24px,3vw,34px)}.g-partner-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:880px;margin:38px auto 0}.g-partner-card{border:1px solid #e0e6d8;border-radius:18px;background:#fff;box-shadow:0 12px 32px #234a3410;overflow:hidden}.g-partner-inner{padding:24px 30px 28px;text-align:center}.g-partner-status{display:flex;align-items:center;gap:6px;font-size:11px;color:#476a3d;text-align:left}.g-partner-status i{width:6px;height:6px;border-radius:50%;background:#5c9652}.g-partner-logo{height:115px;display:flex;align-items:center;justify-content:center;margin:8px 0 15px}.g-partner-logo img{display:block;width:100%;max-width:260px;height:auto;max-height:92px;object-fit:contain}.g-partner-card h3{font-size:18px;margin:0 0 6px;letter-spacing:-.5px}.g-partner-card p{font-size:12px;color:#74816c;margin:0}.g-partner-card.g-revealed .g-partner-inner{animation:partner-float 4s ease-in-out 1}.g-partner-card.g-revealed:nth-child(2){animation-delay:.12s}.g-partner-card.g-revealed:nth-child(2) .g-partner-inner{animation-delay:.15s}@keyframes partner-float{0%,100%{transform:translateY(0)}35%{transform:translateY(-7px)}70%{transform:translateY(2px)}}@media(max-width:640px){.g-partners{padding-top:48px;padding-bottom:48px}.g-partner-grid{grid-template-columns:1fr;gap:16px;margin-top:25px}.g-partner-inner{padding:20px 24px 24px}.g-partner-logo{height:95px}.g-partner-logo img{max-width:235px}}@media(prefers-reduced-motion:reduce){.g-partner-card.g-revealed,.g-partner-card.g-revealed .g-partner-inner{animation:none!important}}
-.g-partner-grid:has(> :only-child){grid-template-columns:minmax(0,430px);justify-content:center}
+.g-partners {
+  padding-top: 75px;
+  padding-bottom: 75px;
+  scroll-margin-top: 24px;
+}
 
-/* Keep partner marks intact while adding a restrained, continuous motion. */
-.g-partner-logo img{animation:partner-logo-drift 5.5s ease-in-out infinite alternate}
-.g-partner-collab img:last-child{animation-delay:-2.8s}
-.g-partner-card:nth-child(2) .g-partner-logo img{animation-delay:-1.4s}
-.g-partner-card:hover .g-partner-logo img{animation-play-state:paused}
-@keyframes partner-logo-drift{from{transform:translate3d(0,3px,0)}to{transform:translate3d(0,-6px,0)}}
-@media(prefers-reduced-motion:reduce){.g-partner-logo img{animation:none!important}}
+.g-partners .g-section-head h2 {
+  font-size: clamp(24px, 3vw, 34px);
+}
 
-/* The university supplies several approved signatures in one source image.
-   Display its complete first signature without changing its proportions. */
-.g-partner-uou-mark{display:block;position:relative;width:min(100%,299px);aspect-ratio:299/70;overflow:hidden}
-.g-partner-uou-mark img{position:absolute;top:0;left:0;width:100%;max-width:none;max-height:none;height:auto}
+.g-partner-grid {
+  max-width: 1120px;
+  margin: 38px auto 0;
+  overflow: hidden;
+}
 
+.g-partner-track {
+  display: flex;
+  width: max-content;
+  animation: partner-loop 32s linear infinite;
+  will-change: transform;
+}
+
+.g-partner-grid:hover .g-partner-track,
+.g-partner-grid:focus-within .g-partner-track {
+  animation-play-state: paused;
+}
+
+.g-partner-set {
+  display: flex;
+  flex: none;
+  gap: 20px;
+  padding-right: 20px;
+}
+
+.g-partner-card {
+  flex: none;
+  width: clamp(260px, 26vw, 310px);
+  border: 1px solid #e0e6d8;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 32px #234a3410;
+  overflow: hidden;
+}
+
+.g-partner-inner {
+  padding: 24px 24px 28px;
+  text-align: center;
+}
+
+.g-partner-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #476a3d;
+  text-align: left;
+}
+
+.g-partner-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #5c9652;
+}
+
+.g-partner-logo {
+  height: 115px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0 15px;
+}
+
+.g-partner-logo img {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  max-height: 92px;
+  object-fit: contain;
+}
+
+.g-partner-collab img {
+  max-width: 43%;
+}
+
+.g-partner-collab span {
+  padding: 0 8px;
+  color: #9aaa94;
+}
+
+.g-partner-card h3 {
+  font-size: 18px;
+  margin: 0 0 6px;
+  letter-spacing: -.5px;
+}
+
+.g-partner-card p {
+  font-size: 12px;
+  color: #74816c;
+  margin: 0;
+}
+
+/* The university's original file contains several signatures. Show its first, complete mark. */
+.g-partner-uou-mark {
+  display: block;
+  position: relative;
+  width: min(100%, 299px);
+  aspect-ratio: 299 / 70;
+  overflow: hidden;
+}
+
+.g-partner-uou-mark img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: auto;
+}
+
+@keyframes partner-loop {
+  to { transform: translateX(-50%); }
+}
+
+@media (max-width: 640px) {
+  .g-partners {
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+
+  .g-partner-grid {
+    margin-top: 25px;
+  }
+
+  .g-partner-card {
+    width: min(78vw, 300px);
+  }
+
+  .g-partner-inner {
+    padding: 20px 20px 24px;
+  }
+
+  .g-partner-logo {
+    height: 95px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-partner-grid {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+
+  .g-partner-track {
+    animation: none;
+    will-change: auto;
+  }
+
+  .g-partner-set[aria-hidden="true"] {
+    display: none;
+  }
+
+  .g-partner-card {
+    scroll-snap-align: start;
+  }
+}
 
