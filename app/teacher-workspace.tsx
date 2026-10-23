@@ -16,8 +16,8 @@ import AcademyReview from "./academy-review";
 import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod } from "../lib/book-periods";
 
 type Row = Record<string, any>;
-export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; activeBooks: string[] };
-type StaffTab = "home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "explanations" | "detail" | "students" | "attendance" | "questions" | "register" | "exited" | "reset" | "admin";
+export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; withdrawnMembers?: Row[]; activeBooks: string[] };
+type StaffTab = "home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "explanations" | "detail" | "students" | "attendance" | "questions" | "register" | "exited" | "withdrawn" | "reset" | "admin";
 const ADMIN_FAVORITES: StaffTab[] = ["attendance", "detail", "reset"];
 const TEACHER_FAVORITES: StaffTab[] = ["attendance", "students", "detail"];
 
@@ -31,6 +31,20 @@ function koreanDate(value: Date) {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(value);
   const part = (type: string) => parts.find((item) => item.type === type)?.value || "";
   return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function retentionEnd(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "확인 필요";
+  date.setUTCFullYear(date.getUTCFullYear() + 1);
+  return date.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
+}
+
+function retentionExpired(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  date.setUTCFullYear(date.getUTCFullYear() + 1);
+  return date.getTime() <= Date.now();
 }
 
 export default function TeacherWorkspace({ teacher, data, refresh, logout }: { teacher: string; data: TeacherData; refresh: () => Promise<void>; logout: () => void }) {
@@ -56,6 +70,18 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   const [paperWeek, setPaperWeek] = useState(Math.min(5, Math.floor((new Date().getDate() - 1) / 7) + 1));
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+
+  async function purgeWithdrawn(kind: "student" | "member", key: string, label: string) {
+    if (!admin || !window.confirm(`${label} 계정과 개인 기록을 영구 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
+    setBusy(true); setMessage("");
+    try {
+      const response = await fetch("/api/admin/purge-withdrawn", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, key, confirmation: "영구삭제" }) });
+      const result = await readJson(response);
+      setMessage(result.message);
+      await refresh();
+    } catch (error) { setMessage(error instanceof Error ? error.message : "삭제에 실패했습니다."); }
+    finally { setBusy(false); }
+  }
 
   useEffect(() => {
     try {
@@ -151,15 +177,15 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     });
   }
 
-  const group = ["home", "answers", "weekly", "daily", "school", "missing"].includes(tab) ? "answers" : ["detail", "students", "attendance", "questions", "register", "exited", "reset", "admin"].includes(tab) ? "students" : "paper";
+  const group = ["home", "answers", "weekly", "daily", "school", "missing"].includes(tab) ? "answers" : ["detail", "students", "attendance", "questions", "register", "exited", "withdrawn", "reset", "admin"].includes(tab) ? "students" : "paper";
   const menus: Array<[typeof tab, string]> = group === "answers"
     ? [["home", "🏠 홈"], ["answers", "📋 전체 오답"], ["weekly", "🗓️ 주간 제출"], ["daily", "🗓️ 날짜별 제출량"], ["school", "🏫 학교 기출"], ["missing", "🚨 미제출"]]
     : group === "students"
-      ? [["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["questions", "💬 학생 질문함"], ["exited", "🚪 퇴원생 관리"], ["reset", "🔑 비밀번호 관리"], ...(admin ? [["admin", "⚙️ 관리자 설정"] as [typeof tab, string]] : [])]
+      ? [["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["questions", "💬 학생 질문함"], ["exited", "🚪 퇴원생 관리"], ["withdrawn", "📁 탈퇴 회원"], ["reset", "🔑 비밀번호 관리"], ...(admin ? [["admin", "⚙️ 관리자 설정"] as [typeof tab, string]] : [])]
       : [["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"]];
   const favoriteOptions: Array<[StaffTab, string]> = [
     ["home", "🏠 홈"], ["answers", "📋 전체 오답"], ["weekly", "🗓️ 주간 제출"], ["daily", "🗓️ 날짜별 제출량"], ["school", "🏫 학교 기출"], ["missing", "🚨 미제출"],
-    ["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["questions", "💬 학생 질문함"], ["exited", "🚪 퇴원생 관리"], ["reset", "🔑 비밀번호 관리"],
+    ["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["questions", "💬 학생 질문함"], ["exited", "🚪 퇴원생 관리"], ["withdrawn", "📁 탈퇴 회원"], ["reset", "🔑 비밀번호 관리"],
     ...(admin ? [["admin", "⚙️ 관리자 설정"] as [StaffTab, string]] : []), ["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"],
   ];
   const favoriteMenu = favorites.map((value) => favoriteOptions.find(([key]) => key === value)).filter((item): item is [StaffTab, string] => Boolean(item));
@@ -207,7 +233,8 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     </form></section>}
     {tab === "print" && <section className="panel"><h2>오답 Paper 출력 관리</h2>{data.printStatus.map((row) => <div className="row workspace-record" key={row.id}><div><strong>{row.student_name} · {row.book_name}</strong><span>{row.class_name} · {row.month}월 {row.week}주 · {row.is_printed ? "출력 완료" : "출력 대기"}</span></div><div><button disabled={busy} onClick={() => void changePrint(row.id, !row.is_printed)}>{row.is_printed ? "출력 취소" : "출력 완료"}</button></div></div>)}</section>}
     {tab === "explanations" && <TeacherExplanations books={[...new Set([...(data.activeBooks || []), ...data.roster.flatMap((row) => splitRosterBooks(row.book_name))])]} schoolExams={data.schoolExams || []} />}
-    {tab === "students" && <section className="panel"><h2>담당 학생 명단·가입 현황</h2>{visibleRoster.map((row) => <div className="row" key={row.id}><strong>{row.student_name} · {row.class_name}</strong><span>{row.school_name} · {row.grade} · {splitRosterBooks(row.book_name).join(", ")} · {data.users.some((user) => user.username === row.student_name) ? "가입 완료" : "미가입"}</span></div>)}</section>}
+    {tab === "students" && <section className="panel"><h2>담당 학생 명단·가입 현황</h2>{visibleRoster.map((row) => <div className="row" key={row.id}><strong>{row.student_name} · {row.class_name}</strong><span>{row.school_name} · {row.grade} · {splitRosterBooks(row.book_name).join(", ")} · {data.users.some((user) => user.username === row.student_name && user.withdrawn_at) ? "탈퇴 회원" : data.users.some((user) => user.username === row.student_name) ? "가입 완료" : "미가입"}</span></div>)}</section>}
+    {tab === "withdrawn" && <section className="panel"><h2>탈퇴 회원</h2><p>로그인은 중지됩니다. 계정과 개인 기록은 탈퇴일부터 1년간 보관합니다. 만료된 계정은 전체관리자가 확인 후 영구 삭제할 수 있습니다. 학원 명단은 별도로 관리합니다.</p><h3>학원 학생 계정</h3>{data.users.filter((user) => user.withdrawn_at).length ? data.users.filter((user) => user.withdrawn_at).map((user) => <div className="row" key={user.username}><strong>{user.username}</strong><span>탈퇴 {new Date(user.withdrawn_at).toLocaleString("ko-KR")} · 보관 만료 {retentionEnd(user.withdrawn_at)} {admin && retentionExpired(user.withdrawn_at) && <button type="button" disabled={busy} onClick={() => void purgeWithdrawn("student", user.username, user.username)}>영구 삭제</button>}</span></div>) : <p>탈퇴한 학생 계정이 없습니다.</p>}{admin && <><h3>독립·대학생 계정</h3>{(data.withdrawnMembers || []).length ? (data.withdrawnMembers || []).map((user) => <div className="row" key={user.id}><strong>{user.display_name || user.email || "이름 미설정"}</strong><span>{user.school || "학교 미등록"} · 탈퇴 {new Date(user.withdrawn_at).toLocaleString("ko-KR")} · 보관 만료 {retentionEnd(user.withdrawn_at)} {retentionExpired(user.withdrawn_at) && <button type="button" disabled={busy} onClick={() => void purgeWithdrawn("member", user.id, user.display_name || user.email || "독립 계정")}>영구 삭제</button>}</span></div>) : <p>탈퇴한 독립 계정이 없습니다.</p>}</>}</section>}
     {tab === "attendance" && <TeacherAttendance teacher={teacher} roster={activeRoster.map((row) => ({ student_name: String(row.student_name || ""), class_name: String(row.class_name || ""), teacher_name: String(row.teacher_name || "") }))} />}
     {tab === "questions" && <TeacherQuestions roster={data.roster} users={data.users} />}
     {tab === "detail" && <StudentDetail teacher={teacher} roster={data.roster} answers={matchingAnswers} users={data.users} files={data.wrongNoteFiles} schoolAnswers={data.schoolWrongAnswers} schoolExams={data.schoolExams} refresh={refresh} />}

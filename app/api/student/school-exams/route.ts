@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../../lib/session";
+import { getActiveSession } from "../../../../lib/active-session";
 import { getServerSupabase } from "../../../../lib/supabase-server";
 import { parseProblemNumbers } from "../../../../lib/wrong-answers";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (session?.role !== "student") return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const db = getServerSupabase();
     const [exams, answers] = await Promise.all([
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (session?.role !== "student") return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const input = await request.json();
     const examId = Number(input.examId);

@@ -43,8 +43,9 @@ export async function GET(request:NextRequest) {
     }
     const identity=resolved.data;
     if(!identity||!["student","member"].includes(identity.role)) return finish("계정 정보를 확인하지 못했습니다.");
-    const exists=identity.role==="student"?await db.from("users").select("username").eq("username",identity.key).maybeSingle():await db.from("university_users").select("id").eq("id",identity.key).maybeSingle();
+    const exists=identity.role==="student"?await db.from("users").select("username,withdrawn_at").eq("username",identity.key).maybeSingle():await db.from("university_users").select("id,withdrawn_at").eq("id",identity.key).maybeSingle();
     if(exists.error||!exists.data) return finish("연결된 계정을 찾지 못했습니다. 관리자에게 문의해주세요.");
+    if(exists.data.withdrawn_at) return finish("탈퇴한 계정입니다. 관리자에게 문의해주세요.");
     const response=finish(attempt.target_role?"카카오 연결을 완료했습니다. 기존 로그인도 계속 사용할 수 있습니다.":undefined);
     setSession(response,identity.role,identity.key);return response;
   } catch { return finish("카카오 로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."); }

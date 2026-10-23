@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../../lib/session";
+import { getActiveSession } from "../../../../lib/active-session";
 import { getServerSupabase } from "../../../../lib/supabase-server";
 import { examOptions } from "../../../../lib/wrong-answers";
 import { FALLBACK_BOOKS } from "../../../../lib/fallback-books";
@@ -7,7 +7,7 @@ import { sortBooksForDisplay } from "../../../../lib/book-periods";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (session?.role !== "student") return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const db = getServerSupabase();
     const result = await db.from("book_master").select("book_name").eq("is_active", true).order("book_name");

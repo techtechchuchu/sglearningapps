@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const supabase = getServerSupabase();
     const { data, error } = await supabase
       .from("users")
-      .select("username,password_hash,grade,temp_password")
+      .select("username,password_hash,grade,temp_password,withdrawn_at")
       .eq("username", loginName)
       .limit(1)
       .maybeSingle();
@@ -26,6 +26,7 @@ export async function POST(request: Request) {
     if (!data || !passwordMatches(loginPassword, data.password_hash)) {
       return NextResponse.json({ ok: false, message: "학생 또는 비밀번호가 올바르지 않습니다." }, { status: 401 });
     }
+    if (data.withdrawn_at) return NextResponse.json({ ok: false, message: "탈퇴한 계정입니다. 관리자에게 문의해주세요." }, { status: 403 });
 
     const response = NextResponse.json({
       ok: true,

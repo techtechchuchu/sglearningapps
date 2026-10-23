@@ -9,9 +9,9 @@ export async function POST(request: Request) {
     const name = String(username || "").trim();
     if (!name) return NextResponse.json({ message: "학생 이름을 입력해주세요." }, { status: 400 });
     const db = getServerSupabase();
-    const user = await db.from("users").select("username").eq("username", name).limit(1);
+    const user = await db.from("users").select("username,withdrawn_at").eq("username", name).limit(1);
     if (user.error) throw user.error;
-    if (!user.data?.length) return NextResponse.json({ ok: true, message: RECEIVED });
+    if (!user.data?.length || user.data[0].withdrawn_at) return NextResponse.json({ ok: true, message: RECEIVED });
     const pending = await db.from("password_reset_requests").select("id").eq("username", name).eq("status", "pending").limit(1);
     if (pending.error) throw pending.error;
     if (!pending.data?.length) {

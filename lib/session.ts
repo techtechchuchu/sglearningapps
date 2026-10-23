@@ -12,7 +12,6 @@ function secret() {
   if (!value) throw new Error("Missing server session secret. Configure SESSION_SECRET with at least 32 characters.");
   return value;
 }
-
 function signature(payload: string) {
   return createHmac("sha256", secret()).update(payload).digest("base64url");
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../lib/session";
+import { getActiveSession } from "../../../lib/active-session";
 import { getServerSupabase } from "../../../lib/supabase-server";
 import { bookExamOptions, explanationKey, safeImageUrl, youtubeId, type ExplanationKind } from "../../../lib/problem-explanations";
 import { FALLBACK_BOOKS } from "../../../lib/fallback-books";
@@ -36,7 +36,7 @@ async function knownBook(db: ReturnType<typeof getServerSupabase>, book: string)
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (!session || (session.role !== "student" && session.role !== "teacher")) return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const { kind, book, examId } = inputFrom(request);
     const db = getServerSupabase();
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (session?.role !== "teacher") return NextResponse.json({ message: "선생님 로그인이 필요합니다." }, { status: 403 });
     const input = await request.json();
     const kind = input.kind as ExplanationKind;

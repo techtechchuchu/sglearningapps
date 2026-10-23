@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, ReactNode, useCallback, useEffect, useState } from "react";
 import "./member-account.css";
+import AccountManagement from "./account-management";
 
 async function api(url:string,body?:Record<string,unknown>) {
   const response=await fetch(url,body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}:{cache:"no-store"});
@@ -78,6 +79,6 @@ export function MemberGate({children,logout}:{children:ReactNode;logout:()=>void
   if(error)return <main className="shell"><section className="panel"><p role="alert">{error}</p><button className="ghost" onClick={reload}>다시 확인</button><button className="ghost" onClick={logout}>로그아웃</button></section></main>;
   if(!account)return <main className="shell"><p role="status">내 계정을 확인하고 있어요.</p></main>;
   if(!account.profile?.onboarding_complete)return <main className="shell"><button className="ghost" onClick={logout}>로그아웃</button>{account.profile&&<ProfileForm profile={account.profile} onSaved={reload}/>}</main>;
-  return <>{children}<div className="shell member-settings"><AcademyConnect account={account} reload={reload}/><details className="panel"><summary>내 가입 정보 수정</summary><ProfileForm profile={account.profile} onSaved={reload}/></details><section className="panel"><h2>카카오 계정 연결</h2>{account.providers.includes("kakao")?<p>카카오 연결 완료</p>:<KakaoButton link/>}</section></div></>;
+  return <>{children}<div className="shell member-settings"><AcademyConnect account={account} reload={reload}/><details className="panel"><summary>계정 관리</summary><AccountManagement logout={logout}/><details className="panel"><summary>가입 정보 수정</summary><ProfileForm profile={account.profile} onSaved={reload}/></details><section className="panel"><h2>로그인·보안</h2>{account.providers.includes("kakao")?<p>카카오 연결 완료</p>:<KakaoButton link/>}</section></details></div></>;
 }
 export function LegacyKakaoLink(){return <section className="panel"><h2>카카오로도 로그인하기</h2><p>현재 학생 계정에 연결합니다. 기존 비밀번호 로그인과 오답·출석 기록은 유지됩니다.</p><KakaoButton link/></section>;}

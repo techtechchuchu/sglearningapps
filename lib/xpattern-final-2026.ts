@@ -1,0 +1,41 @@
+// Printed section numbers from [X패턴] 공통수학2 고1 2학기 기말.pdf.
+// Keep these offsets separate from the historical X-pattern map: wrong_answers
+// stores the offset number, so reusing an older range would relabel past work.
+export const XPATTERN_FINAL_2026 = {
+  "X-패턴 공통수학2": [
+    { school: "함월고", year: "2024", max: 21 },
+    { school: "울산여고", year: "2024", max: 21 },
+    { school: "울산고", year: "2024", max: 18 },
+    { school: "삼산고", year: "2024", max: 21 },
+    { school: "울산외고", year: "2024", max: 23 },
+    { school: "천상고", year: "2024", max: 20 },
+    { school: "범서고", year: "2024", max: 23 },
+    { school: "성광여고", year: "2024", max: 25 },
+    { school: "우신고", year: "2024", max: 20 },
+    { school: "학성고", year: "2024", max: 23 },
+    { school: "강남고", year: "2024", max: 19 },
+    { school: "다운고", year: "2024", max: 15 },
+    { school: "동천고", year: "2024", max: 15 },
+    { school: "무거고", year: "2024", max: 24 },
+    { school: "성신고", year: "2024", max: 18 },
+    { school: "신정고", year: "2024", max: 22 },
+    { school: "학성여고", year: "2024", max: 16 },
+    { school: "호계고", year: "2024", max: 13 },
+    { school: "강남고", year: "2023", max: 12 },
+    { school: "다운고", year: "2023", max: 17 },
+    { school: "달천고", year: "2023", max: 2 },
+    { school: "대현고", year: "2023", max: 25 },
+    { school: "동천고", year: "2023", max: 5 },
+    { school: "무거고", year: "2023", max: 23 },
+    { school: "문수고", year: "2023", max: 9 },
+    { school: "범서고", year: "2023", max: 14 },
+    { school: "삼산고", year: "2023", max: 8 },
+    { school: "성광여고", year: "2023", max: 26 },
+    { school: "성신고", year: "2023", max: 10 },
+    { school: "우신고", year: "2023", max: 20 },
+    { school: "울산고", year: "2023", max: 14 },
+    { school: "울산여고", year: "2023", max: 10 },
+    // One printed section combines questions from both schools and years.
+    { school: "천상고+학성고", year: "2022·2023", max: 19 },
+  ],
+} as const;

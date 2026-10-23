@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../../lib/session";
+import { getActiveSession } from "../../../../lib/active-session";
 import { getServerSupabase } from "../../../../lib/supabase-server";
 import { normalizeSubmittedNumbers, parseProblemNumbers } from "../../../../lib/wrong-answers";
 import { FALLBACK_BOOKS } from "../../../../lib/fallback-books";
 
-function ownSession(request: NextRequest) {
-  const session = getSession(request);
+async function ownSession(request: NextRequest) {
+  const session = await getActiveSession(request);
   return session?.role === "student" ? session.name : null;
 }
 
@@ -25,7 +25,7 @@ async function existingNumbers(db: ReturnType<typeof getServerSupabase>, usernam
 
 export async function POST(request: NextRequest) {
   try {
-    const username = ownSession(request);
+    const username = await ownSession(request);
     if (!username) return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const input = await request.json();
     const book = String(input.book || "").trim();
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const username = ownSession(request);
+    const username = await ownSession(request);
     if (!username) return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const input = await request.json();
     const id = Number(input.id);
@@ -107,7 +107,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const username = ownSession(request);
+    const username = await ownSession(request);
     if (!username) return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const id = Number((await request.json()).id);
     if (!Number.isSafeInteger(id) || id <= 0) return NextResponse.json({ message: "삭제할 기록을 선택해주세요." }, { status: 400 });

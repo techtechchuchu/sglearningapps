@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../../../lib/session";
+import { getActiveSession } from "../../../../../lib/active-session";
 import { getServerSupabase } from "../../../../../lib/supabase-server";
 import { hashPassword, passwordMatches } from "../../../../../lib/student-auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (session?.role !== "student") return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const { currentPassword, newPassword } = await request.json();
     const current = String(currentPassword || "");
     const next = String(newPassword || "");
-    if (next.length < 4) return NextResponse.json({ message: "새 비밀번호는 4자 이상 입력해주세요." }, { status: 400 });
+    if (next.length < 8) return NextResponse.json({ message: "새 비밀번호는 8자 이상 입력해주세요." }, { status: 400 });
     const db = getServerSupabase();
     const user = await db.from("users").select("password_hash").eq("username", session.name).limit(1).single();
     if (user.error) throw user.error;

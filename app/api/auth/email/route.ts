@@ -23,6 +23,9 @@ export async function POST(request:NextRequest) {
     if(verified.error||!verified.data.user?.email_confirmed_at||verified.data.user.email?.toLowerCase()!==email) return failure("인증번호가 올바르지 않거나 만료됐습니다.",400);
     const resolved=await getServerSupabase().rpc("sg_resolve_identity",{p_provider:"email",p_subject:verified.data.user.id,p_email:email});
     if(resolved.error) return failure(resolved.error.message.includes("existing_email")?"기존 계정이 있습니다. 기존 이메일·비밀번호 로그인으로 접속해주세요.":"계정을 만들지 못했습니다.",409);
+    const active=await db.from("university_users").select("withdrawn_at").eq("id",resolved.data.key).maybeSingle();
+    if(active.error) throw active.error;
+    if(!active.data||active.data.withdrawn_at) return failure("탈퇴한 계정입니다. 관리자에게 문의해주세요.",403);
     const response=NextResponse.json({ok:true});setSession(response,"member",resolved.data.key);return response;
   } catch { return failure(); }
 }

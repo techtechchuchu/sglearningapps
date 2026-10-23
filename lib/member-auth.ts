@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "./session";
+import { getActiveSession } from "./active-session";
 import { getServerSupabase } from "./supabase-server";
 
 export const digest = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -16,10 +16,10 @@ export function failure(message = "요청을 처리하지 못했습니다. 잠�
   return NextResponse.json({ message }, { status, headers: { "Cache-Control": "no-store" } });
 }
 export async function memberContext(request: NextRequest) {
-  const session = getSession(request);
+  const session = await getActiveSession(request);
   if (!session || !["member", "university"].includes(session.role)) return null;
   const db = getServerSupabase();
-  const query = db.from("university_users").select("id,email,display_name,learner_type,school,grade,major,onboarding_complete,academy_username");
+  const query = db.from("university_users").select("id,email,display_name,learner_type,school,grade,major,onboarding_complete,academy_username,phone,withdrawn_at");
   const result = await (session.role === "member" ? query.eq("id", session.name) : query.eq("email", session.name)).maybeSingle();
   if (result.error) throw result.error;
   return result.data ? { db, user: result.data, session } : null;

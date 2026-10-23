@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { parseProblemNumbers } from "../lib/wrong-answers";
+import { examIncludesSchool, parseProblemNumbers } from "../lib/wrong-answers";
 import { bookExamOptions, explanationKey, type Explanation } from "../lib/problem-explanations";
 import DemoExplanationMedia from "./demo-explanation-media";
 
@@ -9,8 +9,9 @@ type Row = Record<string, any>;
 type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number };
 type SchoolAnswer = { id: number; exam_id: number; problem: string; memo: string; created_at: string };
 
-export default function StudentProblemBrowser({ studentName, books, schoolExams, wrongAnswers, schoolAnswers, onWrite }: {
+export default function StudentProblemBrowser({ studentName, studentSchools, books, schoolExams, wrongAnswers, schoolAnswers, onWrite }: {
   studentName: string;
+  studentSchools: string[];
   books: string[];
   schoolExams: Exam[];
   wrongAnswers: Row[];
@@ -29,7 +30,16 @@ export default function StudentProblemBrowser({ studentName, books, schoolExams,
 
   const effectiveBook = books.includes(book) ? book : books[0] || "";
   const options = kind === "xpattern" ? (effectiveBook ? bookExamOptions(effectiveBook) : []) : schoolExams.map((exam) => ({ id: String(exam.id), school: exam.school_name, label: exam.display_name || `${exam.exam_year} ${exam.school_name} ${exam.exam_type}`, max: Number(exam.question_count) || 20, offset: 0 }));
-  const schools = [...new Set(options.map((option) => option.school).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
+  const hasCurrentSections = options.some((option) => "edition" in option && option.edition === "2026-2-final");
+  const schools = [...new Set(options.map((option) => option.school).filter(Boolean))].sort((a, b) => {
+    const recommendedA = studentSchools.some((name) => examIncludesSchool(a, name));
+    const recommendedB = studentSchools.some((name) => examIncludesSchool(b, name));
+    if (recommendedA !== recommendedB) return recommendedA ? -1 : 1;
+    const currentA = options.some((option) => option.school === a && "edition" in option && option.edition === "2026-2-final");
+    const currentB = options.some((option) => option.school === b && "edition" in option && option.edition === "2026-2-final");
+    if (currentA !== currentB) return currentA ? -1 : 1;
+    return a.localeCompare(b, "ko");
+  });
   const effectiveSchool = schools.includes(school) ? school : schools[0] || "";
   const schoolOptions = options.filter((option) => option.school === effectiveSchool);
   const effectiveExamId = schoolOptions.some((option) => option.id === examId) ? examId : schoolOptions[0]?.id || "";
@@ -89,7 +99,10 @@ export default function StudentProblemBrowser({ studentName, books, schoolExams,
     <div className="problem-browser-filters">
       <label>자료 종류<select value={kind} onChange={(event) => { setKind(event.target.value as typeof kind); setSchool(""); setExamId(""); }}><option value="xpattern">우리 교재</option><option value="school">학교 기출</option></select></label>
       {kind === "xpattern" && <label>교재<select value={effectiveBook} onChange={(event) => { setBook(event.target.value); setSchool(""); setExamId(""); }}>{books.map((item) => <option key={item}>{item}</option>)}</select></label>}
-      <label>학교<select value={effectiveSchool} onChange={(event) => { setSchool(event.target.value); setExamId(""); }}>{schools.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label>수록 학교·연도<select value={effectiveSchool} onChange={(event) => { setSchool(event.target.value); setExamId(""); }}>{schools.map((item) => {
+        const isCurrent = options.some((option) => option.school === item && "edition" in option && option.edition === "2026-2-final");
+        return <option key={item} value={item}>{hasCurrentSections ? (isCurrent ? "2026 기말판 · " : "기존 교재 · ") : ""}{item}{item.includes("+") ? " (학교 묶음)" : ""}</option>;
+      })}</select><small>두 학교가 함께 적힌 단원은 하나의 묶음으로 선택합니다.</small></label>
       <label>시험<select value={effectiveExamId} onChange={(event) => setExamId(event.target.value)}>{schoolOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
     </div>
     {!exam ? <p className="problem-browser-note">{kind === "xpattern" ? "현재 선택할 수 있는 교재가 없습니다." : "등록된 학교 기출 시험이 없습니다."}</p> : <>

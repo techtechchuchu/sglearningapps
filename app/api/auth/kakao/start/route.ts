@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, SESSION_COOKIE } from "../../../../../lib/session";
+import { SESSION_COOKIE } from "../../../../../lib/session";
+import { getActiveSession } from "../../../../../lib/active-session";
 import { getServerSupabase } from "../../../../../lib/supabase-server";
 import { digest, failure, memberContext, rateLimit, sameOrigin } from "../../../../../lib/member-auth";
 import { passwordMatches } from "../../../../../lib/student-auth";
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     if(new URL(callback).origin!==request.nextUrl.origin) return failure("카카오 로그인은 https://studygyeol.vercel.app 에서 진행해주세요. 계정 연결은 해당 주소에서 기존 계정으로 먼저 로그인하세요.",409);
     if(!await rateLimit(request,"kakao-start")) return failure("잠시 후 다시 시도해주세요.",429);
     const body=await request.json();
-    const session=getSession(request), db=getServerSupabase();
+    const session=await getActiveSession(request), db=getServerSupabase();
     let targetRole:string|null=null,targetKey:string|null=null;
     if(body.intent==="link") {
       if(!session||session.role==="teacher") return failure("연결할 학생 또는 개인 계정으로 먼저 로그인해주세요.",401);

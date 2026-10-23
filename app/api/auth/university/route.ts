@@ -16,9 +16,10 @@ export async function POST(request: Request) {
     if (action === "signup") return NextResponse.json({ message: "새 가입은 카카오 또는 이메일 인증 가입을 이용해주세요." }, { status: 400 });
 
     if (action !== "login") return NextResponse.json({ message: "지원하지 않는 요청입니다." }, { status: 400 });
-    const { data, error } = await db.from("university_users").select("email,password_hash").eq("email", email).maybeSingle();
+    const { data, error } = await db.from("university_users").select("email,password_hash,withdrawn_at").eq("email", email).maybeSingle();
     if (error) throw error;
     if (!data || !data.password_hash || !matchesUniversityPassword(password, data.password_hash)) return NextResponse.json({ message: "이메일 또는 비밀번호가 올바르지 않습니다." }, { status: 401 });
+    if (data.withdrawn_at) return NextResponse.json({ message: "탈퇴한 계정입니다. 관리자에게 문의해주세요." }, { status: 403 });
     const response = NextResponse.json({ ok: true });
     setSession(response, "university", email);
     return response;

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../../../lib/session";
+import { getActiveSession } from "../../../../../lib/active-session";
 import { getServerSupabase } from "../../../../../lib/supabase-server";
 
 const PRIVATE_BUCKET = "wrong-note-pdfs";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const session = getSession(request);
+  const session = await getActiveSession(request);
   if (!session) return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
 
   const { id } = await context.params;

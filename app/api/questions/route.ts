@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../lib/session";
+import { getActiveSession } from "../../../lib/active-session";
 import { getServerSupabase } from "../../../lib/supabase-server";
 
 const fail = (message: string, status: number) => NextResponse.json({ message }, { status });
@@ -7,7 +7,7 @@ const fields = "id,student_name,teacher_name,class_name,question,problem_ref,ans
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (!session) return fail("로그인이 필요합니다.", 401);
     const db = getServerSupabase();
     let query = db.from("student_questions").select(fields).order("created_at", { ascending: false }).limit(200);
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (session?.role !== "student") return fail("학생 로그인 후 이용할 수 있습니다.", 403);
     const body = await request.json();
     const teacherName = String(body.teacherName || "").trim();
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (!session) return fail("로그인이 필요합니다.", 401);
     const body = await request.json();
     const id = Number(body.id);

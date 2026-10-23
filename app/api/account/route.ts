@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, setSession } from "../../../lib/session";
+import { setSession } from "../../../lib/session";
+import { getActiveSession } from "../../../lib/active-session";
 import { failure, memberContext, profileInput, sameOrigin } from "../../../lib/member-auth";
 import { getServerSupabase } from "../../../lib/supabase-server";
 
 export async function GET(request:NextRequest) {
   try {
-    const session=getSession(request);
+    const session=await getActiveSession(request);
     if(!session) return failure("로그인이 필요합니다.",401);
     const auth=await memberContext(request);
     const key=auth?.user.id||session.name,role=auth?"member":session.role;
@@ -25,8 +26,9 @@ export async function POST(request:NextRequest) {
     const body=await request.json();
     if(body.action==="academy-enter") {
       if(!auth.user.academy_username) return failure("승인된 학원 연결이 없습니다.",403);
-      const user=await auth.db.from("users").select("username").eq("username",auth.user.academy_username).maybeSingle();
+      const user=await auth.db.from("users").select("username,withdrawn_at").eq("username",auth.user.academy_username).maybeSingle();
       if(user.error||!user.data) return failure("학원 계정을 확인하지 못했습니다.",403);
+      if(user.data.withdrawn_at) return failure("탈퇴한 학원 계정입니다.",403);
       const active=await auth.db.from("student_roster").select("id").eq("student_name",user.data.username).neq("enrollment_status","퇴원").limit(1);
       if(active.error||!active.data?.length) return failure("현재 재원 중인 반을 확인하지 못했습니다.",403);
       const response=NextResponse.json({ok:true});setSession(response,"student",user.data.username);return response;

@@ -14,7 +14,7 @@ function load(file,stubs={}) {
 }
 process.env.SESSION_SECRET='test-only-session-secret-32-characters-minimum';
 const sessions=load('lib/session.ts');
-const auth=load('lib/member-auth.ts',{'./session':sessions,'./supabase-server':{getServerSupabase(){throw Error('unexpected DB access');}}});
+const auth=load('lib/member-auth.ts',{'./active-session':{getActiveSession:async()=>null},'./supabase-server':{getServerSupabase(){throw Error('unexpected DB access');}}});
 const valid={name:'테스트',learnerType:'university',school:'테스트대학교',grade:'2학년',major:'수학',acceptTerms:true,acceptPrivacy:true,age14:true};
 assert.equal(auth.profileInput(valid).learner_type,'university');
 assert.equal(auth.profileInput({...valid,learnerType:'teacher'}),null);
@@ -35,11 +35,13 @@ let calls=0;
 const callback=load('app/api/auth/kakao/callback/route.ts',{
   '../../../../../lib/member-auth':auth,
   '../../../../../lib/session':sessions,
+  '../../../../../lib/active-session':{getActiveSession:async()=>null},
   '../../../../../lib/supabase-server':{getServerSupabase(){calls++;throw Error('not configured');}}
 });
 const start=load('app/api/auth/kakao/start/route.ts',{
   '../../../../../lib/member-auth':auth,
   '../../../../../lib/session':sessions,
+  '../../../../../lib/active-session':{getActiveSession:async()=>null},
   '../../../../../lib/supabase-server':{getServerSupabase(){throw Error('unexpected');}},
   '../../../../../lib/student-auth':{},'../../../../../lib/university-auth':{}
 });

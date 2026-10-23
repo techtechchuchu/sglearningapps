@@ -1,6 +1,6 @@
 import { createHash, createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../lib/session";
+import { getActiveSession } from "../../../lib/active-session";
 import { getServerSupabase } from "../../../lib/supabase-server";
 
 const ADMIN = "전체 관리자";
@@ -24,7 +24,7 @@ function error(message: string, status: number) { return NextResponse.json({ ok:
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (!session) return error("로그인이 필요합니다.", 401);
     const db = getServerSupabase();
     if (session.role === "student") {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (!session) return error("로그인이 필요합니다.", 401);
     const body = await request.json();
     const db = getServerSupabase();
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     if (!session || session.role !== "teacher") return error("선생님 로그인이 필요합니다.", 401);
     const body = await request.json();
     const studentName = String(body.studentName || "").trim();

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "../../../../lib/session";
+import { getActiveSession } from "../../../../lib/active-session";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getSession(request);
+    const session = await getActiveSession(request);
     return NextResponse.json(session ? { authenticated: true, role: session.role, name: session.name } : { authenticated: false });
   } catch (error) {
     console.error("[session restore] failed", error);

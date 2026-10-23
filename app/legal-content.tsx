@@ -20,11 +20,11 @@ const documents: Record<string, { title: string; intro: string; sections: Sectio
     title: "개인정보 처리방침",
     intro: "스터디결은 학습 서비스를 운영하는 데 필요한 정보만 처리하고, 이용자의 권리를 존중합니다.",
     sections: [
-      { heading: "1. 처리하는 정보와 목적", paragraphs: ["계정 생성·로그인: 이름, 학년, 학원·반 정보, 비밀번호 확인값 및 접속 정보. 본인 확인과 권한 관리에 사용합니다.", "학습·출석 서비스: 담당 선생님, 학교·교재 정보, 오답·질문·학습 기록, 출석 일시와 상태, 제출 자료를 해당 기능 제공과 조회에 사용합니다. 학생 및 학원 관리자가 각자의 권한에 따라 확인할 수 있습니다.", "위치 기반 출석 기능을 이용할 때 브라우저 위치 권한을 요청할 수 있습니다. 위치 정확도 등 출석 확인에 필요한 정보가 처리될 수 있으므로, 권한을 허용하기 전에 화면 안내를 확인해주세요."] },
-      { heading: "2. 보유 기간", paragraphs: ["계정·학습·출석 자료는 서비스 이용 및 학원 운영에 필요한 동안 보유합니다. 계정·계약 종료 또는 삭제 요청 시 관련 법령상 보존 의무와 분쟁 처리 필요성을 확인한 뒤 삭제합니다.", "학원 자체교재·해설 PDF는 계약 종료 후 자료 반환·분쟁 대응을 위해 최대 1년간 제한적으로 보관할 수 있으며, 그 이후 삭제합니다. 학생이 작성한 오답·학습 자료는 별도로 구분해 처리합니다. 실제 삭제 범위와 일정은 요청 시 확인하여 안내합니다."] },
+      { heading: "1. 처리하는 정보와 목적", paragraphs: ["계정 생성·로그인: 이름, 학년, 학교·학원·반 정보, 이메일, 선택적으로 입력한 휴대전화 번호, 비밀번호 확인값 및 접속 정보. 본인 확인과 권한 관리에 사용합니다. 인증하지 않은 휴대전화 번호는 알림이나 본인 확인에 사용하지 않습니다.", "학습·출석 서비스: 담당 선생님, 학교·교재 정보, 오답·질문·학습 기록, 출석 일시와 상태, 제출 자료를 해당 기능 제공과 조회에 사용합니다. 학생 및 학원 관리자가 각자의 권한에 따라 확인할 수 있습니다.", "위치 기반 출석 기능을 이용할 때 브라우저 위치 권한을 요청할 수 있습니다. 위치 정확도 등 출석 확인에 필요한 정보가 처리될 수 있으므로, 권한을 허용하기 전에 화면 안내를 확인해주세요."] },
+      { heading: "2. 보유 기간", paragraphs: ["이용 중에는 계정과 개인 학습·출석 기록을 서비스 제공에 필요한 동안 보유합니다. 회원탈퇴 즉시 로그인을 중지하고 선택적으로 입력한 휴대전화 번호는 삭제합니다. 탈퇴 계정과 연결된 오답·질문·학습·출석 기록은 탈퇴일부터 1년간 제한적으로 보관합니다. 만료 후 관리자가 기록 소유자를 확인해 삭제하며, 동명이인 등 소유관계가 불명확한 기록은 잘못 삭제하지 않도록 별도 확인합니다. 법령상 별도 보존 의무가 있는 자료는 해당 기간 동안 분리 보관한 뒤 삭제합니다.", "학원 명단은 개인 계정과 별도의 학원 운영 자료입니다. 해당 자료의 보관·삭제 범위는 학원과의 계약 및 관련 법령에 따라 별도로 처리합니다. 학원 자체교재·해설 PDF 역시 계약 종료 후 반환·분쟁 대응을 위해 최대 1년간 제한적으로 보관할 수 있으며, 그 이후 삭제합니다. 조기 삭제를 원하면 문의해주세요."] },
       { heading: "3. 제공·위탁 및 국외 서비스", paragraphs: ["원칙적으로 동의 또는 법령상 근거 없이 개인정보를 외부에 판매하거나 제공하지 않습니다. 웹 호스팅에는 Vercel, 데이터 저장·인증 등에는 Supabase와 같은 외부 서비스가 사용될 수 있습니다. 서비스 제공에 필요한 처리 범위, 저장 위치 및 설정은 운영 환경에 따라 달라질 수 있어 문의 시 안내합니다."] },
       { heading: "4. 안전성 및 이용자 권리", paragraphs: ["계정별 접근 권한, 전송 구간 보호, 비공개 파일 접근 제한 등 필요한 안전조치를 적용합니다. 이용자는 본인 정보의 열람·정정·삭제·처리정지를 요청할 수 있으며, 미성년자의 법정대리인도 관계 법령에 따라 권리를 행사할 수 있습니다.", "권리 행사와 문의는 cjh1645@naver.com으로 보내주세요. 본인 확인과 법령상 보존 의무를 검토한 후 결과를 안내합니다."] },
-      { heading: "5. 변경 및 책임자", paragraphs: ["운영자 및 개인정보 보호 문의처: 추재현 · cjh1645@naver.com. 내용이 변경되면 사이트에서 안내합니다. 시행일: 2026년 10월 16일"] },
+      { heading: "5. 변경 및 책임자", paragraphs: ["운영자 및 개인정보 보호 문의처: 추재현 · cjh1645@naver.com. 내용이 변경되면 사이트에서 안내합니다. 시행일: 2026년 10월 23일"] },
     ],
   },
   "content-policy": {
@@ -33,13 +33,13 @@ const documents: Record<string, { title: string; intro: string; sections: Sectio
     sections: [
       { heading: "1. 적용 대상과 권리", paragraphs: ["학원·선생님이 등록한 자체교재, 문제, 정답, 해설, 이미지 및 PDF가 대상입니다. 저작권과 이용 권한은 원래 권리자에게 남습니다. 등록만으로 운영자에게 소유권이 이전되지 않습니다."] },
       { heading: "2. 허용되는 이용", paragraphs: ["운영자는 계약된 학원과 승인된 학생·선생님에게 학습 기능을 제공하는 데 필요한 범위에서 자료를 저장, 변환, 표시할 수 있습니다. 계약 범위를 넘어 무단 배포·판매·홍보용 공개를 하지 않으며, 별도 동의 없이 AI 학습용 데이터로 사용하지 않습니다.", "등록자는 제3자의 저작권·초상권 등을 침해하지 않는 자료인지 확인해야 합니다. 권리 침해 신고가 있으면 자료 접근을 제한하고 사실관계를 확인할 수 있습니다."] },
-      { heading: "3. 보관과 계약 종료", paragraphs: ["계약 중에는 서비스 제공에 필요한 동안 자료를 보관합니다. 계약 종료 후에는 반환 요청·분쟁 대응을 위해 최대 1년간 접근을 제한하여 보관할 수 있으며, 그 기간이 끝나면 삭제합니다. 계약서에 다른 조건이 있거나 법령상 보존 의무가 있으면 해당 조건을 우선 검토합니다.", "계약 종료 시 자료 반환 또는 조기 삭제를 원하면 cjh1645@naver.com으로 요청해주세요. 권리자와 보존 의무를 확인하여 처리 범위·일정을 안내합니다. 이 원칙은 학생 개인의 오답 기록과 제출물을 일괄적으로 1년 보관한다는 뜻이 아닙니다."] },
-      { heading: "4. 보안과 문의", paragraphs: ["자료는 권한 있는 계정에서만 접근하도록 관리합니다. 공유 링크·다운로드·백업 등 기술적 처리 범위는 실제 기능과 계약 조건에 따라 달라질 수 있습니다.", "운영자: 추재현 · 문의: cjh1645@naver.com · 시행일: 2026년 10월 16일"] },
+      { heading: "3. 보관과 계약 종료", paragraphs: ["계약 중에는 서비스 제공에 필요한 동안 자료를 보관합니다. 계약 종료 후에는 반환 요청·분쟁 대응을 위해 최대 1년간 접근을 제한하여 보관할 수 있으며, 그 기간이 끝나면 삭제합니다. 계약서에 다른 조건이 있거나 법령상 보존 의무가 있으면 해당 조건을 우선 검토합니다.", "계약 종료 시 자료 반환 또는 조기 삭제를 원하면 cjh1645@naver.com으로 요청해주세요. 권리자와 보존 의무를 확인하여 처리 범위·일정을 안내합니다. 학생 개인의 오답·출석 기록은 회원탈퇴일부터 1년간 보관하고, 만료 후 관리자가 확인해 삭제하는 별도 기준을 따릅니다."] },
+      { heading: "4. 보안과 문의", paragraphs: ["자료는 권한 있는 계정에서만 접근하도록 관리합니다. 공유 링크·다운로드·백업 등 기술적 처리 범위는 실제 기능과 계약 조건에 따라 달라질 수 있습니다.", "운영자: 추재현 · 문의: cjh1645@naver.com · 시행일: 2026년 10월 23일"] },
     ],
   },
 };
 
 export function LegalContent({ kind }: { kind: keyof typeof documents }) {
   const document = documents[kind];
-  return <main className="legal-page"><div className="legal-container"><header className="legal-header"><Link href="/" className="legal-brand">결 스터디결</Link><Link href="/">로그인·홈으로</Link></header><article className="legal-card"><p className="legal-label">STUDY GYEOL · POLICY</p><h1>{document.title}</h1><p className="legal-intro">{document.intro}</p><p className="legal-date">시행일 2026년 10월 16일</p>{document.sections.map((section) => <section key={section.heading}><h2>{section.heading}</h2>{section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</section>)}</article><nav className="legal-nav" aria-label="정책 문서"><Link href="/terms">이용약관</Link><Link href="/privacy">개인정보 처리방침</Link><Link href="/content-policy">자체교재·PDF 이용 및 보관 원칙</Link></nav></div></main>;
+  return <main className="legal-page"><div className="legal-container"><header className="legal-header"><Link href="/" className="legal-brand">결 스터디결</Link><Link href="/">로그인·홈으로</Link></header><article className="legal-card"><p className="legal-label">STUDY GYEOL · POLICY</p><h1>{document.title}</h1><p className="legal-intro">{document.intro}</p><p className="legal-date">시행일 {kind === "terms" ? "2026년 10월 16일" : "2026년 10월 23일"}</p>{document.sections.map((section) => <section key={section.heading}><h2>{section.heading}</h2>{section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</section>)}</article><nav className="legal-nav" aria-label="정책 문서"><Link href="/terms">이용약관</Link><Link href="/privacy">개인정보 처리방침</Link><Link href="/content-policy">자체교재·PDF 이용 및 보관 원칙</Link></nav></div></main>;
 }
