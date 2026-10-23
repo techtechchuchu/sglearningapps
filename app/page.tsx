@@ -230,7 +230,6 @@ export default function Home() {
         ) : (<>
           <div className="tabs account-tabs"><button type="button" className={!universitySignup ? "active" : ""} onClick={() => { setUniversitySignup(false); setMessage(""); }}>로그인</button><button type="button" className={universitySignup ? "active" : ""} onClick={() => { setUniversitySignup(true); setMessage(""); }}>대학생 회원가입</button></div>
           {universitySignup ? <IndependentSignup /> : <form onSubmit={universityAuth} className="form">{universitySignup && <label>이름<input value={universityName} onChange={(event) => setUniversityName(event.target.value)} autoComplete="name" required /></label>}<label>이메일<input type="email" value={universityEmail} onChange={(event) => setUniversityEmail(event.target.value)} autoComplete="email" required /></label><label>비밀번호<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} autoComplete={universitySignup ? "new-password" : "current-password"} required /></label><button className="primary" disabled={loading}>{loading ? "확인 중..." : universitySignup ? "가입하기" : "대학생으로 로그인"}</button></form>}
-          {!universitySignup && <KakaoButton />}
           <p className="safe-note">학원 계정과 분리된 대학생용 공간입니다. 과목·시험·오답 기록부터 이용할 수 있습니다.</p>
         </>)}
         {message && <div className="alert">{message}</div>}

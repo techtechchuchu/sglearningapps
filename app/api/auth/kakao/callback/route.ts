@@ -33,20 +33,25 @@ export async function GET(request:NextRequest) {
     if(!meResponse.ok) return finish("카카오 계정 정보를 확인하지 못했습니다.");
     const me=await meResponse.json();
     if(!Number.isSafeInteger(me.id)||me.id<=0) return finish("카카오 계정 식별 정보를 확인하지 못했습니다.");
-    // Provider tokens and profile images are not retained. Email is not used to merge accounts.
-    const account=me.kakao_account;
-    const email=account?.is_email_valid===true&&account?.is_email_verified===true&&typeof account.email==="string"?account.email.toLowerCase():null;
-    const resolved=await db.rpc("sg_resolve_identity",{p_provider:"kakao",p_subject:String(me.id),p_email:email,p_role:attempt.target_role,p_key:attempt.target_key});
-    if(resolved.error) {
-      const msg=resolved.error.message;
-      return finish(msg.includes("existing_email")?"이미 가입된 이메일입니다. 기존 계정으로 로그인한 뒤 카카오를 연결해주세요.":msg.includes("identity_already")||resolved.error.code==="23505"?"이미 다른 계정에 연결된 카카오 계정입니다.":"계정 연결을 완료하지 못했습니다.");
+    // Login only resolves a previously linked identity. Kakao never creates a new account.
+    let identity:{role:string;key:string}|null=null;
+    if(attempt.target_role) {
+      const resolved=await db.rpc("sg_resolve_identity",{p_provider:"kakao",p_subject:String(me.id),p_email:null,p_role:attempt.target_role,p_key:attempt.target_key});
+      if(resolved.error) return finish(resolved.error.message.includes("identity_already")||resolved.error.code==="23505"?"이미 다른 계정에 연결된 카카오 계정입니다.":"계정 연결을 완료하지 못했습니다.");
+      identity=resolved.data;
+      if(identity?.role!==attempt.target_role||identity?.key!==attempt.target_key) return finish("연결할 계정 정보가 일치하지 않습니다.");
+    } else {
+      const linked=await db.from("sg_identities").select("target_role,target_key").eq("provider","kakao").eq("subject",String(me.id)).maybeSingle();
+      if(linked.error) throw linked.error;
+      if(!linked.data) return finish("카카오 신규 가입은 지원하지 않습니다. 기존 학원 계정으로 로그인해 카카오를 연결해주세요.");
+      identity={role:linked.data.target_role,key:linked.data.target_key};
     }
-    const identity=resolved.data;
     if(!identity||!["student","member"].includes(identity.role)) return finish("계정 정보를 확인하지 못했습니다.");
-    const exists=identity.role==="student"?await db.from("users").select("username,withdrawn_at").eq("username",identity.key).maybeSingle():await db.from("university_users").select("id,withdrawn_at").eq("id",identity.key).maybeSingle();
+    const exists=identity.role==="student"?await db.from("users").select("username,withdrawn_at").eq("username",identity.key).maybeSingle():await db.from("university_users").select("id,withdrawn_at,academy_username").eq("id",identity.key).maybeSingle();
     if(exists.error||!exists.data) return finish("연결된 계정을 찾지 못했습니다. 관리자에게 문의해주세요.");
     if(exists.data.withdrawn_at) return finish("탈퇴한 계정입니다. 관리자에게 문의해주세요.");
+    if(identity.role==="member"&&!('academy_username' in exists.data&&exists.data.academy_username)) return finish("학원 연결 승인 후 카카오 로그인을 이용할 수 있습니다.");
     const response=finish(attempt.target_role?"카카오 연결을 완료했습니다. 기존 로그인도 계속 사용할 수 있습니다.":undefined);
-    setSession(response,identity.role,identity.key);return response;
+    setSession(response,identity.role==="student"?"student":"member",identity.key);return response;
   } catch { return finish("카카오 로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."); }
 }

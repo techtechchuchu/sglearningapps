@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     if(new URL(callback).origin!==request.nextUrl.origin) return failure("카카오 로그인은 https://studygyeol.vercel.app 에서 진행해주세요. 계정 연결은 해당 주소에서 기존 계정으로 먼저 로그인하세요.",409);
     if(!await rateLimit(request,"kakao-start")) return failure("잠시 후 다시 시도해주세요.",429);
     const body=await request.json();
+    if(body?.intent!=="link"&&body?.intent!=="login") return failure("카카오 로그인 요청을 확인해주세요.",400);
     const session=await getActiveSession(request), db=getServerSupabase();
     let targetRole:string|null=null,targetKey:string|null=null;
     if(body.intent==="link") {
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
       } else {
         const auth=await memberContext(request);
         if(!auth) return failure("로그인이 필요합니다.",401);
+        if(!auth.user.academy_username) return failure("학원 연결 승인 후 카카오 계정을 연결할 수 있습니다.",403);
         const result=await db.from("university_users").select("password_hash").eq("id",auth.user.id).single();
         if(result.error) throw result.error;
         if(result.data.password_hash) {
