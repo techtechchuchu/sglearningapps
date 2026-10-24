@@ -13,18 +13,16 @@ const partners = [
   { name: "현대해상 이주배경 청소년 멘토링", status: "이용 중", description: "현대해상 · JUMP와 함께하는 멘토링 현장", logoClass: "g-partner-collab", logo: <><img src="/partners/hyundai.png" alt="현대해상" width="319" height="102"/><span aria-hidden="true">×</span><img src="/partners/jump.png" alt="JUMP" width="293" height="107"/></> },
   { name: "SG 고등관", status: "이용 중", description: "학원 수업 현장에서 함께하는 스터디결", logoClass: "", logo: <img src="/partners/sg.png" alt="SG 고등관" width="309" height="70"/> },
   { name: "울산대학교", status: "공식 협력·도입", description: "대학 학습 현장에서 함께하는 스터디결", logoClass: "", logo: <span className="g-partner-uou-mark"><img src="/partners/ulsan-university.gif" alt="울산대학교" width="299" height="427"/></span> },
-  { name: "울산동구가족센터", status: "이용 중", description: "지역 가족과 청소년의 배움을 함께합니다", logoClass: "", logo: <img src="/partners/ulsan-donggu-family-center.png" alt="울산동구가족센터" width="417" height="120"/> },
-  { name: "대치명인학원 센텀직영점", status: "함께하는 학원", description: "부산 센텀의 학습 현장", logoClass: "", logo: <img src="/partners/myungin-centum.png" alt="대치명인학원 센텀직영점" width="566" height="73"/> },
-  { name: "현대차그룹 H-점프스쿨", status: "이용 중", description: "대학생 교육봉사단과 함께하는 학습 현장", logoClass: "", logo: <img src="/partners/hyundai-jump-school.jpg" alt="Hyundai Jump School" width="243" height="88"/> },
   { name: "경성대학교", status: "공식 협력·이용", description: "대학 학습 현장에서 함께합니다", logoClass: "", logo: <img src="/partners/kyungsung.png" alt="경성대학교" width="294" height="71"/> },
   { name: "동아대학교", status: "공식 협력·이용", description: "대학 학습 현장에서 함께합니다", logoClass: "g-partner-logo-dark", logo: <img src="/partners/donga.png" alt="동아대학교" width="271" height="70"/> },
   { name: "계명대학교", status: "공식 협력·이용", description: "대학 학습 현장에서 함께합니다", logoClass: "", logo: <img src="/partners/keimyung.png" alt="계명대학교" width="1774" height="445"/> },
   { name: "가천대학교", status: "공식 협력·이용", description: "대학 학습 현장에서 함께합니다", logoClass: "", logo: <img src="/partners/gachon.png" alt="가천대학교" width="323" height="80"/> },
 ];
+const partnerAngle = 360 / partners.length;
 
 function PartnerCardSet({ activeIndex }: { activeIndex: number }) {
   return <>{partners.map((partner, index) => (
-    <article className="g-partner-card" key={partner.name} style={{ transform: `rotateY(${index * 36}deg) translateZ(var(--ring-radius))` }} aria-hidden={activeIndex !== index}>
+    <article className="g-partner-card" key={partner.name} style={{ transform: `rotateY(${index * partnerAngle}deg) translateZ(var(--ring-radius))` }} aria-hidden={activeIndex !== index}>
       <div className="g-partner-inner">
         <span className="g-partner-status"><i aria-hidden="true"/>{partner.status}</span>
         <div className={`g-partner-logo ${partner.logoClass}`}>{partner.logo}</div>
@@ -99,9 +97,9 @@ export default function Landing({ onLogin }: Props) {
       </div>
 
       <section className="g-partners g-wrap" aria-labelledby="partners-title" id="partners">
-        <div className="g-section-head"><p className="g-eyebrow">LEARNING, TOGETHER</p><h2 id="partners-title">지금, 스터디결과 함께하고 있어요.</h2><p>멘토링부터 학원, 대학, 지역 가족센터까지 다양한 배움의 현장에서 함께합니다.</p></div>
+        <div className="g-section-head"><p className="g-eyebrow">LEARNING, TOGETHER</p><h2 id="partners-title">지금, 스터디결과 함께하고 있어요.</h2><p>멘토링과 학원, 대학의 배움 현장에서 함께합니다.</p></div>
         <div className="g-partner-grid" aria-label="함께하는 기관 원형 회전목마">
-          <div className="g-partner-track" style={{ transform: `translateZ(calc(-1 * var(--ring-radius))) rotateY(${-36 * partnerStep}deg)` }}>
+          <div className="g-partner-track" style={{ transform: `translateZ(calc(-1 * var(--ring-radius))) rotateY(${-partnerAngle * partnerStep}deg)` }}>
             <PartnerCardSet activeIndex={activePartnerIndex} />
           </div>
         </div>
