@@ -20,6 +20,14 @@ function clock(seconds: number) {
   return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
 }
 
+function PaymentMethodIcon({ kind }: { kind: "toss" | "kakao" | "card" }) {
+  return <span className={`university-payment-icon university-payment-icon--${kind}`} aria-hidden="true">
+    {kind === "toss" ? <svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5V18H6.5A2.5 2.5 0 0 1 4 15.5v-8Z" stroke="currentColor" strokeWidth="1.8"/><path d="M4 9h16M15 13.5h2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> :
+      kind === "kakao" ? <svg viewBox="0 0 24 24" fill="none"><path d="M12 4c5 0 9 2.8 9 6.4 0 3.7-4 6.6-9 6.6-.6 0-1.3 0-1.9-.1L6 20l.8-4.3C4.4 14.6 3 12.7 3 10.4 3 6.8 7 4 12 4Z" fill="currentColor"/></svg> :
+      <svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" strokeWidth="1.8"/><path d="M3 10h18M7 15.5h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>}
+  </span>;
+}
+
 export default function UniversityLectureNotes({ courses }: { courses: Course[] }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [id, setId] = useState("");
@@ -217,9 +225,9 @@ export default function UniversityLectureNotes({ courses }: { courses: Course[] 
     <div className="university-lecture-plan" aria-label="AI 강의 요약 이용권 안내">
       <div><span className="university-eyebrow">결제 준비 중</span><h3>AI 강의 요약 이용권</h3><p>출시 예정: 첫 이용부터 3일 무료 체험 후, 30일 이용권 9,900원. 자동 결제는 하지 않습니다.</p></div>
       <div className="university-lecture-payment-methods" aria-label="준비 중인 결제수단">
-        <button type="button" disabled>토스페이 결제</button>
-        <button type="button" disabled>카카오페이 결제</button>
-        <button type="button" disabled>신용카드 결제</button>
+        <button type="button" disabled><PaymentMethodIcon kind="toss" />토스페이 결제</button>
+        <button type="button" disabled><PaymentMethodIcon kind="kakao" />카카오페이 결제</button>
+        <button type="button" disabled><PaymentMethodIcon kind="card" />신용카드 결제</button>
       </div>
       <small>현재 결제하거나 무료 체험을 시작할 수 없습니다. 결제 연동 및 서비스 점검 후 버튼이 활성화됩니다.</small>
     </div>
