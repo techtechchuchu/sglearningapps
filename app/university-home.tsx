@@ -3,7 +3,7 @@
 type Course = { id: string; title: string; semester: string };
 type Exam = { id: string; course_id: string; title: string; exam_date: string };
 type Mistake = { id: string; course_id: string; reviewed: boolean };
-type Destination = "courses" | "exams" | "mistakes" | "quiz" | "competition" | "python" | "map";
+type Destination = "courses" | "exams" | "mistakes" | "quiz" | "competition" | "python" | "map" | "lecture";
 
 type Props = {
   learnerType: string;
@@ -51,7 +51,7 @@ export function UniversityHome({ learnerType, courses, exams, mistakes, onNaviga
       })}</div> : <div className="university-empty-course"><p>아직 등록한 과목이 없습니다. 첫 과목을 만들면 시험과 오답을 연결해 볼 수 있어요.</p><button type="button" className="primary" onClick={() => onNavigate("courses")}>첫 과목 등록하기</button></div>}
     </section>
 
-    <section className="university-track-section"><div className="university-section-heading"><div><span className="university-eyebrow">바로 시작</span><h2>준비된 학습 콘텐츠</h2></div></div><div className="university-track-grid">{learnerType === "university" && <button type="button" className="university-track-card university-competition-card" onClick={() => onNavigate("competition")}><span>대학생 공식 모의고사</span><strong>미적분학2 · 함께 실력 겨루기</strong><small>같은 문제 · 30분 · 1회 응시 · 종료 후 익명 순위</small><em>모의고사 보기 →</em></button>}<button type="button" className="university-track-card" onClick={() => onNavigate("python")}><span>기초프로그래밍2</span><strong>파이썬 1~7장</strong><small>요약 → 예제 → 직접 실행</small><em>연습실 열기 →</em></button><button type="button" className="university-track-card" onClick={() => onNavigate("quiz")}><span>미적분학2</span><strong>시험형 변형 퀴즈</strong><small>3세트 → 정답 → 풀이 확인</small><em>퀴즈 풀기 →</em></button></div></section>
+    <section className="university-track-section"><div className="university-section-heading"><div><span className="university-eyebrow">바로 시작</span><h2>준비된 학습 콘텐츠</h2></div></div><div className="university-track-grid">{learnerType === "university" && <button type="button" className="university-track-card" onClick={() => onNavigate("lecture")}><span>과목별 강의 기록</span><strong>녹음하며 만드는 내 강의 노트</strong><small>받아쓰기 → 원문 확인 → 직접 정리</small><em>강의 노트 열기 →</em></button>}{learnerType === "university" && <button type="button" className="university-track-card university-competition-card" onClick={() => onNavigate("competition")}><span>대학생 공식 모의고사</span><strong>미적분학2 · 함께 실력 겨루기</strong><small>같은 문제 · 30분 · 1회 응시 · 종료 후 익명 순위</small><em>모의고사 보기 →</em></button>}<button type="button" className="university-track-card" onClick={() => onNavigate("python")}><span>기초프로그래밍2</span><strong>파이썬 1~7장</strong><small>요약 → 예제 → 직접 실행</small><em>연습실 열기 →</em></button><button type="button" className="university-track-card" onClick={() => onNavigate("quiz")}><span>미적분학2</span><strong>시험형 변형 퀴즈</strong><small>3세트 → 정답 → 풀이 확인</small><em>퀴즈 풀기 →</em></button></div></section>
   </>;
 }
 
@@ -72,3 +72,4 @@ export function UniversityStudyMap({ courses, exams, mistakes, onNavigate, selec
     {courseMistakes.length > 0 && <p className="university-map-footer">복습 완료 {courseMistakes.length - pending.length}개 · 아직 복습할 오답 {pending.length}개</p>}
   </section>;
 }
+

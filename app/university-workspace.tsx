@@ -9,12 +9,13 @@ import "./university.css";
 const UniversityMidterm = dynamic(() => import("./university-midterm"), { loading: () => <section className="panel" role="status">퀴즈를 준비하고 있어요.</section> });
 const UniversityMockExam = dynamic(() => import("./university-mock-exam"), { loading: () => <section className="panel" role="status">모의고사를 준비하고 있어요.</section> });
 const PythonLab = dynamic(() => import("./python-lab"), { loading: () => <section className="panel" role="status">파이썬 연습실을 준비하고 있어요.</section> });
+const UniversityLectureNotes = dynamic(() => import("./university-lecture-notes"), { loading: () => <section className="panel" role="status">강의 노트를 준비하고 있어요.</section> });
 
 type Course = { id: string; title: string; semester: string };
 type Exam = { id: string; course_id: string; title: string; exam_date: string };
 type Mistake = { id: string; course_id: string; problem_label: string; memo: string; reviewed: boolean; created_at: string };
 type Data = { profile: { id: string; name: string; email: string; learnerType: string }; courses: Course[]; exams: Exam[]; mistakes: Mistake[] };
-type View = "home" | "map" | "courses" | "exams" | "mistakes" | "quiz" | "competition" | "python" | "helper";
+type View = "home" | "map" | "courses" | "exams" | "mistakes" | "quiz" | "competition" | "python" | "lecture" | "helper";
 
 export default function UniversityWorkspace({ logout }: { logout: () => void }) {
   const [data, setData] = useState<Data | null>(null);
@@ -69,10 +70,11 @@ export default function UniversityWorkspace({ logout }: { logout: () => void }) 
 
   return <main className="shell dashboard-shell university-workspace">
     <header className="topbar university-topbar"><BrandLockup compact solo /><div><span className="badge">{data?.profile.learnerType === "school" ? "학생 개인 학습" : data?.profile.learnerType === "general" ? "개인 학습 공간" : "대학생 학습 모드"}</span><h1>{data?.profile.name || "나의 학습"}</h1><p>과목을 정리하고 시험까지 내 오답을 복습하세요.</p></div><button type="button" className="ghost" onClick={logout}>로그아웃</button></header>
-    <nav className="workspace-tabs university-nav" aria-label="개인 학습 메뉴"><span className="university-nav-label">WORKSPACE</span>{([["home", "나의 홈"], ["map", "학습 지도"], ["courses", "내 과목"], ["exams", "시험 준비"], ["mistakes", "오답 복습"], ["quiz", "변형 퀴즈"], ...(data?.profile.learnerType === "university" ? [["competition", "공식 모의고사"]] as const : []), ["python", "파이썬 연습실"], ["helper", "결결이"]] as const).map(([id, label]) => <button type="button" key={id} className={view === id ? "active" : ""} aria-current={view === id ? "page" : undefined} onClick={() => setView(id)}>{label}</button>)}</nav>
+    <nav className="workspace-tabs university-nav" aria-label="개인 학습 메뉴"><span className="university-nav-label">WORKSPACE</span>{([["home", "나의 홈"], ["map", "학습 지도"], ["courses", "내 과목"], ...(data?.profile.learnerType === "university" ? [["lecture", "강의 노트"]] as const : []), ["exams", "시험 준비"], ["mistakes", "오답 복습"], ["quiz", "변형 퀴즈"], ...(data?.profile.learnerType === "university" ? [["competition", "공식 모의고사"]] as const : []), ["python", "파이썬 연습실"], ["helper", "결결이"]] as const).map(([id, label]) => <button type="button" key={id} className={view === id ? "active" : ""} aria-current={view === id ? "page" : undefined} onClick={() => setView(id)}>{label}</button>)}</nav>
     {view === "quiz" && data && <UniversityMidterm key={data.profile.email} userEmail={data.profile.email} />}
     {view === "competition" && data?.profile.learnerType === "university" && <UniversityMockExam />}
     {view === "python" && data && <PythonLab />}
+    {view === "lecture" && data?.profile.learnerType === "university" && <UniversityLectureNotes courses={courses} />}
     {error && <p className="workspace-message" role="alert">{error}</p>}
     {!data && !error && <section className="panel" role="status">학습 기록을 불러오는 중입니다.</section>}
     {!data && error && <section className="panel"><button type="button" className="ghost" onClick={() => void refresh().then(() => setError("")).catch((caught) => setError(caught.message))}>다시 불러오기</button></section>}
@@ -84,4 +86,5 @@ export default function UniversityWorkspace({ logout }: { logout: () => void }) 
     {view === "helper" && data && <section className="panel university-helper"><span className="badge">결결이 · 학습 도우미 미리보기</span><h2>어떤 부분이 가장 막히나요?</h2><p>대학생용 결결이 상담 화면을 준비 중입니다. 현재는 실제 AI 답변이 연결되지 않았으며, 과목·시험·오답 기록은 다른 메뉴에서 이용할 수 있습니다.</p><div className="university-prompts"><span>시험 계획 세우기</span><span>오답 복습하기</span><span>공부 습관 점검하기</span></div></section>}
   </main>;
 }
+
 
