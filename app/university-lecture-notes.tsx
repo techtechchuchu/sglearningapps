@@ -214,6 +214,15 @@ export default function UniversityLectureNotes({ courses }: { courses: Course[] 
   return <section className="panel university-lecture">
     <div className="university-section-heading"><div><span className="university-eyebrow">강의 기록</span><h2>내 강의 노트</h2><p>녹음하면서 받아쓰고, 원문 위치를 확인해 과목별로 정리하세요.</p></div><button type="button" className="ghost" onClick={newNote} disabled={recording}>+ 새 노트</button></div>
     <p className="university-lecture-caution">브라우저 자동 받아쓰기의 정확도와 지원 여부는 기기마다 다르며, 음성이 브라우저 제공자의 인식 서비스로 전송될 수 있습니다. 중요한 수식·전문용어는 원본과 비교하고, 수업의 녹음 허용 여부도 확인하세요.</p>
+    <div className="university-lecture-plan" aria-label="AI 강의 요약 이용권 안내">
+      <div><span className="university-eyebrow">결제 준비 중</span><h3>AI 강의 요약 이용권</h3><p>출시 예정: 첫 이용부터 3일 무료 체험 후, 30일 이용권 9,900원. 자동 결제는 하지 않습니다.</p></div>
+      <div className="university-lecture-payment-methods" aria-label="준비 중인 결제수단">
+        <button type="button" disabled>토스페이 결제</button>
+        <button type="button" disabled>카카오페이 결제</button>
+        <button type="button" disabled>신용카드 결제</button>
+      </div>
+      <small>현재 결제하거나 무료 체험을 시작할 수 없습니다. 결제 연동 및 서비스 점검 후 버튼이 활성화됩니다.</small>
+    </div>
     <div className="university-lecture-grid"><aside aria-label="저장된 강의 노트"><h3>저장된 노트</h3>{notes.length ? notes.map((note) => <button type="button" key={note.id} className={note.id === id ? "selected" : ""} disabled={recording} onClick={() => openNote(note)}><strong>{note.title}</strong><small>{courses.find((course) => course.id === note.course_id)?.title || "과목"} · {new Date(note.updated_at).toLocaleDateString("ko-KR")}</small></button>) : <p>아직 저장된 노트가 없습니다.</p>}</aside>
       <div className="university-lecture-editor"><div className="university-lecture-fields"><label>과목<select value={courseId} onChange={(event) => setCourseId(event.target.value)} disabled={recording || Boolean(id)}><option value="">과목 선택</option>{courses.map((course) => <option value={course.id} key={course.id}>{course.title}</option>)}</select></label><label>강의 제목<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="예: 미적분학2 · 4주차 강의" maxLength={120} disabled={recording} /></label></div>
         <div className="university-lecture-recorder"><div><strong>{recording ? `● 녹음 중 ${clock(elapsed)}` : "녹음 또는 원본 파일 연결"}</strong><small>최대 60분 · 녹음 파일은 기기에만 남습니다.</small></div>{recording ? <button type="button" onClick={stopRecording}>녹음 종료</button> : <button type="button" onClick={() => void startRecording()} disabled={!courseId}>녹음 시작</button>}</div>
@@ -226,4 +235,3 @@ export default function UniversityLectureNotes({ courses }: { courses: Course[] 
       </div></div>
   </section>;
 }
-
