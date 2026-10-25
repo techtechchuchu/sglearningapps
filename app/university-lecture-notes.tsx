@@ -53,6 +53,7 @@ export default function UniversityLectureNotes({ courses }: { courses: Course[] 
   const interval = useRef<ReturnType<typeof setInterval> | null>(null);
   const restart = useRef<ReturnType<typeof setTimeout> | null>(null);
   const objectUrl = useRef("");
+  const titleInput = useRef<HTMLInputElement | null>(null);
 
   async function load() {
     const response = await fetch("/api/university/lecture-notes", { cache: "no-store" });
@@ -85,7 +86,10 @@ export default function UniversityLectureNotes({ courses }: { courses: Course[] 
 
   function newNote() {
     if (recording) return;
-    setId(""); setCourseId(courses[0]?.id || ""); setTitle(""); setSegments([]); setSummary(""); setMessage(""); clearAudio();
+    setId(""); setCourseId(courses[0]?.id || ""); setTitle(""); setSegments([]); setSummary("");
+    setMessage(courses.length ? "새 노트입니다. 강의 제목과 내용을 입력한 뒤 저장하거나 AI 요약을 눌러주세요." : "새 노트를 만들려면 먼저 과목을 추가해주세요.");
+    clearAudio();
+    requestAnimationFrame(() => titleInput.current?.focus());
   }
 
   function openNote(note: Note) {
@@ -201,10 +205,23 @@ export default function UniversityLectureNotes({ courses }: { courses: Course[] 
   }
 
   async function summarizeNote() {
-    if (!id || recording || summarizing) return;
+    if (recording || summarizing || busy) return;
+    if (!aiAvailable) { setMessage("AI 요약이 아직 활성화되지 않았습니다. 잠시 후 다시 확인해주세요."); return; }
+    if (!courseId || !title.trim()) { setMessage("AI 요약 전에 과목과 강의 제목을 입력해주세요."); titleInput.current?.focus(); return; }
+    if (segments.map((item) => item.text).join("\n").trim().length < 50) { setMessage("AI 요약을 하려면 받아쓴 내용을 50자 이상 입력해주세요."); return; }
     setSummarizing(true); setMessage("");
     try {
-      const response = await fetch("/api/university/lecture-notes/summarize", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      const saved = await fetch("/api/university/lecture-notes", {
+        method: id ? "PATCH" : "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, courseId, title, transcript: segments, summary }),
+      });
+      const savedResult = await saved.json();
+      if (!saved.ok) throw new Error(savedResult.message || "노트를 저장하지 못했습니다.");
+      const noteId = id || savedResult.id;
+      if (!noteId) throw new Error("저장된 노트를 확인하지 못했습니다.");
+      if (!id) setId(noteId);
+      await load();
+      const response = await fetch("/api/university/lecture-notes/summarize", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: noteId }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "요약하지 못했습니다.");
       setSummary(result.summary);
@@ -232,14 +249,15 @@ export default function UniversityLectureNotes({ courses }: { courses: Course[] 
       <small>현재 결제하거나 무료 체험을 시작할 수 없습니다. 결제 연동 및 서비스 점검 후 버튼이 활성화됩니다.</small>
     </div>
     <div className="university-lecture-grid"><aside aria-label="저장된 강의 노트"><h3>저장된 노트</h3>{notes.length ? notes.map((note) => <button type="button" key={note.id} className={note.id === id ? "selected" : ""} disabled={recording} onClick={() => openNote(note)}><strong>{note.title}</strong><small>{courses.find((course) => course.id === note.course_id)?.title || "과목"} · {new Date(note.updated_at).toLocaleDateString("ko-KR")}</small></button>) : <p>아직 저장된 노트가 없습니다.</p>}</aside>
-      <div className="university-lecture-editor"><div className="university-lecture-fields"><label>과목<select value={courseId} onChange={(event) => setCourseId(event.target.value)} disabled={recording || Boolean(id)}><option value="">과목 선택</option>{courses.map((course) => <option value={course.id} key={course.id}>{course.title}</option>)}</select></label><label>강의 제목<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="예: 미적분학2 · 4주차 강의" maxLength={120} disabled={recording} /></label></div>
+      <div className="university-lecture-editor"><div className="university-lecture-fields"><label>과목<select value={courseId} onChange={(event) => setCourseId(event.target.value)} disabled={recording || Boolean(id)}><option value="">과목 선택</option>{courses.map((course) => <option value={course.id} key={course.id}>{course.title}</option>)}</select></label><label>강의 제목<input ref={titleInput} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="예: 미적분학2 · 4주차 강의" maxLength={120} disabled={recording} /></label></div>
         <div className="university-lecture-recorder"><div><strong>{recording ? `● 녹음 중 ${clock(elapsed)}` : "녹음 또는 원본 파일 연결"}</strong><small>최대 60분 · 녹음 파일은 기기에만 남습니다.</small></div>{recording ? <button type="button" onClick={stopRecording}>녹음 종료</button> : <button type="button" onClick={() => void startRecording()} disabled={!courseId}>녹음 시작</button>}</div>
         {audioUrl && <div className="university-lecture-playback"><audio ref={audio} controls src={audioUrl} /><a href={audioUrl} download={`${title.trim() || "강의녹음"}.${audioUrl && recorder.current?.mimeType.includes("mp4") ? "m4a" : "webm"}`}>원본 음성 다운로드</a></div>}
         {!recording && <label className="university-lecture-attach">이전에 저장한 음성 파일을 다시 연결하기<input type="file" accept="audio/*" onChange={(event) => attachAudio(event.target.files?.[0])} /></label>}
         <div className="university-lecture-transcript"><div className="university-section-heading"><div><h3>받아쓴 내용</h3><p>시간을 누르면 연결한 음성의 해당 위치로 이동합니다. 받아쓰기 시각은 대략적인 위치입니다.</p></div><button type="button" className="ghost" disabled={recording} onClick={() => setSegments((old) => [...old, { at: elapsed, text: "" }])}>+ 문장 추가</button></div>{segments.map((segment, index) => <div className="university-lecture-line" key={index}><button type="button" disabled={!audioUrl} onClick={() => { if (audio.current) { audio.current.currentTime = segment.at; void audio.current.play(); } }}>{clock(segment.at)}</button><textarea aria-label={`${index + 1}번째 전사 문장`} value={segment.text} onChange={(event) => setSegments((old) => old.map((item, position) => position === index ? { ...item, text: event.target.value } : item))} maxLength={500} /><button type="button" className="ghost" aria-label={`${index + 1}번째 문장 삭제`} onClick={() => setSegments((old) => old.filter((_, position) => position !== index))}>×</button></div>)}{!segments.length && <p>녹음하면서 인식된 문장이 여기에 쌓입니다. 인식이 안 되면 직접 입력할 수도 있어요.</p>}</div>
         <label className="university-lecture-summary">내 정리 노트<textarea value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="핵심 개념, 시험에 나올 부분, 이해하지 못한 점을 정리하세요." maxLength={12000} /></label>
-        <div className="university-lecture-ai-note"><button type="button" className="ghost" onClick={() => void summarizeNote()} disabled={!aiAvailable || !id || recording || summarizing}>{summarizing ? "요약 중..." : "AI로 초안 요약"}</button><span>{aiAvailable ? "저장한 강의 제목과 전사 내용 일부가 외부 AI 서비스로 전송됩니다. 개인정보가 없는지 확인한 뒤 이용하세요. AI 결과는 원본과 대조하고 다시 저장해야 합니다." : "AI 요약 활성화 대기 중입니다. 지금은 전사 내용을 직접 정리·저장할 수 있습니다."}</span></div>
+        <div className="university-lecture-ai-note"><button type="button" className="ghost" onClick={() => void summarizeNote()} disabled={!aiAvailable || recording || summarizing || busy}>{summarizing ? "요약 중..." : "AI로 초안 요약"}</button><span>{aiAvailable ? "강의 제목과 받아쓴 내용을 50자 이상 입력하면 노트를 먼저 저장한 뒤 AI 요약을 시작합니다. 입력한 내용은 외부 AI 서비스로 전송되므로 개인정보가 없는지 확인하세요. 결과를 확인하고 다시 저장해야 합니다." : "AI 요약 활성화 대기 중입니다. 지금은 전사 내용을 직접 정리·저장할 수 있습니다."}</span></div>
         {message && <p className="workspace-message" role="status">{message}</p>}<div className="university-lecture-actions"><button type="button" className="primary" onClick={() => void saveNote()} disabled={busy || recording || !courseId || !title.trim()}>{busy ? "처리 중..." : "노트 저장"}</button>{id && <button type="button" className="ghost" onClick={() => void deleteNote()} disabled={busy || recording}>노트 삭제</button>}</div>
       </div></div>
   </section>;
 }
+
