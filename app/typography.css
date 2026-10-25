@@ -1,0 +1,63 @@
+:root {
+  --site-font: "SUIT Variable", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-synthesis: none;
+}
+
+html,
+body,
+.gyeol,
+.sg-landing {
+  font-family: var(--site-font);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}
+
+.gyeol :is(h1, h2, h3),
+.sg-landing :is(h1, h2, h3),
+.dashboard-shell :is(h1, h2, h3),
+.auth-screen :is(h1, h2, h3),
+.university-workspace :is(h1, h2, h3) {
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+
+.gyeol .g-hero h1,
+.sg-landing .sg-hero h1 {
+  letter-spacing: -.025em;
+}
+
+.gyeol :is(.g-section-head h2, .g-detail h2, .g-faq h2, .g-note h2),
+.sg-landing :is(.sg-features h2, .sg-bottom h2) {
+  letter-spacing: -.02em;
+}
+
+.gyeol .g-company-copy h3 {
+  letter-spacing: -.025em;
+}
+
+.gyeol :is(.g-eyebrow, .g-path-top, .g-note-bottom),
+.university-nav-label {
+  letter-spacing: .06em;
+}
+
+.gyeol :is(button, .g-button, .g-login),
+.sg-landing button,
+.dashboard-shell :is(button, .primary, .ghost, .tabs button),
+.auth-screen :is(button, .auth-submit, .role-button),
+.university-workspace :is(button, .university-course-card em) {
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+
+code,
+pre,
+kbd,
+samp,
+.uq-math-editor input {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
