@@ -1,0 +1,34 @@
+.admission-explorer{color:#173029}
+.admission-heading h2{margin:12px 0 8px;font-size:clamp(24px,3vw,32px);letter-spacing:-.035em}
+.admission-heading p,.admission-explorer p{line-height:1.6}
+.admission-systems{border:0;padding:0;margin:25px 0 20px}
+.admission-systems legend{font-weight:750;margin-bottom:10px}
+.admission-systems>div,.admission-filter-bar>div{display:flex;flex-wrap:wrap;gap:8px}
+.admission-systems button,.admission-filter-bar button{min-height:42px;border:1px solid #cbded5;border-radius:11px;background:#fff;color:#245441;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer}
+.admission-systems button.active,.admission-filter-bar button.active{background:#176b50;color:#fff;border-color:#176b50}
+.admission-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.admission-inputs label{display:grid;gap:7px;font-weight:700}
+.admission-inputs label span{color:#62756c;font-size:13px;font-weight:400}
+.admission-inputs input{width:100%;min-height:44px;border:1px solid #cdded5;border-radius:11px;padding:10px 12px;background:#fff;font:inherit}
+.admission-inputs input[aria-invalid="true"]{border-color:#bc3b39}
+.admission-error{color:#a52b29}
+.admission-disclosure{border:1px solid #dce7dd;border-radius:14px;background:#f5f9f6;padding:14px 17px;margin:14px 0}
+.admission-disclosure strong{display:block;margin-bottom:5px}
+.admission-disclosure p{margin:6px 0;color:#425a4e}
+.admission-source-links{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0 24px}
+.admission-source-links a,.admission-school-footer a{color:#176b50;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.admission-source-links a{border:1px solid #cbded5;border-radius:10px;padding:10px 12px;text-decoration:none}
+.admission-filter-bar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.admission-count{margin:19px 0 12px;color:#52695d;font-size:14px}
+.admission-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.admission-school{display:flex;flex-direction:column;justify-content:space-between;gap:20px;border:1px solid #dfebe2;border-radius:15px;padding:16px;background:#fff}
+.admission-school-main{display:flex;align-items:flex-start;gap:12px}
+.admission-logo-pending{display:grid;place-items:center;flex:none;width:43px;height:43px;border:1px solid #d7e5dc;border-radius:12px;background:#f1f7f2;color:#37725a;font-size:18px;font-weight:800}
+.admission-school-main>div>span{color:#567365;font-size:13px}
+.admission-school h3{margin:6px 0;font-size:19px}
+.admission-school p{margin:4px 0;color:#5b6e63;font-size:13px}
+.admission-school-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:13px}
+.admission-school-footer>span{color:#7a6650}
+.admission-footnote{margin:24px 0 0;color:#66796c;font-size:13px}
+@media(max-width:700px){.admission-inputs,.admission-list{grid-template-columns:1fr}.admission-explorer{padding:17px}.admission-systems button,.admission-filter-bar button{font-size:14px}}
+
