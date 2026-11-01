@@ -5,3 +5,5 @@
 .gyeolgyeoli-suggestions button:disabled{opacity:.5;cursor:not-allowed}
 .gyeolgyeoli-status{color:#416350}
 .gyeolgyeoli-error{color:#ac3030;font-weight:650}
+.gyeolgyeoli-clear{margin-left:auto;border:1px solid #d9e5dc;border-radius:10px;background:#fff;color:#466254;padding:8px 11px;font:inherit;font-size:.85rem;cursor:pointer}
+.gyeolgyeoli-older{display:block;margin:18px auto 0;border:1px solid #d9e5dc;border-radius:999px;background:#fff;color:#285743;padding:8px 16px;font:inherit;cursor:pointer}
