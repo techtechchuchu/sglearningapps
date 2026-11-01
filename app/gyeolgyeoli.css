@@ -1,0 +1,7 @@
+.gyeolgyeoli-chat-body{overflow-y:auto;max-height:62vh}
+.gyeolgyeoli-message p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.gyeolgyeoli-message.assistant small+p{margin-top:8px}
+.gyeolgyeoli-composer button:not(:disabled){background:#176b50;cursor:pointer}
+.gyeolgyeoli-suggestions button:disabled{opacity:.5;cursor:not-allowed}
+.gyeolgyeoli-status{color:#416350}
+.gyeolgyeoli-error{color:#ac3030;font-weight:650}
