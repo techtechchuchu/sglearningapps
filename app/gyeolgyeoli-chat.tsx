@@ -40,6 +40,7 @@ export default function GyeolgyeoliChat({ name }: { name: string }) {
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "답변을 받지 못했습니다.");
       setQuestion(text);
+      setTurns((previous) => previous.slice(0, -1));
     } finally { setBusy(false); }
   }
 
@@ -54,3 +55,4 @@ export default function GyeolgyeoliChat({ name }: { name: string }) {
     <footer className="gyeolgyeoli-chat-footer"><form className="gyeolgyeoli-composer" onSubmit={(event) => void send(event)}><input aria-label="질문 입력" value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={800} placeholder={enabled ? "공부에 관한 질문을 입력하세요" : "AI 연결을 준비 중입니다"} disabled={!enabled || busy} /><button type="submit" disabled={!enabled || busy || question.trim().length < 2} aria-label="질문 보내기">➤</button></form><p>입력한 내용은 AI 답변을 위해 Google Gemini로 전송됩니다. 개인정보·비밀번호는 입력하지 마세요. AI 답변은 틀릴 수 있습니다.</p></footer>
   </section>;
 }
+
