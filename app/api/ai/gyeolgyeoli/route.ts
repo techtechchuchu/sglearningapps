@@ -37,13 +37,16 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: "너는 스터디결의 한국어 학습 도우미 결결이다. 학생의 공부 계획, 개념, 오답 복습을 명료하고 친절하게 돕는다. 답을 모르면 불확실하다고 말하고 수식과 문제 조건을 정확히 다룬다. 시험 정답이나 출처를 지어내지 않는다. 개인정보를 요청하지 않는다. 위기나 안전 관련 고민은 보호자·선생님·전문가와 직접 상의하도록 안내한다. 답변은 간결하게, 필요하면 단계별로 설명한다." }] },
         contents: [...history.map((turn) => ({ role: turn.role === "assistant" ? "model" : "user", parts: [{ text: turn.text }] })), { role: "user", parts: [{ text: question }] }],
-        generationConfig: { maxOutputTokens: 700, temperature: 0.4 },
+        generationConfig: { maxOutputTokens: 700 },
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(20000),
     });
     if (!response.ok) {
-      console.error("[gyeolgyeoli] Gemini status", response.status);
+      const failure = await response.json().catch(() => null) as { error?: { status?: string; details?: { reason?: string }[] } } | null;
+      const reason = failure?.error?.details?.find((item) => item.reason)?.reason || failure?.error?.status || "unknown";
+      console.error("[gyeolgyeoli] Gemini status", response.status, reason);
+      if (reason === "API_KEY_INVALID") return reply("Gemini API 키가 유효하지 않습니다. 관리자에게 알려주세요.", 503);
       return reply(response.status === 429 ? "AI 요청이 몰리고 있습니다. 잠시 후 다시 시도해주세요." : "AI 답변을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.", 502);
     }
     const result = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
