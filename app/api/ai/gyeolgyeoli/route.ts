@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     if (question.length < 2 || question.length > 800) return reply("질문은 2~800자로 입력해주세요.", 400);
     const history = Array.isArray(input.history) ? input.history.slice(-6) : [];
     if (history.some((turn) => !turn || typeof turn !== "object" || !["user", "assistant"].includes(turn.role) || typeof turn.text !== "string" || turn.text.length > 800)) return reply("대화 내용을 확인해주세요.", 400);
-    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+    const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
     if (!/^gemini-[a-z0-9.-]+$/.test(model)) return reply("AI 모델 설정을 확인해주세요.", 503);
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
@@ -55,3 +55,4 @@ export async function POST(request: NextRequest) {
     return reply("AI 답변을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.", 502);
   }
 }
+
