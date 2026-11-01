@@ -233,7 +233,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   </form></section>;
 
   return <main className="shell dashboard-shell study-workspace">
-    <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions"><button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => openTab("helper")}>✦ AI 상담사 결결이</button><button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
+    <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions"><button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => openTab("helper")}><span className="student-ai-sparkle" aria-hidden="true">✦</span> AI 상담사 결결이</button><button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
     <nav className="workspace-tabs student-primary-tabs" aria-label="학생 주요 메뉴">
       <button type="button" className={tab === "home" ? "active" : ""} aria-current={tab === "home" ? "page" : undefined} onClick={() => openTab("home")}>홈</button>
       <button type="button" className={tab === "wrong" ? "active" : ""} aria-current={tab === "wrong" ? "page" : undefined} onClick={() => openTab("wrong")}>오답 작성</button>
