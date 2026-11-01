@@ -108,7 +108,8 @@ export async function POST(request: NextRequest) {
       return reply(response.status === 429 ? "AI 요청이 몰리고 있습니다. 잠시 후 다시 시도해주세요." : "AI 답변을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.", 502);
     }
     const result = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    const answer = result.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n").trim().slice(0, 4000);
+    const rawAnswer = result.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n").trim().slice(0, 4000);
+    const answer = rawAnswer && restrictedTopic.test(rawAnswer) ? TOPIC_FALLBACK : rawAnswer;
     if (!answer) return reply("답변이 비어 있습니다. 질문을 바꿔 다시 시도해주세요.", 502);
     const saved = await db.from("gyeolgyeoli_messages").insert({ [owner.column]: owner.value, question, answer }).select("id,created_at").single();
     if (saved.error) {
@@ -121,3 +122,4 @@ export async function POST(request: NextRequest) {
     return reply("AI 답변을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.", 502);
   }
 }
+
