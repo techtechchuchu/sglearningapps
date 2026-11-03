@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { displayProblemNumbers } from "../lib/wrong-answers";
 import GyeolgyeoliChat from "./gyeolgyeoli-chat";
+import "./student-notice-carousel.css";
 
 type RecordRow = { id?: number; unit?: string; problem?: string; memo?: string; created_at?: string };
 type SchoolRow = { id: number; problem?: string; created_at?: string };
@@ -10,7 +12,41 @@ type View = "home" | "weekly" | "helper";
 const dayKey = (date: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
 const days = ["일", "월", "화", "수", "목", "금", "토"];
 
-export default function StudentLearningHub({ view, name, answers, schoolAnswers, onNavigate }: { view: View; name: string; answers: RecordRow[]; schoolAnswers: SchoolRow[]; onNavigate: (tab: "wrong" | "learn" | "questions" | "attendance") => void }) {
+const notices = [
+  { title: "아이폰 홈 화면에서 스터디결 바로 열기", description: "Safari에서 공유 버튼을 누르고 ‘홈 화면에 추가’를 선택하세요." },
+  { title: "AI 상담사 결결이를 이용해 보세요", description: "공부 계획과 오답 복습을 질문할 수 있고, 대화는 날짜별 기록에서 다시 볼 수 있어요." },
+] as const;
+
+function StudentNoticeCarousel({ onOpenAI }: { onOpenAI: () => void }) {
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [interacting, setInteracting] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    if (paused || interacting || showGuide || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") setIndex((current) => (current + 1) % notices.length);
+    }, 6500);
+    return () => window.clearInterval(timer);
+  }, [paused, interacting, showGuide]);
+
+  function select(next: number) {
+    setIndex((next + notices.length) % notices.length);
+    setShowGuide(false);
+  }
+
+  return <section className="student-notice-carousel" aria-label="공지사항" onMouseEnter={() => setInteracting(true)} onMouseLeave={() => setInteracting(false)} onFocusCapture={() => setInteracting(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setInteracting(false); }}>
+    <div className="student-notice-heading"><span className="badge">공지사항</span><span>{index + 1} / {notices.length}</span></div>
+    <div className="student-notice-content" key={index} aria-live="off">
+      <h2>{notices[index].title}</h2><p>{notices[index].description}</p>
+      {index === 0 ? <><button type="button" className="student-notice-link" aria-expanded={showGuide} onClick={() => setShowGuide((current) => !current)}>{showGuide ? "안내 접기" : "추가 방법 보기"}</button>{showGuide && <ol className="student-notice-steps"><li>아이폰의 Safari에서 스터디결 사이트를 엽니다.</li><li>공유 버튼을 누르고 ‘홈 화면에 추가’를 선택합니다.</li><li>‘웹 앱으로 열기’를 켠 뒤 ‘추가’를 누릅니다.</li></ol>}</> : <button type="button" className="student-notice-link" onClick={onOpenAI}>결결이 열기</button>}
+    </div>
+    <div className="student-notice-controls"><button type="button" onClick={() => select(index - 1)} aria-label="이전 공지">←</button><div role="group" aria-label="공지 선택">{notices.map((notice, noticeIndex) => <button type="button" key={notice.title} className={index === noticeIndex ? "active" : ""} aria-label={`${noticeIndex + 1}번 공지: ${notice.title}`} aria-pressed={index === noticeIndex} onClick={() => select(noticeIndex)} />)}</div><button type="button" onClick={() => select(index + 1)} aria-label="다음 공지">→</button><button type="button" className="student-notice-pause" aria-label={paused ? "공지 자동 넘김 재생" : "공지 자동 넘김 일시정지"} onClick={() => setPaused((current) => !current)}>{paused ? "▶" : "Ⅱ"}</button></div>
+  </section>;
+}
+
+export default function StudentLearningHub({ view, name, answers, schoolAnswers, onNavigate }: { view: View; name: string; answers: RecordRow[]; schoolAnswers: SchoolRow[]; onNavigate: (tab: "wrong" | "learn" | "questions" | "attendance" | "helper") => void }) {
   const now = new Date();
   const today = dayKey(now);
   const start = new Date(now);
@@ -23,6 +59,7 @@ export default function StudentLearningHub({ view, name, answers, schoolAnswers,
   const todayTotal = counts.get(today) || 0;
 
   if (view === "home") return <div className="learning-hub">
+    <StudentNoticeCarousel onOpenAI={() => onNavigate("helper")} />
     <section className="panel learning-hero"><span className="badge">오늘의 학습</span><h2>{name} 학생, 오늘은 무엇을 공부할까요?</h2><p>{new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "full" }).format(now)} · 최근 7일 동안 기록한 학습을 바탕으로 보여드립니다.</p><div className="learning-metrics"><article><b>{todayTotal}</b><span>오늘 기록</span></article><article><b>{weekTotal}</b><span>최근 7일 기록</span></article><article><b>{answers.length}</b><span>누적 오답</span></article></div></section>
     <section className="panel"><h2>바로 시작하기</h2><div className="learning-actions"><button type="button" onClick={() => onNavigate("wrong")}>✏️ 오답 작성</button><button type="button" onClick={() => onNavigate("learn")}>▶️ 문제별 해설</button><button type="button" onClick={() => onNavigate("questions")}>💬 선생님께 질문</button><button type="button" onClick={() => onNavigate("attendance")}>📍 출석 확인</button></div></section>
     <section className="panel"><h2>최근 학습 기록</h2>{activity.length ? activity.slice(0, 5).map((row) => <div className="row" key={row.id}><strong>{row.label}</strong><span>{row.kind} · {row.at ? new Date(row.at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "날짜 미상"}</span></div>) : <p>아직 기록이 없습니다. 첫 오답을 작성해 보세요.</p>}</section>
