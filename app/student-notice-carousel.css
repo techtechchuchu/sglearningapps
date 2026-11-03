@@ -1,0 +1,18 @@
+.student-notice-carousel{min-width:0;padding:20px 24px;border:1px solid #dce8e0;border-radius:20px;background:#fff;box-shadow:0 10px 28px #173c2710}
+.student-notice-heading{display:flex;align-items:center;justify-content:space-between;color:#687c70;font-size:.85rem}
+.student-notice-heading .badge{font-size:.82rem}
+.student-notice-content{min-height:112px;animation:student-notice-enter .3s ease-out}
+.student-notice-content h2{margin:16px 0 6px;color:#193c2d;font-size:1.18rem}
+.student-notice-content p{margin:0;color:#5a6f63;line-height:1.5}
+.student-notice-link{margin-top:12px;padding:0;border:0;background:transparent;color:#176b50;font:inherit;font-weight:750;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.student-notice-steps{margin:12px 0 0;padding-left:22px;color:#365648;line-height:1.65}
+.student-notice-controls{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px}
+.student-notice-controls>button{min-width:34px;min-height:34px;border:1px solid #d5e4db;border-radius:9px;background:#fff;color:#245840;font:inherit;cursor:pointer}
+.student-notice-controls>div{display:flex;gap:7px;align-items:center}
+.student-notice-controls>div button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:#bdcec3;cursor:pointer}
+.student-notice-controls>div button.active{width:21px;border-radius:999px;background:#176b50}
+.student-notice-controls .student-notice-pause{margin-left:5px}
+.student-notice-carousel button:focus-visible{outline:3px solid #8bc9a9;outline-offset:2px}
+@keyframes student-notice-enter{from{opacity:.45;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:650px){.student-notice-carousel{padding:17px}.student-notice-content h2{font-size:1.05rem}.student-notice-content{min-height:125px}}
+@media(prefers-reduced-motion:reduce){.student-notice-content{animation:none}}
