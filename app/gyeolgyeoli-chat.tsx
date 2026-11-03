@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Fragment, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import "./gyeolgyeoli.css";
 
 type Turn = { role: "user" | "assistant"; text: string; createdAt: string };
@@ -19,6 +19,7 @@ export default function GyeolgyeoliChat({ name }: { name: string }) {
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [savingWarning, setSavingWarning] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(() => dateKey(new Date().toISOString()));
 
   useEffect(() => {
     let live = true;
@@ -49,7 +50,7 @@ export default function GyeolgyeoliChat({ name }: { name: string }) {
       const response = await fetch("/api/ai/gyeolgyeoli", { method: "DELETE" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "대화 기록을 삭제하지 못했습니다.");
-      setTurns([]); setCursor(null); setSavingWarning(false);
+      setTurns([]); setCursor(null); setSavingWarning(false); setSelectedDay(dateKey(new Date().toISOString()));
     } catch (caught) { setError(caught instanceof Error ? caught.message : "대화 기록을 삭제하지 못했습니다."); }
   }
 
@@ -58,6 +59,7 @@ export default function GyeolgyeoliChat({ name }: { name: string }) {
     const text = question.trim();
     if (!text || busy || !enabled) return;
     setBusy(true); setError(""); setSavingWarning(false); setQuestion("");
+    setSelectedDay(dateKey(new Date().toISOString()));
     setTurns((previous) => [...previous, { role: "user", text, createdAt: new Date().toISOString() }]);
     try {
       const response = await fetch("/api/ai/gyeolgyeoli", {
@@ -76,16 +78,35 @@ export default function GyeolgyeoliChat({ name }: { name: string }) {
     } finally { setBusy(false); }
   }
 
+  const today = dateKey(new Date().toISOString());
+  const questions = turns.filter((turn) => turn.role === "user");
+  const days = Array.from(new Set(questions.map((turn) => dateKey(turn.createdAt)))).sort().reverse();
+  const selectedTurns = turns.filter((turn) => dateKey(turn.createdAt) === selectedDay);
+  const daySummary = (day: string) => {
+    const items = questions.filter((turn) => dateKey(turn.createdAt) === day);
+    return { count: items.length, preview: items[items.length - 1]?.text || "아직 대화가 없습니다", label: items[0] ? dateLabel(items[0].createdAt) : "오늘" };
+  };
+
   return <section className="gyeolgyeoli-chat" aria-label="AI 학습 도우미 결결이">
     <header className="gyeolgyeoli-chat-header"><span className="gyeolgyeoli-avatar" aria-hidden="true">결</span><div><strong>AI 학습 도우미 결결이</strong><small>{enabled === null ? "연결 확인 중" : enabled ? "공부에 관한 질문을 입력해 보세요" : "AI 연결을 준비 중입니다"}</small></div>{turns.length > 0 && <button type="button" className="gyeolgyeoli-clear" onClick={() => void clearHistory()}>대화 삭제</button>}</header>
-    <div className="gyeolgyeoli-chat-body"><div className="gyeolgyeoli-welcome"><span className="gyeolgyeoli-avatar" aria-hidden="true">결</span><div><h2>{name}님, 무엇이 궁금한가요?</h2><p>개념 설명부터 복습 계획까지 함께 정리해 드릴게요.</p></div></div>
-      <div className="gyeolgyeoli-suggestions" aria-label="추천 질문">{suggestions.map((text) => <button type="button" key={text} disabled={!enabled || busy} onClick={() => setQuestion(text)}>{text}</button>)}</div>
-      {cursor && <button type="button" className="gyeolgyeoli-older" disabled={loadingOlder} onClick={() => void loadOlder()}>{loadingOlder ? "불러오는 중…" : "이전 대화 보기"}</button>}
-      {turns.length > 0 && <div className="gyeolgyeoli-conversation" role="log" aria-live="polite">{turns.map((turn, index) => <Fragment key={`${turn.createdAt}-${index}`}>{(index === 0 || dateKey(turn.createdAt) !== dateKey(turns[index - 1].createdAt)) && <div className="gyeolgyeoli-date-divider"><time dateTime={dateKey(turn.createdAt)}>{dateLabel(turn.createdAt)}</time></div>}<div className={`gyeolgyeoli-message ${turn.role === "user" ? "student" : "assistant"}`}>{turn.role === "assistant" && <small>결결이</small>}<p>{turn.text}</p></div></Fragment>)}</div>}
-      {busy && <p className="gyeolgyeoli-status" role="status">결결이가 답변을 작성하고 있어요…</p>}
-      {savingWarning && <p className="gyeolgyeoli-error" role="alert">답변은 받았지만 기록은 저장되지 않았습니다. 관리자에게 알려주세요.</p>}
-      {error && <p className="gyeolgyeoli-error" role="alert">{error}</p>}
+    <div className="gyeolgyeoli-main">
+      <aside className="gyeolgyeoli-history" aria-label="날짜별 대화 목록">
+        <div className="gyeolgyeoli-history-heading"><strong>대화 기록</strong><small>날짜를 눌러 지난 대화를 확인하세요</small></div>
+        <button type="button" className={selectedDay === today ? "gyeolgyeoli-history-item active" : "gyeolgyeoli-history-item"} aria-current={selectedDay === today ? "date" : undefined} onClick={() => setSelectedDay(today)}><strong>오늘 대화</strong><span>{daySummary(today).count ? `${daySummary(today).count}개 질문 · ${daySummary(today).preview}` : "새 질문을 시작해 보세요"}</span></button>
+        {days.filter((day) => day !== today).map((day) => { const summary = daySummary(day); return <button type="button" key={day} className={selectedDay === day ? "gyeolgyeoli-history-item active" : "gyeolgyeoli-history-item"} aria-current={selectedDay === day ? "date" : undefined} onClick={() => setSelectedDay(day)}><strong>{summary.label}</strong><span>{summary.count}개 질문 · {summary.preview}</span></button>; })}
+        {cursor && <button type="button" className="gyeolgyeoli-older" disabled={loadingOlder} onClick={() => void loadOlder()}>{loadingOlder ? "불러오는 중…" : "이전 기록 더 보기"}</button>}
+      </aside>
+      <div className="gyeolgyeoli-panel">
+        <div className="gyeolgyeoli-chat-body">
+          <div className="gyeolgyeoli-day-heading"><strong>{selectedDay === today ? "오늘 대화" : daySummary(selectedDay).label}</strong><span>{daySummary(selectedDay).count}개 질문</span></div>
+          {selectedDay === today && <><div className="gyeolgyeoli-welcome"><span className="gyeolgyeoli-avatar" aria-hidden="true">결</span><div><h2>{name}님, 무엇이 궁금한가요?</h2><p>개념 설명부터 복습 계획까지 함께 정리해 드릴게요.</p></div></div><div className="gyeolgyeoli-suggestions" aria-label="추천 질문">{suggestions.map((text) => <button type="button" key={text} disabled={!enabled || busy} onClick={() => setQuestion(text)}>{text}</button>)}</div></>}
+          {selectedTurns.length > 0 ? <div className="gyeolgyeoli-conversation" role="log" aria-live="polite">{selectedTurns.map((turn, index) => <div className={`gyeolgyeoli-message ${turn.role === "user" ? "student" : "assistant"}`} key={`${turn.createdAt}-${index}`}>{turn.role === "assistant" && <small>결결이</small>}<p>{turn.text}</p></div>)}</div> : <p className="gyeolgyeoli-empty">{selectedDay === today ? "오늘 나눈 대화가 아직 없습니다." : "이 날짜에 불러온 대화가 없습니다."}</p>}
+          {busy && <p className="gyeolgyeoli-status" role="status">결결이가 답변을 작성하고 있어요…</p>}
+          {savingWarning && <p className="gyeolgyeoli-error" role="alert">답변은 받았지만 기록은 저장되지 않았습니다. 관리자에게 알려주세요.</p>}
+          {error && <p className="gyeolgyeoli-error" role="alert">{error}</p>}
+        </div>
+        <footer className="gyeolgyeoli-chat-footer">{selectedDay === today ? <form className="gyeolgyeoli-composer" onSubmit={(event) => void send(event)}><input aria-label="질문 입력" value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={800} placeholder={enabled ? "공부에 관한 질문을 입력하세요" : "AI 연결을 준비 중입니다"} disabled={!enabled || busy} /><button type="submit" disabled={!enabled || busy || question.trim().length < 2} aria-label="질문 보내기">➤</button></form> : <button type="button" className="gyeolgyeoli-today-link" onClick={() => setSelectedDay(today)}>오늘 대화로 돌아가 질문하기</button>}<p>대화는 로그인한 계정에 저장되며 AI 답변을 위해 Google Gemini로 전송됩니다. 개인정보·비밀번호는 입력하지 마세요. AI 답변은 틀릴 수 있습니다.</p></footer>
+      </div>
     </div>
-    <footer className="gyeolgyeoli-chat-footer"><form className="gyeolgyeoli-composer" onSubmit={(event) => void send(event)}><input aria-label="질문 입력" value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={800} placeholder={enabled ? "공부에 관한 질문을 입력하세요" : "AI 연결을 준비 중입니다"} disabled={!enabled || busy} /><button type="submit" disabled={!enabled || busy || question.trim().length < 2} aria-label="질문 보내기">➤</button></form><p>대화는 로그인한 계정에 저장되며 AI 답변을 위해 Google Gemini로 전송됩니다. 개인정보·비밀번호는 입력하지 마세요. AI 답변은 틀릴 수 있습니다.</p></footer>
   </section>;
 }
