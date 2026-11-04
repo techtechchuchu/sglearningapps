@@ -10,6 +10,16 @@ export type ReportStatusRow = {
 const weekdays: Record<string, number> = { "일": 0, "월": 1, "화": 2, "수": 3, "목": 4, "금": 5, "토": 6 };
 const fixedDelivery: Record<string, number> = { "박병민.T": 3, "이주백.T": 5 };
 
+const finalBookAliases: Record<string, string> = {
+  "X-패턴 공통수학2 기말": "X-패턴 공통수학2",
+  "UNIT N제 공통수학2 기말": "UNIT N제 공통수학2",
+};
+
+function matchesRosterBook(allowed: Set<string>, submitted: unknown): boolean {
+  const book = String(submitted || "").trim();
+  return allowed.has(book) || allowed.has(finalBookAliases[book] || "");
+}
+
 function timestamp(value: unknown): number {
   const raw = String(value || "").trim();
   if (!raw) return NaN;
@@ -90,7 +100,7 @@ export function buildReportStatus(roster: Row[], answers: Row[], reports: Row[],
     const key = `${teacher}\u0000${className}\u0000${student}`;
     const allowed = new Set(splitRosterBooks(row.book_name));
     const studentAnswers = byStudent.get(student) || [];
-    const matched = studentAnswers.filter((answer) => allowed.has(String(answer.unit || "").trim()));
+    const matched = studentAnswers.filter((answer) => matchesRosterBook(allowed, answer.unit));
     for (const answer of matched) {
       const link = `${key}\u0000${String(answer.unit || "").trim()}\u0000${answer.id ?? `${answer.created_at}|${answer.problem}`}`;
       if (seenLinks.has(link)) continue;
