@@ -1,18 +1,34 @@
-.student-notice-carousel{min-width:0;padding:20px 24px;border:1px solid #dce8e0;border-radius:20px;background:#fff;box-shadow:0 10px 28px #173c2710}
-.student-notice-heading{display:flex;align-items:center;justify-content:space-between;color:#687c70;font-size:.85rem}
-.student-notice-heading .badge{font-size:.82rem}
-.student-notice-content{min-height:112px;animation:student-notice-enter .3s ease-out}
-.student-notice-content h2{margin:16px 0 6px;color:#193c2d;font-size:1.18rem}
-.student-notice-content p{margin:0;color:#5a6f63;line-height:1.5}
-.student-notice-link{margin-top:12px;padding:0;border:0;background:transparent;color:#176b50;font:inherit;font-weight:750;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.student-notice-steps{margin:12px 0 0;padding-left:22px;color:#365648;line-height:1.65}
-.student-notice-controls{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px}
-.student-notice-controls>button{min-width:34px;min-height:34px;border:1px solid #d5e4db;border-radius:9px;background:#fff;color:#245840;font:inherit;cursor:pointer}
+.student-notice-carousel{width:min(100%,430px);min-width:0;justify-self:center;overflow:hidden;border:1px solid #d8e5de;border-radius:24px;background:#fff;box-shadow:0 14px 34px #173c2717}
+.student-notice-poster{display:flex;flex-direction:column;min-height:510px;padding:20px 24px 24px;animation:student-notice-enter .35s ease-out}
+.student-notice-home .student-notice-poster{background:radial-gradient(circle at 85% 7%,#ffffffb0 0 13%,transparent 14%),linear-gradient(155deg,#bdebdc 0%,#e9f5f0 52%,#fcfbf6 100%)}
+.student-notice-ai .student-notice-poster{background:radial-gradient(circle at 13% 18%,#ffffffa8 0 12%,transparent 13%),linear-gradient(155deg,#d8eee4 0%,#e2ebf4 52%,#fdfbf7 100%)}
+.student-notice-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#245642;font-size:.85rem}
+.student-notice-heading>span{padding:6px 10px;border-radius:999px;background:#173f32;color:#fff;font-weight:800}
+.student-notice-visual{position:relative;display:grid;place-items:center;flex:none;height:195px;isolation:isolate}
+.student-notice-visual::before{content:"";position:absolute;width:205px;height:205px;border:1px solid #ffffffb8;border-radius:50%;box-shadow:0 0 0 22px #ffffff42,0 0 0 47px #ffffff29;z-index:-1}
+.student-notice-phone{display:flex;flex-direction:column;align-items:center;justify-content:center;width:94px;height:154px;border:7px solid #183c31;border-radius:23px;background:#fff;box-shadow:16px 18px 26px #235f4c35;transform:rotate(-8deg)}
+.student-notice-phone-speaker{position:absolute;top:5px;width:26px;height:4px;border-radius:4px;background:#183c31}
+.student-notice-phone-mark{display:grid;place-items:center;width:47px;height:47px;border-radius:15px;background:#176b50;color:#fff;font-size:1.4rem;font-weight:850}
+.student-notice-phone small{margin-top:7px;color:#183c31;font-weight:800}
+.student-notice-ai-mark{position:relative;display:grid;place-items:center;width:115px;height:115px;border-radius:35px;background:#176b50;color:#fff;box-shadow:16px 17px 28px #235f4c38;transform:rotate(-6deg)}
+.student-notice-ai-mark>span{font-size:3.4rem;font-weight:850}
+.student-notice-ai-mark i{position:absolute;right:-34px;width:48px;height:15px;border-radius:10px;background:#fff;box-shadow:0 5px 13px #235f4c26}
+.student-notice-ai-mark i:nth-of-type(1){top:30px}.student-notice-ai-mark i:nth-of-type(2){top:55px;width:35px}
+.student-notice-content{display:flex;flex:1;flex-direction:column;align-items:flex-start;color:#193c2d}
+.student-notice-eyebrow{color:#236b4e;font-size:.82rem;font-weight:850;letter-spacing:.04em}
+.student-notice-content h2{margin:10px 0 10px;font-size:clamp(1.35rem,4vw,1.7rem);line-height:1.25;letter-spacing:-.035em}
+.student-notice-content p{margin:0;color:#4d695c;line-height:1.55}
+.student-notice-link{display:block;width:100%;margin-top:auto;padding:13px 14px;border:0;border-radius:12px;background:#173f32;color:#fff;font:inherit;font-weight:800;text-align:center;cursor:pointer}
+.student-notice-link:hover{background:#10523d}
+.student-notice-steps{margin:12px 0 0;padding-left:21px;color:#365648;font-size:.9rem;line-height:1.5}
+.student-notice-steps li+li{margin-top:4px}
+.student-notice-controls{display:flex;align-items:center;justify-content:center;gap:12px;padding:13px 20px;background:#fff}
+.student-notice-controls>button{min-width:36px;min-height:36px;border:1px solid #d5e4db;border-radius:9px;background:#fff;color:#245840;font:inherit;cursor:pointer}
 .student-notice-controls>div{display:flex;gap:7px;align-items:center}
 .student-notice-controls>div button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:#bdcec3;cursor:pointer}
 .student-notice-controls>div button.active{width:21px;border-radius:999px;background:#176b50}
-.student-notice-controls .student-notice-pause{margin-left:5px}
+.student-notice-controls .student-notice-pause{margin-left:6px}
 .student-notice-carousel button:focus-visible{outline:3px solid #8bc9a9;outline-offset:2px}
-@keyframes student-notice-enter{from{opacity:.45;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:650px){.student-notice-carousel{padding:17px}.student-notice-content h2{font-size:1.05rem}.student-notice-content{min-height:125px}}
-@media(prefers-reduced-motion:reduce){.student-notice-content{animation:none}}
+@keyframes student-notice-enter{from{opacity:.55;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:650px){.student-notice-carousel{width:min(100%,390px)}.student-notice-poster{min-height:475px;padding:18px 19px 22px}.student-notice-visual{height:175px}.student-notice-content h2{font-size:1.4rem}}
+@media(prefers-reduced-motion:reduce){.student-notice-poster{animation:none}}
