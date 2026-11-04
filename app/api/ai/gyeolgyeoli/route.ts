@@ -9,6 +9,11 @@ export const dynamic = "force-dynamic";
 const reply = (message: string, status: number) => NextResponse.json({ message }, { status, headers: { "Cache-Control": "no-store" } });
 const apiKey = () => process.env.Gemini_ai_key || process.env.GEMINI_API_KEY;
 const TOPIC_FALLBACK = "이해하지 못했어요.";
+const STUDY_SUGGESTION_BACKUP: Record<string, string> = {
+  "이번 주 공부 계획을 세워줘": "이번 주 해야 할 과목과 과제를 먼저 적어 보세요. 마감이 가까운 것부터 하루에 1~2개씩 배치하고, 매일 끝에 10분 동안 완료한 것과 밀린 것을 확인하면 좋아요.",
+  "오답을 복습하는 방법을 알려줘": "틀린 이유를 계산 실수·개념 부족·문제 해석 중 하나로 적고, 해설을 덮은 채 다시 풀어 보세요. 이틀 뒤 같은 문제를 한 번 더 풀어 맞히면 복습이 더 오래 남습니다.",
+  "시험 전날에는 무엇을 해야 해?": "새로운 문제를 많이 풀기보다 이미 틀린 문제와 핵심 개념을 짧게 확인하세요. 준비물과 시험 시간을 미리 챙기고, 잠을 충분히 자는 것이 좋습니다.",
+};
 const UNCLEAR_FALLBACK = "잘 이해하지 못하는 표현이에요.";
 const restrictedTopic = /일베|일간베스트|혐오|여혐|남혐|비하|멸칭|차별|인종주의|이태원\s*(참사|사고)?|세월호|정치|정치인|대통령|국회의원|정당|대선|총선|탄핵|이재명|윤석열|노무현|문재인|박근혜|김대중|이명박|박정희|전두환|노태우|김영삼|한동훈|홍준표|안철수|이준석|조국|국민의힘|민주당/i;
 const unclearExpression = (question: string) => question.length <= 12 && !/\s|[?？.!。]/.test(question) && !/^(안녕|안녕하세요|반가워요|고마워|고마워요|감사합니다)$/.test(question);
@@ -93,7 +98,7 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: "너는 스터디결의 한국어 학습 도우미 결결이다. 학생의 공부 계획, 개념, 오답 복습을 명료하고 친절하게 돕는다. 정치·정치인, 혐오·비하 표현, 이태원 참사·세월호 관련 내용이면 다른 설명이나 권유 없이 정확히 '이해하지 못했어요.'라고만 답한다. 단어·이름만 던진 모호한 입력이면 정확히 '잘 이해하지 못하는 표현이에요.'라고만 답한다. 그 외 학습 질문에서 답을 모르면 불확실하다고 말하고 수식과 문제 조건을 정확히 다룬다. 시험 정답이나 출처를 지어내지 않는다. 개인정보를 요청하지 않는다. 위기나 안전 관련 고민은 보호자·선생님·전문가와 직접 상의하도록 안내한다. 답변은 간결하게, 필요하면 단계별로 설명한다." }] },
+        systemInstruction: { parts: [{ text: "너는 스터디결의 한국어 학습 도우미 결결이다. 학생의 공부 계획, 개념, 오답 복습을 명료하고 친절하게 돕는다. 시험 전날 공부법처럼 일반적인 학습 질문에는 구체적으로 답한다. 학생의 질문이 정치·정치인, 혐오·비하 표현, 이태원 참사·세월호 관련 내용이면 다른 설명이나 권유 없이 정확히 '이해하지 못했어요.'라고만 답한다. 단어·이름만 던진 모호한 입력이면 정확히 '잘 이해하지 못하는 표현이에요.'라고만 답한다. 그 외 학습 질문에서 답을 모르면 불확실하다고 말하고 수식과 문제 조건을 정확히 다룬다. 시험 정답이나 출처를 지어내지 않는다. 개인정보를 요청하지 않는다. 위기나 안전 관련 고민은 보호자·선생님·전문가와 직접 상의하도록 안내한다. 답변은 간결하게, 필요하면 단계별로 설명한다." }] },
         contents: [...history, { role: "user", parts: [{ text: question }] }],
         generationConfig: { maxOutputTokens: 700 },
       }),
@@ -109,7 +114,7 @@ export async function POST(request: NextRequest) {
     }
     const result = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
     const rawAnswer = result.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n").trim().slice(0, 4000);
-    const answer = rawAnswer && restrictedTopic.test(rawAnswer) ? TOPIC_FALLBACK : rawAnswer;
+    const answer = rawAnswer === TOPIC_FALLBACK || rawAnswer === UNCLEAR_FALLBACK ? STUDY_SUGGESTION_BACKUP[question] || rawAnswer : rawAnswer;
     if (!answer) return reply("답변이 비어 있습니다. 질문을 바꿔 다시 시도해주세요.", 502);
     const saved = await db.from("gyeolgyeoli_messages").insert({ [owner.column]: owner.value, question, answer }).select("id,created_at").single();
     if (saved.error) {
