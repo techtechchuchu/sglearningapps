@@ -36,11 +36,13 @@ function StudentNoticeCarousel({ onOpenAI }: { onOpenAI: () => void }) {
     setShowGuide(false);
   }
 
-  return <section className="student-notice-carousel" aria-label="공지사항" onMouseEnter={() => setInteracting(true)} onMouseLeave={() => setInteracting(false)} onFocusCapture={() => setInteracting(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setInteracting(false); }}>
-    <div className="student-notice-heading"><span className="badge">공지사항</span><span>{index + 1} / {notices.length}</span></div>
-    <div className="student-notice-content" key={index} aria-live="off">
-      <h2>{notices[index].title}</h2><p>{notices[index].description}</p>
-      {index === 0 ? <><button type="button" className="student-notice-link" aria-expanded={showGuide} onClick={() => setShowGuide((current) => !current)}>{showGuide ? "안내 접기" : "추가 방법 보기"}</button>{showGuide && <ol className="student-notice-steps"><li>아이폰의 Safari에서 스터디결 사이트를 엽니다.</li><li>공유 버튼을 누르고 ‘홈 화면에 추가’를 선택합니다.</li><li>‘웹 앱으로 열기’를 켠 뒤 ‘추가’를 누릅니다.</li></ol>}</> : <button type="button" className="student-notice-link" onClick={onOpenAI}>결결이 열기</button>}
+  return <section className={`student-notice-carousel ${index === 0 ? "student-notice-home" : "student-notice-ai"}`} aria-label="공지사항" onMouseEnter={() => setInteracting(true)} onMouseLeave={() => setInteracting(false)} onFocusCapture={() => setInteracting(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setInteracting(false); }}>
+    <div className="student-notice-poster" key={index}>
+      <div className="student-notice-heading"><strong>스터디결 공지사항</strong><span>{index + 1} / {notices.length}</span></div>
+      <div className="student-notice-visual" aria-hidden="true">{index === 0 ? <div className="student-notice-phone"><span className="student-notice-phone-speaker" /><span className="student-notice-phone-mark">결</span><small>스터디결</small></div> : <div className="student-notice-ai-mark"><span>결</span><i /><i /></div>}</div>
+      <div className="student-notice-content" aria-live="off"><span className="student-notice-eyebrow">{index === 0 ? "아이폰 이용 안내" : "AI 학습 도우미"}</span><h2>{notices[index].title}</h2><p>{notices[index].description}</p>
+        {index === 0 ? <><button type="button" className="student-notice-link" aria-expanded={showGuide} onClick={() => setShowGuide((current) => !current)}>{showGuide ? "안내 접기" : "홈 화면 추가 방법 보기 →"}</button>{showGuide && <ol className="student-notice-steps"><li>아이폰의 Safari에서 스터디결 사이트를 엽니다.</li><li>공유 버튼을 누르고 ‘홈 화면에 추가’를 선택합니다.</li><li>‘웹 앱으로 열기’를 켠 뒤 ‘추가’를 누릅니다.</li></ol>}</> : <button type="button" className="student-notice-link" onClick={onOpenAI}>결결이에게 질문하기 →</button>}
+      </div>
     </div>
     <div className="student-notice-controls"><button type="button" onClick={() => select(index - 1)} aria-label="이전 공지">←</button><div role="group" aria-label="공지 선택">{notices.map((notice, noticeIndex) => <button type="button" key={notice.title} className={index === noticeIndex ? "active" : ""} aria-label={`${noticeIndex + 1}번 공지: ${notice.title}`} aria-pressed={index === noticeIndex} onClick={() => select(noticeIndex)} />)}</div><button type="button" onClick={() => select(index + 1)} aria-label="다음 공지">→</button><button type="button" className="student-notice-pause" aria-label={paused ? "공지 자동 넘김 재생" : "공지 자동 넘김 일시정지"} onClick={() => setPaused((current) => !current)}>{paused ? "▶" : "Ⅱ"}</button></div>
   </section>;
