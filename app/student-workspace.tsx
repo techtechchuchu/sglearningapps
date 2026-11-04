@@ -19,7 +19,10 @@ type SchoolAnswer = { id: number; exam_id: number; problem: string; memo: string
 type ExamOption = { id: string; school: string; label: string; max: number; edition: string; requiresConfirmation: boolean };
 type ChannelRequest = { teacherName: string; channelName: string; channelUrl: string; book: string; problem: string; variantProblem: string; memo: string; requestId?: number };
 
-const TEACHER_KAKAO_CHANNELS = [{ teacher: "이주백", channelName: "SG수학학원 이주백T", channelUrl: "https://pf.kakao.com/_hmxdiK/chat" }];
+const TEACHER_KAKAO_CHANNELS = [
+  { teacher: "이주백", channelName: "SG수학학원 이주백T", channelUrl: "https://pf.kakao.com/_hmxdiK/chat" },
+  { teacher: "노대근", channelName: "노대근.T 카카오채널", channelUrl: "https://pf.kakao.com/_SxnVGn/chat" },
+];
 
 async function json(response: Response) {
   const body = await response.json().catch(() => ({}));
