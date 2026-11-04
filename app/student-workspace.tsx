@@ -129,13 +129,21 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   }
 
   async function saveWrong() {
+    const assignedName = book.endsWith(" 기말") ? book.slice(0, -" 기말".length) : book;
+    const teacherNames = [...new Set(data.roster
+      .filter((row) => splitRosterBooks(row.book_name).some((assigned) => assigned === book || assigned === assignedName))
+      .map((row) => String(row.teacher_name || "").trim()).filter(Boolean))];
+    const teacherName = teacherNames.length === 1 ? teacherNames[0] : "";
+    const channel = TEACHER_KAKAO_CHANNELS.find((item) => teacherName.includes(item.teacher));
+    if (variantChoice === "yes" && !channel) {
+      setWrongFormError(teacherNames.length > 1 ? "담당 선생님이 여러 분으로 확인됩니다. 학원에 확인해주세요." : "담당 선생님의 카카오채널이 아직 등록되지 않았습니다. 학원에 문의해주세요.");
+      setWrongReviewReady(false);
+      return;
+    }
     await run(async () => {
       const result = await json(await fetch("/api/student/wrong-answers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ book, examId, examConfirmed, problem, memo, bookConfirmed: true, variantChoice, variantProblem }) }));
-      const rosterRow = data.roster.find((row) => splitRosterBooks(row.book_name).includes(book));
-      const teacherName = String(rosterRow?.teacher_name || "").trim();
-      const channel = TEACHER_KAKAO_CHANNELS.find((item) => teacherName.includes(item.teacher)) || TEACHER_KAKAO_CHANNELS[0];
       setChannelOpened(false);
-      setChannelRequest(variantChoice === "yes" ? { teacherName: teacherName || `${channel.teacher}T`, channelName: channel.channelName, channelUrl: channel.channelUrl, book, problem, variantProblem, memo, requestId: Number(result.row?.id) || undefined } : null);
+      setChannelRequest(variantChoice === "yes" && channel ? { teacherName, channelName: channel.channelName, channelUrl: channel.channelUrl, book, problem, variantProblem, memo, requestId: Number(result.row?.id) || undefined } : null);
       await refresh();
       setProblem(""); setMemo(""); setExamConfirmed(false); setVariantChoice(""); setVariantProblem(""); setWrongReviewReady(false);
       setMessage(variantChoice === "yes" ? "오답을 저장했습니다. 카카오채널 전송을 완료해야 다음 화면으로 이동할 수 있습니다." : `저장 확인 완료: ${result.saved.join(", ")}${result.duplicate.length ? ` · 중복 제외: ${result.duplicate.join(", ")}` : ""}`);
