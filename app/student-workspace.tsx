@@ -60,6 +60,14 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [menuCondensed, setMenuCondensed] = useState(false);
+
+  useEffect(() => {
+    const updateMenu = () => setMenuCondensed(window.scrollY > 140);
+    updateMenu();
+    window.addEventListener("scroll", updateMenu, { passive: true });
+    return () => window.removeEventListener("scroll", updateMenu);
+  }, []);
 
   function booksForPeriod(sourceBooks: string[], period: BookPeriod) {
     const periodBooks = filterBooksByPeriod(sourceBooks, period);
@@ -226,6 +234,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     setTab(nextTab);
     setMoreOpen(false);
     setMessage("");
+    window.scrollTo({ top: 0, behavior: "auto" });
   }
 
   const wrongAnswerPanel = <section className="panel wrong-answer-panel"><h2>{tab === "home" ? "바로 오답 작성" : "오답 작성"}</h2>{tab === "home" && <p className="panel-intro">교재와 문제번호를 선택하면 이 화면에서 바로 오답을 저장할 수 있습니다.</p>}<form onSubmit={(event) => { event.preventDefault(); reviewWrong(); }} className="form workspace-form" noValidate>
@@ -245,7 +254,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
 
   return <main className="shell dashboard-shell study-workspace">
     <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions"><button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => openTab("helper")}><span className="student-ai-sparkle" aria-hidden="true">✦</span> AI 상담사 결결이</button><button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
-    <nav className="workspace-tabs student-primary-tabs" aria-label="학생 주요 메뉴">
+    <nav className={`workspace-tabs student-primary-tabs${menuCondensed ? " is-condensed" : ""}`} aria-label="학생 주요 메뉴">
       <button type="button" className={tab === "home" ? "active" : ""} aria-current={tab === "home" ? "page" : undefined} onClick={() => openTab("home")}>홈</button>
       <button type="button" className={tab === "wrong" ? "active" : ""} aria-current={tab === "wrong" ? "page" : undefined} onClick={() => openTab("wrong")}>오답 작성</button>
       <button type="button" className={tab === "school" ? "active" : ""} aria-current={tab === "school" ? "page" : undefined} onClick={() => openTab("school")}>학교 기출</button>
