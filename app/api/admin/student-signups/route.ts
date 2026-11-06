@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { failure, sameOrigin } from "../../../../lib/member-auth";
 import { staffSession } from "../../../../lib/staff-access";
 import { getServerSupabase } from "../../../../lib/supabase-server";
+import { matchesStudentSignupRoster } from "../../../../lib/student-signup-roster";
 
 function isAdmin(request: NextRequest) { return staffSession(request) === "전체 관리자"; }
 
@@ -32,9 +33,9 @@ export async function PATCH(request: NextRequest) {
       const applicant = await db.from("users").select("grade").eq("username", username).eq("signup_status", "pending").maybeSingle();
       if (applicant.error) throw applicant.error;
       if (!applicant.data) return failure("이미 처리됐거나 없는 가입 신청입니다.", 409);
-      const roster = await db.from("student_roster").select("id,grade").eq("student_name", username).neq("enrollment_status", "퇴원").limit(20);
+      const roster = await db.from("student_roster").select("id,student_name,grade,class_name,enrollment_status").eq("student_name", username).eq("enrollment_status", "재원").limit(20);
       if (roster.error) throw roster.error;
-      if (!roster.data?.some(row => !row.grade || row.grade === applicant.data.grade))
+      if (!roster.data?.some(row => matchesStudentSignupRoster(row, username, String(applicant.data.grade || ""))))
         return failure("동일한 이름·학년의 재원 명단이 없습니다. 먼저 명단에 등록하거나 학년을 확인해주세요.", 409);
     }
     const result = await db.from("users").update({
