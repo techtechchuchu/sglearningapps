@@ -227,3 +227,10 @@
   .study-workspace>.student-sticky-header>.student-primary-tabs{position:static;top:auto;z-index:auto;width:100%;margin:6px 0 0;box-shadow:none}
 }
 @media(max-width:380px){.student-sticky-header .student-topbar-actions{grid-column:1/-1;justify-content:flex-end}}
+
+/* SG academy support stays visible at the bottom of student and staff screens. */
+.sg-has-contact-footer{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important}
+.sg-contact-footer{position:fixed;inset:auto 0 0;z-index:90;display:flex;align-items:center;justify-content:center;gap:16px;min-height:56px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #dce6df;background:rgba(255,255,255,.97);box-shadow:0 -8px 26px #183b2712;color:#53695b;font-size:13px;backdrop-filter:blur(10px)}
+.sg-contact-footer a{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 15px;border-radius:10px;background:#176b50;color:#fff;text-decoration:none;font-weight:800;white-space:nowrap}
+.sg-contact-footer a:hover,.sg-contact-footer a:focus-visible{background:#10523d}
+@media(max-width:480px){.sg-contact-footer{gap:8px;justify-content:space-between;font-size:11px}.sg-contact-footer a{padding:8px 11px;font-size:12px}}
