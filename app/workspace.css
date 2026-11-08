@@ -14,7 +14,7 @@
 .g-nav .brand-lockup{font-size:18px}
 .g-nav .brand-lockup img{width:104px;max-height:28px}
 .study-workspace{width:min(100%,1180px);min-width:0}
-.study-workspace>.panel,.study-workspace>.metrics,.study-workspace>.grid2,.study-workspace>.workspace-group-tabs,.study-workspace>.workspace-tabs{width:100%;max-width:100%;min-width:0}
+.study-workspace>.panel,.study-workspace>.metrics,.study-workspace>.grid2,.study-workspace>.workspace-group-tabs,.study-workspace>.workspace-tabs,.study-workspace>.student-sticky-header>.student-primary-tabs{width:100%;max-width:100%;min-width:0}
 .learning-hub{display:grid;gap:18px;min-width:0}.learning-hub>.panel{min-width:0}.learning-hero{background:linear-gradient(135deg,#f0f9f2,#fff)}.learning-hero h2{margin:14px 0 6px}.learning-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}.learning-metrics article{padding:18px;border:1px solid #dce9e1;border-radius:16px;background:#fff;display:grid;gap:4px}.learning-metrics b{font-size:1.7rem;color:#176b50}.learning-metrics span{color:#60756a}.learning-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.learning-actions button,.question-card>button{padding:11px 15px;border:1px solid #c8dbd0;border-radius:12px;background:#fff;color:#175d46;font:inherit;font-weight:700;cursor:pointer}.learning-actions button.selected,.learning-actions button:hover{background:#e4f3e9}.learning-week{display:grid;gap:14px;margin-top:22px}.learning-day{display:grid;grid-template-columns:105px 44px minmax(0,1fr);gap:12px;align-items:center}.learning-bar-track{height:10px;border-radius:999px;background:#edf2ed;overflow:hidden}.learning-bar-track>div{height:100%;border-radius:999px;background:#31a375}.learning-guidance{margin-top:20px;padding:18px;border-radius:16px;background:#f4faf6}.learning-guidance li{margin:8px 0}.learning-note{margin-top:24px;color:#6a7770;font-size:.9rem}.question-card{padding:18px 0;border-top:1px solid #e3eae5;overflow-wrap:anywhere}.question-card-head{display:flex;gap:12px;justify-content:space-between;align-items:center}.question-card-head span{padding:5px 9px;border-radius:999px;background:#eaf5ed;color:#235a41;font-size:.85rem}.question-card small{display:block;margin-top:5px;color:#718076}.question-card p{white-space:pre-wrap}.question-card label{display:block;font-weight:700;margin:15px 0 10px}.question-card textarea{display:block;width:100%;min-height:90px;padding:12px;margin-top:8px;border:1px solid #cbded5;border-radius:10px;font:inherit}.question-answer{padding:12px 16px;border-radius:12px;background:#f1f7f2}.question-answer p{margin-bottom:0}@media(max-width:650px){.learning-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.learning-metrics article{padding:11px}.learning-metrics b{font-size:1.25rem}.learning-metrics span{font-size:.75rem}.learning-day{grid-template-columns:76px 36px minmax(0,1fr);gap:7px;font-size:.78rem}.learning-actions button{flex:1 1 calc(50% - 10px)}.question-card-head{align-items:flex-start}}
 .staff-header{align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px 24px}
 .staff-header .staff-heading{flex:1;min-width:180px}
@@ -205,8 +205,25 @@
 
 
 /* Student navigation stays available while reading long pages. */
-.study-workspace>.student-primary-tabs{position:sticky;top:0;z-index:80;margin:16px 0 20px;padding:8px;border:1px solid transparent;border-radius:18px;background:rgba(244,247,251,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:padding .18s ease,box-shadow .18s ease,border-color .18s ease}
-.study-workspace>.student-primary-tabs.is-condensed{padding:6px;border-color:#dce8e1;box-shadow:0 10px 24px #173b2d1c}
+.student-sticky-header{display:contents}
+.study-workspace>.student-sticky-header>.student-primary-tabs{position:sticky;top:0;z-index:80;margin:16px 0 20px;padding:8px;border:1px solid transparent;border-radius:18px;background:rgba(244,247,251,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:padding .18s ease,box-shadow .18s ease,border-color .18s ease}
+.study-workspace>.student-sticky-header>.student-primary-tabs.is-condensed{padding:6px;border-color:#dce8e1;box-shadow:0 10px 24px #173b2d1c}
 .student-primary-tabs button{transition:min-height .18s ease,padding .18s ease}
 .student-primary-tabs.is-condensed button{min-height:42px;padding:8px 10px}
-@media(max-width:700px){.study-workspace>.student-primary-tabs{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 2px;border-radius:12px}.study-workspace>.student-primary-tabs::-webkit-scrollbar{display:none}.student-primary-tabs button,.student-primary-tabs button:last-child{grid-column:auto;flex:0 0 auto;min-width:106px;min-height:44px;padding:8px 12px;white-space:nowrap}.student-primary-tabs.is-condensed button{min-height:40px;padding:7px 11px}}
+@media(max-width:700px){.study-workspace>.student-sticky-header>.student-primary-tabs{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 2px;border-radius:12px}.study-workspace>.student-sticky-header>.student-primary-tabs::-webkit-scrollbar{display:none}.student-primary-tabs button,.student-primary-tabs button:last-child{grid-column:auto;flex:0 0 auto;min-width:106px;min-height:44px;padding:8px 12px;white-space:nowrap}.student-primary-tabs.is-condensed button{min-height:40px;padding:7px 11px}}
+
+/* Keep the compact student identity and primary menu together on phones. */
+@media(max-width:700px){
+  .study-workspace>.student-sticky-header{display:block;position:sticky;top:0;z-index:80;width:100%;min-width:0;padding-bottom:4px;border-radius:0 0 16px 16px;background:rgba(244,247,251,.97);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  .student-sticky-header .student-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 8px;align-items:center;margin:0;padding:11px 13px;border-radius:16px}
+  .student-sticky-header .student-topbar>.workspace-branding{grid-column:1/-1;gap:2px;width:100%}
+  .student-sticky-header .student-topbar .workspace-branding p{font-size:10px;line-height:1.2}
+  .student-sticky-header .student-topbar>div:nth-child(2){grid-column:1;min-width:0}
+  .student-sticky-header .student-topbar .badge{display:none}
+  .student-sticky-header .student-topbar h1{margin:0 0 2px;font-size:20px;line-height:1.15}
+  .student-sticky-header .student-topbar>div:nth-child(2) p{margin:0;color:#687b70;font-size:12px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .student-sticky-header .student-topbar-actions{grid-column:2;justify-content:flex-end;width:auto;margin:0;gap:6px}
+  .student-sticky-header .student-ai-counselor,.student-sticky-header .student-topbar-actions .ghost{min-height:38px;padding:7px 8px;font-size:11px}
+  .study-workspace>.student-sticky-header>.student-primary-tabs{position:static;top:auto;z-index:auto;width:100%;margin:6px 0 0;box-shadow:none}
+}
+@media(max-width:380px){.student-sticky-header .student-topbar-actions{grid-column:1/-1;justify-content:flex-end}}
