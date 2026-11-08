@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { displayProblemNumbers, examIncludesSchool, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
 import BrandLockup from "./brand-lockup";
+import SgContactFooter from "./sg-contact-footer";
 import StudentProblemBrowser from "./student-problem-browser";
 import StudentAttendance from "./student-attendance";
 import StudentLearningHub from "./student-learning-hub";
@@ -252,7 +253,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     {wrongReviewReady && <section id="wrong-inline-confirm" className="wrong-inline-confirm" aria-labelledby="wrong-inline-title"><span>최종 확인</span><h3 id="wrong-inline-title">이 내용으로 제출할까요?</h3><dl><div><dt>시험 시기</dt><dd>{bookPeriod}</dd></div><div><dt>교재</dt><dd>{book}</dd></div>{chosenBookExam && <div><dt>수록 학교·연도</dt><dd>{chosenBookExam.label}</dd></div>}<div><dt>오답 문제번호</dt><dd>{problem}번</dd></div><div className={variantChoice === "yes" ? "is-variant" : ""}><dt>변형문제</dt><dd>{variantChoice === "yes" ? `${variantProblem}번 요청` : "요청하지 않음"}</dd></div>{memo && <div><dt>비고</dt><dd>{memo}</dd></div>}</dl><p>선택한 교재와 문제번호가 실제 오답과 일치하는지 확인해주세요.</p><div><button type="button" className="ghost" onClick={() => setWrongReviewReady(false)} disabled={busy}>다시 수정하기</button><button type="button" className="primary" onClick={() => void saveWrong()} disabled={busy}>{busy ? "제출 중..." : variantChoice === "yes" ? "맞습니다 · 채널 전송 단계로" : "맞습니다 · 제출하기"}</button></div></section>}
   </form></section>;
 
-  return <main className="shell dashboard-shell study-workspace">
+  return <main className="shell dashboard-shell study-workspace sg-has-contact-footer">
     <div className="student-sticky-header">
     <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions">{allowStudentAi && <button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => openTab("helper")}><span className="student-ai-sparkle" aria-hidden="true">✦</span> AI 상담사 결결이</button>}<button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
     <nav className={`workspace-tabs student-primary-tabs${menuCondensed ? " is-condensed" : ""}`} aria-label="학생 주요 메뉴">
@@ -297,6 +298,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
       else { setSchoolExamId(selectedExam); setSchoolProblem(String(number)); setSchoolConfirmed(false); setTab("school"); }
       setMessage("선택한 문제번호를 입력했습니다. 내용을 확인하고 저장해주세요.");
     }} />}
+    <SgContactFooter />
   </main>;
 }
 
