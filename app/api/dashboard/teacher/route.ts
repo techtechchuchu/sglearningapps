@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
     const firstError = reportRes.error || resetRes.error || examsRes.error || booksRes.error;
     if (firstError) throw firstError;
     const allowed = new Set(studentNames);
+    const sharedAccount = users.find((row) => row.username === "sg고등관" && row.signup_status === "approved" && !row.withdrawn_at) || null;
 
     return NextResponse.json({
       ok: true,
@@ -81,6 +82,7 @@ export async function GET(request: NextRequest) {
       activeBooks: (booksRes.data || []).map((row) => row.book_name),
       resetRequests: teacher === ALL_TEACHER_ADMIN ? resetRes.data || [] : (resetRes.data || []).filter((row) => allowed.has(row.username)),
       users: teacher === ALL_TEACHER_ADMIN ? users : users.filter((row) => allowed.has(row.username)),
+      sharedAccount: sharedAccount ? { username: sharedAccount.username, grade: sharedAccount.grade, signup_status: sharedAccount.signup_status } : null,
       withdrawnMembers,
     });
   } catch (error) {
