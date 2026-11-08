@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveSession } from "../../../lib/active-session";
-import { rateLimit, sameOrigin } from "../../../lib/member-auth";
-import { getServerSupabase } from "../../../lib/supabase-server";
+import { getActiveSession } from "../../../../lib/active-session";
+import { rateLimit, sameOrigin } from "../../../../lib/member-auth";
+import { getServerSupabase } from "../../../../lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
