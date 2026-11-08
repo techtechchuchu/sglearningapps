@@ -2,7 +2,7 @@ export const BOOK_PERIODS = ["2학기 기말", "2학기 중간", "전체 교재"
 
 export type BookPeriod = (typeof BOOK_PERIODS)[number];
 
-// 2학기 기말 대비용 교재(범위만 골라 재구성해 번호를 새로 매긴 "기말판"). 오답노트 생성기의 UNITS 이름과 같아야 한다.
+// 2학기 기말 교재와 선택 가능한 마플교과서. 기말판 이름은 오답노트 생성기의 UNITS 이름과 같아야 한다.
 export const FINAL_TERM_BOOKS = [
   "울산N제 공통수학2 기말",
   "UNIT N제 공통수학2 기말",
@@ -13,6 +13,8 @@ export const FINAL_TERM_BOOKS = [
   "X-패턴 확통 기말",
   "기하끝 기말",
   "X-패턴 기하",
+  "마플교과서 공통수학1",
+  "마플교과서 공통수학2",
 ] as const;
 
 export const MIDTERM_BOOKS = [
@@ -32,12 +34,6 @@ export const MIDTERM_BOOKS = [
   "X-패턴 확통",
   "기하끝",
 ] as const;
-
-export const ALWAYS_AVAILABLE_BOOKS = ["마플교과서 공통수학1"] as const;
-
-export function isAlwaysAvailableBook(book: string) {
-  return ALWAYS_AVAILABLE_BOOKS.some((item) => item === book);
-}
 
 const finalRank = new Map<string, number>(FINAL_TERM_BOOKS.map((book, index) => [book, index]));
 const midtermRank = new Map<string, number>(MIDTERM_BOOKS.map((book, index) => [book, index]));
@@ -63,7 +59,7 @@ export function sortBooksForDisplay(books: string[]) {
 export function filterBooksByPeriod(books: string[], period: BookPeriod) {
   const sorted = sortBooksForDisplay(books);
   if (period === "전체 교재") return sorted;
-  return sorted.filter((book) => bookPeriodOf(book) === period || isAlwaysAvailableBook(book));
+  return sorted.filter((book) => bookPeriodOf(book) === period);
 }
 
 type RosterBookRow = { class_name?: unknown; grade?: unknown };
@@ -79,6 +75,7 @@ const FINAL_BOOKS_BY_CLASS: Array<{ matches: string[]; books: string[] }> = [
 ];
 
 export function finalBooksForRoster(books: string[], roster: RosterBookRow[]) {
+  const selectableMaplBooks = new Set(["마플교과서 공통수학1", "마플교과서 공통수학2"]);
   const assigned = new Set<string>();
   for (const row of roster) {
     const classLabel = `${String(row.grade || "")} ${String(row.class_name || "")}`.replaceAll(" ", "");
@@ -87,6 +84,6 @@ export function finalBooksForRoster(books: string[], roster: RosterBookRow[]) {
     }
   }
   if (!assigned.size) return books;
-  return books.filter((book) => assigned.has(book) || isAlwaysAvailableBook(book));
+  return books.filter((book) => assigned.has(book) || selectableMaplBooks.has(book));
 }
 

@@ -10,7 +10,7 @@ import StudentAdmissions from "./student-admissions";
 import { LegacyKakaoLink } from "./member-account";
 import AccountManagement from "./account-management";
 import { StudentQuestions } from "./learning-questions";
-import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod, finalBooksForRoster, isAlwaysAvailableBook } from "../lib/book-periods";
+import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod, finalBooksForRoster } from "../lib/book-periods";
 
 type Row = Record<string, any>;
 type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices: Row[]; mustChangePassword?: boolean; grade?: string };
@@ -239,7 +239,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
 
   const wrongAnswerPanel = <section className="panel wrong-answer-panel"><h2>{tab === "home" ? "바로 오답 작성" : "오답 작성"}</h2>{tab === "home" && <p className="panel-intro">교재와 문제번호를 선택하면 이 화면에서 바로 오답을 저장할 수 있습니다.</p>}<form onSubmit={(event) => { event.preventDefault(); reviewWrong(); }} className="form workspace-form" noValidate>
     <fieldset className="book-period-picker"><legend>시험 시기 선택</legend><p>기말 교재는 현재 학년·반에 맞는 교재만 표시됩니다.</p><div role="group" aria-label="교재 시기 선택">{BOOK_PERIODS.map((period) => <button type="button" key={period} className={bookPeriod === period ? "active" : ""} aria-pressed={bookPeriod === period} onClick={() => { const nextBooks = booksForPeriod(books, period); setBookPeriod(period); setBook(nextBooks[0] || ""); setExamId(""); setExamConfirmed(false); }}>{period}</button>)}</div></fieldset>
-    <label>{bookPeriod === "전체 교재" ? "전체 교재" : `${bookPeriod} 교재`}<select value={book} onChange={(event) => { setBook(event.target.value); setExamId(""); }} required><option value="">선택해주세요</option><optgroup label={bookPeriod}>{visibleBooks.filter((item) => bookPeriod === "전체 교재" || !isAlwaysAvailableBook(item)).map((item) => <option key={item}>{item}</option>)}</optgroup>{bookPeriod !== "전체 교재" && visibleBooks.some(isAlwaysAvailableBook) && <optgroup label="상시 교재">{visibleBooks.filter(isAlwaysAvailableBook).map((item) => <option key={item}>{item}</option>)}</optgroup>}</select></label>
+    <label>{bookPeriod === "전체 교재" ? "전체 교재" : `${bookPeriod} 교재`}<select value={book} onChange={(event) => { setBook(event.target.value); setExamId(""); }} required><option value="">선택해주세요</option><optgroup label={bookPeriod}>{visibleBooks.map((item) => <option key={item}>{item}</option>)}</optgroup>}</select></label>
     {bookExams.length > 0 && <label>수록 학교·연도<select value={examId} required onChange={(event) => { setExamId(event.target.value); setExamConfirmed(false); }}><option value="">학교와 연도를 선택해주세요</option>{suggestedExams.length > 0 && <optgroup label="내 학교가 포함된 단원">{suggestedExams.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</optgroup>}{otherExams.length > 0 && <optgroup label="다른 학교·묶음 단원">{otherExams.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</optgroup>}</select><small>학교가 함께 적힌 단원은 한 묶음입니다. 내 학교가 포함돼도 실제로 푼 단원과 연도를 확인해주세요.</small></label>}
     {chosenBookExam && <p>{chosenBookExam.label} · 교재에 인쇄된 번호 1~{chosenBookExam.max}번을 입력하세요.</p>}
     <label>문제번호<input value={problem} onChange={(event) => setProblem(event.target.value)} placeholder="예: 3, 7, 12" required /></label>
