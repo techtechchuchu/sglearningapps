@@ -13,6 +13,7 @@ export const FINAL_TERM_BOOKS = [
   "X-패턴 확통 기말",
   "기하끝 기말",
   "X-패턴 기하",
+  "기하 쎈 기말",
   "마플교과서 공통수학1",
   "마플교과서 공통수학2",
 ] as const;
@@ -70,7 +71,7 @@ const FINAL_BOOKS_BY_CLASS: Array<{ matches: string[]; books: string[] }> = [
   { matches: ["드릴"], books: ["UNIT N제 공통수학2 기말", "X-패턴 공통수학2 기말"] },
   { matches: ["미적분1"], books: ["X-패턴 미적분1 기말"] },
   { matches: ["확통", "확률과통계"], books: ["X-패턴 확통 기말"] },
-  { matches: ["기하"], books: ["기하끝 기말", "X-패턴 기하"] },
+  { matches: ["기하"], books: ["기하끝 기말", "X-패턴 기하", "기하 쎈 기말"] },
   { matches: ["미적분2"], books: ["X-패턴 미적분2 기말"] },
 ];
 
