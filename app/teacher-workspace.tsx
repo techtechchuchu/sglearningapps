@@ -7,6 +7,7 @@ import SubmissionReportUpload from "./submission-report-upload";
 import RosterActions from "./roster-actions";
 import StudentDetail from "./student-detail";
 import BrandLockup from "./brand-lockup";
+import SgContactFooter from "./sg-contact-footer";
 import ReportStatusPanel from "./report-status-panel";
 import TeacherExplanations from "./teacher-explanations";
 import TeacherAttendance from "./teacher-attendance";
@@ -200,7 +201,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     } catch { setMessage("메뉴를 저장하지 못했습니다. 브라우저 저장 권한을 확인해주세요."); }
   }
 
-  return <main className="shell dashboard-shell study-workspace">
+  return <main className="shell dashboard-shell study-workspace sg-has-contact-footer">
     <section className="staff-header"><BrandLockup /><div className="staff-heading"><h1>👨‍🏫 선생님 관리</h1><p>현재 로그인: {teacher}</p></div><StaffNotifications teacher={teacher} roster={data.roster} users={data.users} resetRequests={data.resetRequests} navigate={(target, section) => { if (target === "admin" && section === "members") { setAdminInitialSection("members"); setAdminPanelKey((key) => key + 1); } setTab(target); setMessage(""); }} /><button className="ghost" onClick={logout}>로그아웃</button></section>
     <AcademyReview refresh={refresh} />
     <StudentSignupReview teacher={teacher} roster={data.roster} refresh={refresh} />
@@ -243,6 +244,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {(tab === "register" || tab === "exited") && <RosterActions mode={tab} teacher={teacher} roster={data.roster} activeBooks={data.activeBooks || []} refresh={refresh} />}
     {tab === "reset" && <section className="panel"><h2>학생 비밀번호 관리</h2><h3>처리 대기 요청</h3>{data.resetRequests.length ? data.resetRequests.map((row) => <div className="row" key={row.id}><strong>{row.username}</strong><span>{new Date(row.requested_at).toLocaleString("ko-KR")}</span></div>) : <p>대기 중인 요청이 없습니다.</p>}<h3>임시 비밀번호 발급</h3><form onSubmit={resetPassword} className="form workspace-form"><label>학생<select value={resetStudent} onChange={(event) => setResetStudent(event.target.value)} required><option value="">선택해주세요</option>{data.users.map((user) => <option key={user.username}>{user.username}</option>)}</select></label><label>새 임시 비밀번호<input type="password" minLength={4} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><label>임시 비밀번호 확인<input type="password" minLength={4} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label><button className="primary" disabled={busy}>임시 비밀번호 발급</button></form></section>}
     {tab === "admin" && admin && <AdminPanel key={adminPanelKey} initialSection={adminInitialSection} roster={data.roster} users={data.users} activeBooks={data.activeBooks || []} refreshRoster={refresh} />}
+    <SgContactFooter />
   </main>;
 }
 
