@@ -18,7 +18,7 @@ const notices = [
   { id: "startplan", kind: "blog", title: "2027 SG 예비고1 스타트플랜 설명회", description: "11월 18일 차오름센터 설명회 안내를 확인하세요.", image: "/sg-blog-startplan-2027.jpg", url: "https://blog.naver.com/PostView.naver?blogId=ulsansgg&logNo=224442015757&redirect=Dlog" },
   { id: "premium", kind: "blog", title: "고1 11월 전국모의고사 현장 응시", description: "THE PREMIUM 전국모의고사 현장 응시 안내를 확인하세요.", image: "/sg-blog-premium-2026.png", url: "https://blog.naver.com/PostView.naver?blogId=ulsansgg&logNo=224437617530&redirect=Dlog" },
   { id: "home", kind: "home", title: "아이폰 홈 화면에서 스터디결 바로 열기", description: "Safari에서 공유 버튼을 누르고 ‘홈 화면에 추가’를 선택하세요." },
-  { id: "ai", kind: "ai", title: "AI 상담사 결결이를 이용해 보세요", description: "공부 계획과 오답 복습을 질문할 수 있고, 대화는 날짜별 기록에서 다시 볼 수 있어요." },
+  { id: "ai", kind: "ai", title: "앱 사용이 어려우신가요?", description: "결결이에게 스터디결 사용법과 이용 중 불편한 점을 물어보세요." },
 ] as const;
 
 function StudentNoticeCarousel({ onOpenAI, showAI }: { onOpenAI: () => void; showAI: boolean }) {
@@ -76,6 +76,6 @@ export default function StudentLearningHub({ view, name, answers, schoolAnswers,
 
   if (view === "weekly") return <div className="learning-hub"><section className="panel"><span className="badge">주간 학습기록</span><h2>최근 7일의 공부 흔적</h2><p>오답 작성과 학교 기출 저장 기록을 날짜별로 집계합니다. 공부 시간이나 진도는 아직 자동 측정하지 않습니다.</p><div className="learning-metrics"><article><b>{weekTotal}</b><span>저장한 기록</span></article><article><b>{[...counts.values()].filter(Boolean).length}</b><span>기록한 날</span></article><article><b>{activity.filter((row) => row.at && counts.has(dayKey(new Date(row.at))) && row.kind === "학교 기출").length}</b><span>학교 기출 기록</span></article></div><div className="learning-week">{timeline.map(({ key, label }) => <div className="learning-day" key={key}><span>{label}</span><b>{counts.get(key) || 0}건</b><div className="learning-bar-track"><div style={{ width: `${Math.min(100, ((counts.get(key) || 0) / Math.max(1, ...counts.values())) * 100)}%` }} /></div></div>)}</div></section></div>;
 
-  return <GyeolgyeoliChat name={name} />;
+  return <GyeolgyeoliChat name={name} purpose="support" />;
 }
 

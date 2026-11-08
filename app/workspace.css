@@ -233,4 +233,7 @@
 .sg-contact-footer{position:fixed;inset:auto 0 0;z-index:90;display:flex;align-items:center;justify-content:center;gap:16px;min-height:56px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #dce6df;background:rgba(255,255,255,.97);box-shadow:0 -8px 26px #183b2712;color:#53695b;font-size:13px;backdrop-filter:blur(10px)}
 .sg-contact-footer a{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 15px;border-radius:10px;background:#176b50;color:#fff;text-decoration:none;font-weight:800;white-space:nowrap}
 .sg-contact-footer a:hover,.sg-contact-footer a:focus-visible{background:#10523d}
-@media(max-width:480px){.sg-contact-footer{gap:8px;justify-content:space-between;font-size:11px}.sg-contact-footer a{padding:8px 11px;font-size:12px}}
+.sg-contact-actions{display:flex;align-items:center;gap:8px}
+.sg-contact-actions button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 15px;border:1px solid #b8d7c7;border-radius:10px;background:#eef7f1;color:#176b50;font:inherit;font-weight:800;white-space:nowrap;cursor:pointer}
+.sg-contact-actions button:hover,.sg-contact-actions button:focus-visible{background:#dcefe3}
+@media(max-width:600px){.sg-has-contact-footer{padding-bottom:calc(106px + env(safe-area-inset-bottom))!important}.sg-contact-footer{flex-direction:column;gap:4px;min-height:0;padding:6px 12px calc(7px + env(safe-area-inset-bottom));font-size:11px}.sg-contact-actions{width:100%;justify-content:center}.sg-contact-actions a,.sg-contact-actions button{min-height:36px;flex:1;max-width:190px;padding:7px 9px;font-size:12px}}
