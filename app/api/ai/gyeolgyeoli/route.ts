@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
     const session = await getActiveSession(request);
     const owner = session && await ownerOf(session);
     if (!owner) return reply("로그인 후 이용해주세요.", 401);
+    if (session?.role === "student" && session.name !== "추재현") return reply("학생 AI 상담사 이용이 종료되었습니다.", 403);
     const body: unknown = await request.json();
     if (!body || typeof body !== "object") return reply("질문을 입력해주세요.", 400);
     const input = body as { question?: unknown };
