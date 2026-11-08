@@ -17,7 +17,7 @@ type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices
 type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number };
 type SchoolAnswer = { id: number; exam_id: number; problem: string; memo: string; created_at: string };
 type ExamOption = { id: string; school: string; label: string; max: number; edition: string; requiresConfirmation: boolean };
-type ChannelRequest = { teacherName: string; channelName: string; channelUrl: string; book: string; problem: string; variantProblem: string; memo: string; requestId?: number };
+type ChannelRequest = { teacherName: string; channelName: string; channelUrl: string; book: string; examLabel: string; variantProblem: string };
 
 const TEACHER_KAKAO_CHANNELS = [
   { teacher: "이주백", channelName: "SG수학학원 이주백T", channelUrl: "https://pf.kakao.com/_hmxdiK/chat" },
@@ -154,7 +154,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     await run(async () => {
       const result = await json(await fetch("/api/student/wrong-answers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ book, examId, examConfirmed, problem, memo, bookConfirmed: true, variantChoice, variantProblem }) }));
       setChannelOpened(false);
-      setChannelRequest(variantChoice === "yes" && channel ? { teacherName, channelName: channel.channelName, channelUrl: channel.channelUrl, book, problem, variantProblem, memo, requestId: Number(result.row?.id) || undefined } : null);
+      setChannelRequest(variantChoice === "yes" && channel ? { teacherName, channelName: channel.channelName, channelUrl: channel.channelUrl, book, examLabel: book.startsWith("X-패턴") ? chosenBookExam?.label || "" : "", variantProblem } : null);
       await refresh();
       setProblem(""); setMemo(""); setExamConfirmed(false); setVariantChoice(""); setVariantProblem(""); setWrongReviewReady(false);
       setMessage(variantChoice === "yes" ? "오답을 저장했습니다. 카카오채널 전송을 완료해야 다음 화면으로 이동할 수 있습니다." : `저장 확인 완료: ${result.saved.join(", ")}${result.duplicate.length ? ` · 중복 제외: ${result.duplicate.join(", ")}` : ""}`);
@@ -164,14 +164,13 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   function sendChannelRequest() {
     if (!channelRequest) return;
     const lines = [
-      "[변형문제 요청]",
+      "[변형 문제 요청 부탁드려요 쌤 !]",
       `학생: ${name}`,
       `담당: ${channelRequest.teacherName}`,
       `교재: ${channelRequest.book}`,
-      `오답 문제번호: ${channelRequest.problem}번`,
-      `변형 요청번호: ${channelRequest.variantProblem}번`,
-      channelRequest.memo ? `비고: ${channelRequest.memo}` : "",
-      channelRequest.requestId ? `요청번호: ${channelRequest.requestId}` : "",
+      channelRequest.examLabel
+        ? `변형 문제: ${channelRequest.examLabel} - ${channelRequest.variantProblem}번`
+        : `변형 문제: ${channelRequest.variantProblem}번`,
     ].filter(Boolean).join("\n");
     setChannelOpened(true);
     window.open(channelRequest.channelUrl, "_blank", "noopener,noreferrer");
@@ -267,7 +266,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["admissions", "내 내신·대학 탐색"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
     {tab === "account" && !data.mustChangePassword && <LegacyKakaoLink />}
     {message && <p className="workspace-message" role="status">{message}</p>}
-    {channelRequest && <div className="channel-request-lock"><section className="channel-request-card" role="dialog" aria-modal="true" aria-labelledby="channel-request-title"><div><span>필수 전송 단계</span><h2 id="channel-request-title">{channelRequest.channelName} 채널로 보내주세요</h2><p>다음 화면으로 이동하려면 카카오채널에서 변형문제 요청을 전송해야 합니다. 아래 버튼을 누르면 요청 내용이 복사되고 채널이 열립니다.</p></div><dl><div><dt>담당</dt><dd>{channelRequest.teacherName}</dd></div><div><dt>교재</dt><dd>{channelRequest.book}</dd></div><div><dt>오답 번호</dt><dd>{channelRequest.problem}번</dd></div><div><dt>변형 요청</dt><dd>{channelRequest.variantProblem}번</dd></div></dl><div className="channel-request-actions"><button type="button" className="channel-request-button" onClick={sendChannelRequest}>{channelOpened ? "카카오채널 다시 열기" : "카카오채널로 요청 보내기"}</button>{channelOpened && <button type="button" className="channel-request-complete" onClick={completeChannelRequest}>카카오채널에서 전송했습니다</button>}</div><small>카카오 정책상 실제 메시지 전송 여부는 자동으로 확인할 수 없습니다. 채팅방에서 붙여넣기 후 전송 버튼을 꼭 눌러주세요.</small></section></div>}
+    {channelRequest && <div className="channel-request-lock"><section className="channel-request-card" role="dialog" aria-modal="true" aria-labelledby="channel-request-title"><div><span>필수 전송 단계</span><h2 id="channel-request-title">{channelRequest.channelName} 채널로 보내주세요</h2><p>다음 화면으로 이동하려면 카카오채널에서 변형문제 요청을 전송해야 합니다. 아래 버튼을 누르면 요청 내용이 복사되고 채널이 열립니다.</p></div><dl><div><dt>담당</dt><dd>{channelRequest.teacherName}</dd></div><div><dt>교재</dt><dd>{channelRequest.book}</dd></div>{channelRequest.examLabel && <div><dt>학교·시험</dt><dd>{channelRequest.examLabel}</dd></div>}<div><dt>변형 필요 번호</dt><dd>{channelRequest.variantProblem}번</dd></div></dl><div className="channel-request-actions"><button type="button" className="channel-request-button" onClick={sendChannelRequest}>{channelOpened ? "카카오채널 다시 열기" : "요청 복사하고 카카오채널 열기"}</button>{channelOpened && <button type="button" className="channel-request-complete" onClick={completeChannelRequest}>카카오채널에서 전송했습니다</button>}</div><small>카카오 정책상 실제 메시지 전송 여부는 자동으로 확인할 수 없습니다. 채팅방에서 붙여넣기 후 전송 버튼을 꼭 눌러주세요.</small></section></div>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
     {tab === "home" && !data.mustChangePassword && <StudentLearningHub view="home" name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
     {(tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
