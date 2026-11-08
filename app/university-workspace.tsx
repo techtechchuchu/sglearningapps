@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import BrandLockup from "./brand-lockup";
 import GyeolgyeoliChat from "./gyeolgyeoli-chat";
+import SupportRequestWidget from "./support-request-widget";
 import dynamic from "next/dynamic";
 import { UniversityHome, UniversityStudyMap } from "./university-home";
 import "./university.css";
@@ -69,7 +70,7 @@ export default function UniversityWorkspace({ logout }: { logout: () => void }) 
   const mistakes = data?.mistakes || [];
   const courseName = (id: string) => courses.find((course) => course.id === id)?.title || "과목";
 
-  return <main className="shell dashboard-shell university-workspace">
+  return <main className="shell dashboard-shell university-workspace sg-has-contact-footer">
     <header className="topbar university-topbar"><BrandLockup compact solo /><div><span className="badge">{data?.profile.learnerType === "school" ? "학생 개인 학습" : data?.profile.learnerType === "general" ? "개인 학습 공간" : "대학생 학습 모드"}</span><h1>{data?.profile.name || "나의 학습"}</h1><p>과목을 정리하고 시험까지 내 오답을 복습하세요.</p></div><button type="button" className="ghost" onClick={logout}>로그아웃</button></header>
     <nav className="workspace-tabs university-nav" aria-label="개인 학습 메뉴"><span className="university-nav-label">WORKSPACE</span>{([["home", "나의 홈"], ["map", "학습 지도"], ["courses", "내 과목"], ...(data?.profile.learnerType === "university" ? [["lecture", "강의 노트"]] as const : []), ["exams", "시험 준비"], ["mistakes", "오답 복습"], ["quiz", "변형 퀴즈"], ...(data?.profile.learnerType === "university" ? [["competition", "공식 모의고사"]] as const : []), ["python", "파이썬 연습실"], ["helper", "결결이"]] as const).map(([id, label]) => <button type="button" key={id} className={view === id ? "active" : ""} aria-current={view === id ? "page" : undefined} onClick={() => setView(id)}>{label}</button>)}</nav>
     {view === "quiz" && data && <UniversityMidterm key={data.profile.email} userEmail={data.profile.email} />}
@@ -85,6 +86,7 @@ export default function UniversityWorkspace({ logout }: { logout: () => void }) 
     {view === "exams" && data && <section className="panel"><h2>시험 준비</h2><p>과목별 시험 날짜를 등록해두면 홈에서 가까운 일정부터 확인할 수 있습니다.</p><form className="form university-form" onSubmit={(event) => void save(event, { kind: "exam", courseId: examCourse, title: examTitle, examDate }, () => { setExamTitle(""); setExamDate(""); })}><label>과목<select value={examCourse} onChange={(event) => setExamCourse(event.target.value)} required><option value="">과목 선택</option>{courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}</select></label><label>시험명<input value={examTitle} onChange={(event) => setExamTitle(event.target.value)} placeholder="예: 중간고사" required /></label><label>시험 날짜<input type="date" value={examDate} onChange={(event) => setExamDate(event.target.value)} required /></label><button className="primary" disabled={busy || !courses.length}>시험 등록</button></form><div className="university-list">{exams.map((exam) => <div className="row" key={exam.id}><strong>{courseName(exam.course_id)} · {exam.title}</strong><span>{exam.exam_date}</span></div>)}{!exams.length && <p>아직 등록한 시험이 없습니다.</p>}</div></section>}
     {view === "mistakes" && data && <section className="panel"><h2>내 오답 복습</h2><p>문제번호와 헷갈린 이유를 남기고 다시 풀었다면 복습 완료로 표시하세요.</p><form className="form university-form" onSubmit={(event) => void save(event, { kind: "mistake", courseId: mistakeCourse, problemLabel, memo }, () => { setProblemLabel(""); setMemo(""); })}><label>과목<select value={mistakeCourse} onChange={(event) => setMistakeCourse(event.target.value)} required><option value="">과목 선택</option>{courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}</select></label><label>문제번호·제목<input value={problemLabel} onChange={(event) => setProblemLabel(event.target.value)} placeholder="예: 3주차 과제 5번" required /></label><label>틀린 이유·복습 메모<textarea value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="어떤 개념이 헷갈렸나요?" /></label><button className="primary" disabled={busy || !courses.length}>오답 저장</button></form><div className="university-list">{mistakes.map((item) => <div className="row university-mistake" key={item.id}><div><strong>{courseName(item.course_id)} · {item.problem_label}</strong><span>{item.memo || "메모 없음"}</span></div><button type="button" className={item.reviewed ? "reviewed" : ""} disabled={busy} onClick={() => void toggleReview(item)}>{item.reviewed ? "복습 완료 ✓" : "복습하기"}</button></div>)}{!mistakes.length && <p>아직 작성한 오답이 없습니다.</p>}</div></section>}
     {view === "helper" && data && <GyeolgyeoliChat name={data.profile.name} />}
+    <SupportRequestWidget fixedFooter />
   </main>;
 }
 
