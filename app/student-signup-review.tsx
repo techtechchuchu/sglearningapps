@@ -6,6 +6,13 @@ import { matchesStudentSignupRoster } from "../lib/student-signup-roster";
 type RequestRow = { username: string; login_id: string; grade: string; email: string; phone: string; created_at: string };
 type RosterRow = { student_name?: string; grade?: string; teacher_name?: string; class_name?: string; school_name?: string; enrollment_status?: string };
 
+function formatSignupTimeKst(value: string): string {
+  const normalized = value.trim().replace(" ", "T");
+  const utcValue = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized) ? normalized : `${normalized}Z`;
+  const date = new Date(utcValue);
+  return Number.isNaN(date.getTime()) ? "시간 확인 필요" : date.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+}
+
 export default function StudentSignupReview({ teacher, roster, refresh }: { teacher: string; roster: RosterRow[]; refresh: () => Promise<void> }) {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [error, setError] = useState("");
@@ -41,7 +48,7 @@ export default function StudentSignupReview({ teacher, roster, refresh }: { teac
       const matches = roster.filter(item => (teacher === "전체 관리자" || item.teacher_name === teacher) && matchesStudentSignupRoster(item, row.username, row.grade));
       return <article className="academy-review-item" key={row.username}>
         <strong>{row.username} · {row.grade}</strong>
-        <span>신청 {new Date(row.created_at).toLocaleString("ko-KR")}</span>
+        <span>신청 {formatSignupTimeKst(row.created_at)}</span>
         <p>아이디 {row.login_id} · 이메일 {row.email} · 휴대전화 {row.phone}</p>
         {matches.length ? matches.map((item, index) => <p key={`${item.teacher_name}-${item.class_name}-${index}`}>명단: {item.school_name} · {item.teacher_name} · {item.class_name}</p>) : <p>일치하는 재원 명단이 없습니다. 승인하려면 먼저 신규생 명단에 등록해주세요.</p>}
         <div className="actions"><button type="button" className="primary" disabled={busy || !matches.length} onClick={() => void decide(row, true)}>명단 확인 후 승인</button><button type="button" className="ghost" disabled={busy} onClick={() => void decide(row, false)}>반려</button></div>
