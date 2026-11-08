@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import StudentWorkspace from "./student-workspace";
+import SgContactFooter from "./sg-contact-footer";
 import TeacherWorkspace, { type TeacherData } from "./teacher-workspace";
 import BrandLockup from "./brand-lockup";
 import UniversityWorkspace from "./university-workspace";
@@ -218,7 +219,7 @@ export default function Home() {
   if (restoreError) return <main className="shell"><section className="login-card" role="alert"><div className="brand"><BrandLockup compact solo /><h1>연결을 다시 확인해주세요</h1><p>일시적인 연결 문제일 수 있습니다. 로그인 정보는 삭제하지 않았습니다.</p></div><p className="alert">{restoreError}</p><div className="learning-actions"><button type="button" className="primary" onClick={retryRestore}>다시 연결</button><button type="button" className="ghost" onClick={() => { setRestoreError(""); }}>로그인 화면</button></div></section></main>;
 
   return (
-    <main className="shell">
+    <main className={mode === "university" ? "shell" : "shell sg-has-contact-footer"}>
       <section className="login-card">
         <div className="brand"><BrandLockup compact solo /><h1>학습 노트 시작하기</h1><p>{mode === "university" ? "대학생을 위한 나만의 과목·시험·오답 기록을 시작하세요." : "기존 학원 계정으로 로그인해 오답을 기록하고 수업 현황을 확인하세요."}</p></div>
         <div className="tabs login-role-tabs"><button type="button" className={mode === "student" ? "active" : ""} onClick={() => { setMode("student"); setMessage(""); window.location.hash = "login-student"; }}>학생·일반</button><button type="button" className={mode === "teacher" ? "active" : ""} onClick={() => { setMode("teacher"); setMessage(""); window.location.hash = "login-teacher"; }}>선생님·관리자</button><button type="button" className={mode === "university" ? "active" : ""} onClick={() => { setMode("university"); setMessage(""); window.location.hash = "login-university"; }}>대학생</button></div>
@@ -260,6 +261,7 @@ export default function Home() {
         </div>
         <nav aria-label="서비스 정책" style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 20, fontSize: 13 }}><a href="/terms">이용약관</a><a href="/privacy">개인정보 처리방침</a><a href="/content-policy">자체교재·PDF 이용 및 보관 원칙</a></nav>
       </section>
+      {mode !== "university" && <SgContactFooter />}
     </main>
   );
 }
