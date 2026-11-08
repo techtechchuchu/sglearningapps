@@ -237,3 +237,7 @@
 .sg-contact-actions button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 15px;border:1px solid #b8d7c7;border-radius:10px;background:#eef7f1;color:#176b50;font:inherit;font-weight:800;white-space:nowrap;cursor:pointer}
 .sg-contact-actions button:hover,.sg-contact-actions button:focus-visible{background:#dcefe3}
 @media(max-width:600px){.sg-has-contact-footer{padding-bottom:calc(106px + env(safe-area-inset-bottom))!important}.sg-contact-footer{flex-direction:column;gap:4px;min-height:0;padding:6px 12px calc(7px + env(safe-area-inset-bottom));font-size:11px}.sg-contact-actions{width:100%;justify-content:center}.sg-contact-actions a,.sg-contact-actions button{min-height:36px;flex:1;max-width:190px;padding:7px 9px;font-size:12px}}
+
+.sg-contact-ai-only{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 18px;border:0;border-radius:10px;background:#176b50;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.sg-contact-ai-only:hover,.sg-contact-ai-only:focus-visible{background:#10523d}
+@media(max-width:600px){.sg-contact-footer:has(.sg-contact-ai-only){min-height:48px;padding:6px 12px calc(6px + env(safe-area-inset-bottom))}.sg-contact-ai-only{width:100%;max-width:280px;min-height:36px;font-size:12px}}
