@@ -253,6 +253,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   </form></section>;
 
   return <main className="shell dashboard-shell study-workspace">
+    <div className="student-sticky-header">
     <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions"><button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => openTab("helper")}><span className="student-ai-sparkle" aria-hidden="true">✦</span> AI 상담사 결결이</button><button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
     <nav className={`workspace-tabs student-primary-tabs${menuCondensed ? " is-condensed" : ""}`} aria-label="학생 주요 메뉴">
       <button type="button" className={tab === "home" ? "active" : ""} aria-current={tab === "home" ? "page" : undefined} onClick={() => openTab("home")}>홈</button>
@@ -261,6 +262,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
       <button type="button" className={myPageActive ? "active" : ""} aria-expanded={myPageActive} onClick={() => openTab("records")}>마이페이지</button>
       <button type="button" className={moreOpen || moreActive ? "active" : ""} aria-expanded={moreOpen || moreActive} onClick={() => { setMoreOpen((current) => !current); setMessage(""); }}>기능 더보기</button>
     </nav>
+    </div>
     {myPageActive && <nav className="student-secondary-menu" aria-label="마이페이지 메뉴"><button type="button" className={tab === "records" ? "active" : ""} onClick={() => openTab("records")}>내 기록</button><button type="button" className={tab === "account" ? "active" : ""} onClick={() => openTab("account")}>계정 관리</button></nav>}
     {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["admissions", "내 내신·대학 탐색"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
     {tab === "account" && !data.mustChangePassword && <LegacyKakaoLink />}
