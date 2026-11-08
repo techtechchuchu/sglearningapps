@@ -1,5 +1,11 @@
 .student-notice-carousel{width:min(100%,430px);min-width:0;justify-self:center;overflow:hidden;border:1px solid #d8e5de;border-radius:24px;background:#fff;box-shadow:0 14px 34px #173c2717}
-.student-notice-poster{display:flex;flex-direction:column;min-height:510px;padding:20px 24px 24px;animation:student-notice-enter .35s ease-out}
+.student-notice-poster{position:relative;display:flex;flex-direction:column;min-height:510px;padding:20px 24px 24px;animation:student-notice-enter .35s ease-out}
+.student-notice-blog .student-notice-poster{background:linear-gradient(155deg,#e6f5ec 0%,#f7fbf8 60%,#fff 100%)}
+.student-notice-blog .student-notice-visual::before{display:none}
+.student-notice-blog-image{display:block;width:180px;height:180px;object-fit:cover;border-radius:18px;box-shadow:0 13px 27px #173c2726}
+.student-notice-blog-overlay{position:absolute;inset:0;z-index:1;border-radius:24px}
+.student-notice-blog-overlay:focus-visible{outline:3px solid #176b50;outline-offset:-5px}
+.student-notice-blog .student-notice-poster:hover .student-notice-link{background:#10523d}
 .student-notice-home .student-notice-poster{background:radial-gradient(circle at 85% 7%,#ffffffb0 0 13%,transparent 14%),linear-gradient(155deg,#bdebdc 0%,#e9f5f0 52%,#fcfbf6 100%)}
 .student-notice-ai .student-notice-poster{background:radial-gradient(circle at 13% 18%,#ffffffa8 0 12%,transparent 13%),linear-gradient(155deg,#d8eee4 0%,#e2ebf4 52%,#fdfbf7 100%)}
 .student-notice-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#245642;font-size:.85rem}
