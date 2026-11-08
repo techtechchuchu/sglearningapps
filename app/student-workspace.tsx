@@ -95,6 +95,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     finally { setBusy(false); }
   }
 
+  const allowStudentAi = name === "추재현";
   const allBookExams = examsByBook[book] || [];
   const hasCurrentFinalEdition = allBookExams.some((item) => item.edition === "2026-2-final");
   const bookExams = bookPeriod === "2학기 기말" && hasCurrentFinalEdition
@@ -253,7 +254,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
 
   return <main className="shell dashboard-shell study-workspace">
     <div className="student-sticky-header">
-    <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions"><button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => openTab("helper")}><span className="student-ai-sparkle" aria-hidden="true">✦</span> AI 상담사 결결이</button><button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
+    <section className="topbar student-topbar"><BrandLockup compact /><div><span className="badge">내 오답노트</span><h1>{name} 학생</h1><p>{data.grade || ""} · {data.roster.map((row) => row.class_name).filter(Boolean).join(", ")}</p></div><div className="student-topbar-actions">{allowStudentAi && <button type="button" className={`student-ai-counselor${tab === "helper" ? " active" : ""}`} aria-current={tab === "helper" ? "page" : undefined} onClick={() => openTab("helper")}><span className="student-ai-sparkle" aria-hidden="true">✦</span> AI 상담사 결결이</button>}<button type="button" className="ghost" onClick={logout}>로그아웃</button></div></section>
     <nav className={`workspace-tabs student-primary-tabs${menuCondensed ? " is-condensed" : ""}`} aria-label="학생 주요 메뉴">
       <button type="button" className={tab === "home" ? "active" : ""} aria-current={tab === "home" ? "page" : undefined} onClick={() => openTab("home")}>홈</button>
       <button type="button" className={tab === "wrong" ? "active" : ""} aria-current={tab === "wrong" ? "page" : undefined} onClick={() => openTab("wrong")}>오답 작성</button>
@@ -268,8 +269,8 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     {message && <p className="workspace-message" role="status">{message}</p>}
     {channelRequest && <div className="channel-request-lock"><section className="channel-request-card" role="dialog" aria-modal="true" aria-labelledby="channel-request-title"><div><span>필수 전송 단계</span><h2 id="channel-request-title">{channelRequest.channelName} 채널로 보내주세요</h2><p>다음 화면으로 이동하려면 카카오채널에서 변형문제 요청을 전송해야 합니다. 아래 버튼을 누르면 요청 내용이 복사되고 채널이 열립니다.</p></div><dl><div><dt>담당</dt><dd>{channelRequest.teacherName}</dd></div><div><dt>교재</dt><dd>{channelRequest.book}</dd></div>{channelRequest.examLabel && <div><dt>학교·시험</dt><dd>{channelRequest.examLabel}</dd></div>}<div><dt>변형 필요 번호</dt><dd>{channelRequest.variantProblem}번</dd></div></dl><div className="channel-request-actions"><button type="button" className="channel-request-button" onClick={sendChannelRequest}>{channelOpened ? "카카오채널 다시 열기" : "요청 복사하고 카카오채널 열기"}</button>{channelOpened && <button type="button" className="channel-request-complete" onClick={completeChannelRequest}>카카오채널에서 전송했습니다</button>}</div><small>카카오 정책상 실제 메시지 전송 여부는 자동으로 확인할 수 없습니다. 채팅방에서 붙여넣기 후 전송 버튼을 꼭 눌러주세요.</small></section></div>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
-    {tab === "home" && !data.mustChangePassword && <StudentLearningHub view="home" name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
-    {(tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} />}
+    {tab === "home" && !data.mustChangePassword && <StudentLearningHub view="home" name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} showAI={allowStudentAi} />}
+    {(tab === "weekly" || (tab === "helper" && allowStudentAi)) && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} showAI={allowStudentAi} />}
     {(tab === "home" || tab === "wrong") && !data.mustChangePassword && wrongAnswerPanel}
     {tab === "questions" && !data.mustChangePassword && <StudentQuestions classes={[...new Map(data.roster.filter((row) => row.enrollment_status !== "퇴원").map((row) => [`${row.teacher_name}\0${row.class_name}`, { teacherName: String(row.teacher_name || ""), className: String(row.class_name || "") }])).values()].filter((item) => item.teacherName && item.className)} />}
     {tab === "admissions" && !data.mustChangePassword && <StudentAdmissions />}
