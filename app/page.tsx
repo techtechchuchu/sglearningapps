@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import StudentWorkspace from "./student-workspace";
 import SgContactFooter from "./sg-contact-footer";
+import GuestSupport from "./guest-support";
 import TeacherWorkspace, { type TeacherData } from "./teacher-workspace";
 import BrandLockup from "./brand-lockup";
 import UniversityWorkspace from "./university-workspace";
@@ -37,6 +38,7 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [teacher, setTeacher] = useState("이주백.T");
   const [message, setMessage] = useState("");
+  const [guestSupportOpen, setGuestSupportOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [teacherData, setTeacherData] = useState<TeacherData | null>(null);
@@ -261,7 +263,8 @@ export default function Home() {
         </div>
         <nav aria-label="서비스 정책" style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginTop: 20, fontSize: 13 }}><a href="/terms">이용약관</a><a href="/privacy">개인정보 처리방침</a><a href="/content-policy">자체교재·PDF 이용 및 보관 원칙</a></nav>
       </section>
-      {mode !== "university" && <SgContactFooter />}
+      {mode !== "university" && <SgContactFooter onOpenAI={() => setGuestSupportOpen(true)} />}
+      {mode !== "university" && guestSupportOpen && <GuestSupport onClose={() => setGuestSupportOpen(false)} onReset={() => { setMode("student"); setStudentAuthTab("reset"); setMessage(""); setGuestSupportOpen(false); window.location.hash = "login-student"; }} />}
     </main>
   );
 }

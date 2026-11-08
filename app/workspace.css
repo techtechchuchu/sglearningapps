@@ -241,3 +241,21 @@
 .sg-contact-ai-only{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 18px;border:0;border-radius:10px;background:#176b50;color:#fff;font:inherit;font-weight:800;cursor:pointer}
 .sg-contact-ai-only:hover,.sg-contact-ai-only:focus-visible{background:#10523d}
 @media(max-width:600px){.sg-contact-footer:has(.sg-contact-ai-only){min-height:48px;padding:6px 12px calc(6px + env(safe-area-inset-bottom))}.sg-contact-ai-only{width:100%;max-width:280px;min-height:36px;font-size:12px}}
+
+.guest-support-backdrop{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(10,28,26,.48)}
+.guest-support-dialog{width:min(100%,460px);max-height:min(90vh,720px);overflow:auto;padding:24px;border:1px solid #d9e7df;border-radius:20px;background:#fff;box-shadow:0 24px 70px #09251f3b;color:#102a24}
+.guest-support-dialog header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.guest-support-dialog header strong{font-size:21px}
+.guest-support-dialog header p{margin:6px 0 0;color:#566e64;font-size:14px}
+.guest-support-dialog header button{border:0;background:none;font-size:28px;line-height:1;cursor:pointer}
+.guest-support-dialog form{display:grid;gap:9px;margin-top:22px}
+.guest-support-dialog form label{font-weight:700}
+.guest-support-dialog form input{width:100%;min-height:44px;padding:10px 12px;border:1px solid #bcd1c7;border-radius:10px;font:inherit}
+.guest-support-dialog form button,.guest-support-actions button,.guest-support-actions a,.guest-support-answer a,.guest-support-answer button{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 13px;border:1px solid #176b50;border-radius:10px;background:#176b50;color:#fff;font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+.guest-support-dialog form button:disabled{opacity:.55;cursor:wait}
+.guest-support-answer{display:grid;gap:10px;margin-top:18px;padding:14px;border-radius:12px;background:#f1f8f3}
+.guest-support-answer p{margin:0;white-space:pre-wrap;line-height:1.55}
+.guest-support-actions{display:flex;gap:8px;margin-top:18px}
+.guest-support-actions button,.guest-support-actions a{flex:1;border-color:#c4d9cf;background:#fff;color:#176b50}
+.guest-support-dialog small{display:block;margin-top:15px;color:#5e7069;line-height:1.5}
+@media(max-width:600px){.guest-support-backdrop{align-items:flex-end;padding:8px}.guest-support-dialog{max-height:88vh;padding:20px 16px;border-radius:18px}}
