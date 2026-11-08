@@ -7,7 +7,8 @@ import SubmissionReportUpload from "./submission-report-upload";
 import RosterActions from "./roster-actions";
 import StudentDetail from "./student-detail";
 import BrandLockup from "./brand-lockup";
-import SgContactFooter from "./sg-contact-footer";
+import SupportRequestWidget from "./support-request-widget";
+import SupportRequestInbox from "./support-request-inbox";
 import ReportStatusPanel from "./report-status-panel";
 import TeacherExplanations from "./teacher-explanations";
 import TeacherAttendance from "./teacher-attendance";
@@ -213,6 +214,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {(tab === "answers" || tab === "weekly" || tab === "daily" || tab === "missing" || tab === "students") && <section className="panel workspace-filters">{(tab === "daily" || tab === "missing") && <label>기준 날짜<input type="date" value={submissionDate} onChange={(event) => setSubmissionDate(event.target.value)} /></label>}<label>학생<select value={studentFilter} onChange={(event) => setStudentFilter(event.target.value)}><option value="">전체</option>{students.map((student) => <option key={student}>{student}</option>)}</select></label><label>반<select value={classFilter} onChange={(event) => setClassFilter(event.target.value)}><option value="">전체</option>{classes.map((className) => <option key={className}>{className}</option>)}</select></label></section>}
     {tab === "home" && <>
       <section className="panel"><h2>🏠 오답노트 관리 홈</h2><p>{admin ? "저장된 보고서 기준, 학생 제출 현황과 변형문제 요청을 한 화면에서 확인합니다." : "전체 관리자가 저장한 보고서 기준과 담당 학생 현황을 확인합니다."}</p></section>
+      {admin && <SupportRequestInbox />}
       {admin && <SubmissionReportUpload refresh={refresh} />}
       <section className="panel"><h2>📄 최신 저장 보고서</h2>{latestReports.length ? <div className="metrics">{latestReports.map((row) => <article key={row.id}><b>{row.teacher_name}</b><span>최근 제출 마감 {row.cutoff_at ? new Date(row.cutoff_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-"}</span><small>대상 {row.target_count ?? "-"}명 · {row.note_count ?? "-"}건</small></article>)}</div> : <p>아직 저장된 보고서가 없습니다.</p>}</section>
       <ReportStatusPanel roster={data.roster} answers={data.wrongAnswers} reports={data.reports} />
@@ -244,7 +246,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {(tab === "register" || tab === "exited") && <RosterActions mode={tab} teacher={teacher} roster={data.roster} activeBooks={data.activeBooks || []} refresh={refresh} />}
     {tab === "reset" && <section className="panel"><h2>학생 비밀번호 관리</h2><h3>처리 대기 요청</h3>{data.resetRequests.length ? data.resetRequests.map((row) => <div className="row" key={row.id}><strong>{row.username}</strong><span>{new Date(row.requested_at).toLocaleString("ko-KR")}</span></div>) : <p>대기 중인 요청이 없습니다.</p>}<h3>임시 비밀번호 발급</h3><form onSubmit={resetPassword} className="form workspace-form"><label>학생<select value={resetStudent} onChange={(event) => setResetStudent(event.target.value)} required><option value="">선택해주세요</option>{data.users.map((user) => <option key={user.username}>{user.username}</option>)}</select></label><label>새 임시 비밀번호<input type="password" minLength={4} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><label>임시 비밀번호 확인<input type="password" minLength={4} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label><button className="primary" disabled={busy}>임시 비밀번호 발급</button></form></section>}
     {tab === "admin" && admin && <AdminPanel key={adminPanelKey} initialSection={adminInitialSection} roster={data.roster} users={data.users} activeBooks={data.activeBooks || []} refreshRoster={refresh} />}
-    <SgContactFooter />
+    <SupportRequestWidget fixedFooter />
   </main>;
 }
 
