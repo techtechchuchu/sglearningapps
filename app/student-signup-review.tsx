@@ -6,7 +6,7 @@ import { matchesStudentSignupRoster } from "../lib/student-signup-roster";
 type RequestRow = { username: string; login_id: string; grade: string; email: string; phone: string; created_at: string };
 type RosterRow = { student_name?: string; grade?: string; teacher_name?: string; class_name?: string; school_name?: string; enrollment_status?: string };
 
-export default function StudentSignupReview({ roster, refresh }: { roster: RosterRow[]; refresh: () => Promise<void> }) {
+export default function StudentSignupReview({ teacher, roster, refresh }: { teacher: string; roster: RosterRow[]; refresh: () => Promise<void> }) {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,7 +38,7 @@ export default function StudentSignupReview({ roster, refresh }: { roster: Roste
     <p>가입코드만으로는 로그인할 수 없습니다. 재원 명단의 이름·학년을 확인하고 승인해주세요.</p>
     {error && <p role="alert">{error}</p>}
     {requests.map(row => {
-      const matches = roster.filter(item => matchesStudentSignupRoster(item, row.username, row.grade));
+      const matches = roster.filter(item => (teacher === "전체 관리자" || item.teacher_name === teacher) && matchesStudentSignupRoster(item, row.username, row.grade));
       return <article className="academy-review-item" key={row.username}>
         <strong>{row.username} · {row.grade}</strong>
         <span>신청 {new Date(row.created_at).toLocaleString("ko-KR")}</span>
