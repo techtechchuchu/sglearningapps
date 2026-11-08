@@ -31,11 +31,15 @@ export async function POST(request: NextRequest) {
 
     if (input.kind === "member") {
       if (!/^[0-9a-f-]{36}$/i.test(key)) return NextResponse.json({ message: "계정 정보가 올바르지 않습니다." }, { status: 400 });
-      const account = await db.from("university_users").select("id,withdrawn_at").eq("id", key).maybeSingle();
+      const account = await db.from("university_users").select("id,email,withdrawn_at").eq("id", key).maybeSingle();
       if (account.error) throw account.error;
       if (!account.data || !expired(account.data.withdrawn_at)) return NextResponse.json({ message: "보관 기간이 끝나지 않았습니다." }, { status: 409 });
       const identities = await db.from("sg_identities").delete().eq("target_role", "member").eq("target_key", key);
       if (identities.error) throw identities.error;
+      for (const [role, name] of [["member", key], ["university", account.data.email]] as const) {
+        const support = await db.from("support_requests").delete().eq("requester_role", role).eq("requester_name", name);
+        if (support.error) throw support.error;
+      }
       const removed = await db.from("university_users").delete().eq("id", key).eq("withdrawn_at", account.data.withdrawn_at).select("id");
       // The date was checked above. The extra predicate protects against a concurrent status change.
       if (removed.error) throw removed.error;
@@ -72,6 +76,8 @@ export async function POST(request: NextRequest) {
       const removed = await db.from(table).delete().eq(column, key);
       if (removed.error) throw removed.error;
     }
+    const support = await db.from("support_requests").delete().eq("requester_role", "student").eq("requester_name", key);
+    if (support.error) throw support.error;
     const identities = await db.from("sg_identities").delete().eq("target_role", "student").eq("target_key", key);
     if (identities.error) throw identities.error;
     const removed = await db.from("users").delete().eq("username", key).eq("withdrawn_at", account.data.withdrawn_at).select("username");
