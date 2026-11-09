@@ -108,8 +108,9 @@ export default function GyeolgyeoliChat({ name, purpose = "study" }: { name: str
           {busy && <p className="gyeolgyeoli-status" role="status">결결이가 답변을 작성하고 있어요…</p>}
           {savingWarning && <p className="gyeolgyeoli-error" role="alert">답변은 받았지만 기록은 저장되지 않았습니다. 관리자에게 알려주세요.</p>}
           {error && <p className="gyeolgyeoli-error" role="alert">{error}</p>}
+          {support && <div className="gyeolgyeoli-support-action"><SupportRequestWidget /></div>}
         </div>
-        <footer className="gyeolgyeoli-chat-footer">{selectedDay === today ? <form className="gyeolgyeoli-composer" onSubmit={(event) => void send(event)}><input aria-label="질문 입력" value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={800} placeholder={enabled ? support ? "앱 사용 중 궁금한 점을 입력하세요" : "공부에 관한 질문을 입력하세요" : "AI 연결을 준비 중입니다"} disabled={!enabled || busy} /><button type="submit" disabled={!enabled || busy || question.trim().length < 2} aria-label="질문 보내기">➤</button></form> : <button type="button" className="gyeolgyeoli-today-link" onClick={() => setSelectedDay(today)}>오늘 대화로 돌아가 질문하기</button>}<p>대화는 로그인한 계정에 저장되며 AI 답변을 위해 Google Gemini로 전송됩니다. 개인정보·비밀번호는 입력하지 마세요. AI 답변은 틀릴 수 있습니다.</p>{support && <SupportRequestWidget />}</footer>
+        <footer className="gyeolgyeoli-chat-footer">{selectedDay === today ? <form className="gyeolgyeoli-composer" onSubmit={(event) => void send(event)}><input aria-label="질문 입력" value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={800} placeholder={enabled ? support ? "앱 사용 중 궁금한 점을 입력하세요" : "공부에 관한 질문을 입력하세요" : "AI 연결을 준비 중입니다"} disabled={!enabled || busy} /><button type="submit" disabled={!enabled || busy || question.trim().length < 2} aria-label="질문 보내기">➤</button></form> : <button type="button" className="gyeolgyeoli-today-link" onClick={() => setSelectedDay(today)}>오늘 대화로 돌아가 질문하기</button>}<p>대화는 로그인한 계정에 저장되며 AI 답변을 위해 Google Gemini로 전송됩니다. 개인정보·비밀번호는 입력하지 마세요. AI 답변은 틀릴 수 있습니다.</p></footer>
       </div>
     </div>
   </section>;
