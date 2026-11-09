@@ -3,6 +3,7 @@
 .gyeolgyeoli-message.assistant small+p{margin-top:8px}
 .gyeolgyeoli-composer button:not(:disabled){background:#176b50;cursor:pointer}
 .gyeolgyeoli-suggestions button:disabled{opacity:.5;cursor:not-allowed}
+.gyeolgyeoli-support-action{display:flex;justify-content:flex-start;margin:24px 0 0 51px}
 .gyeolgyeoli-status{color:#416350}
 .gyeolgyeoli-error{color:#ac3030;font-weight:650}
 .gyeolgyeoli-clear{margin-left:auto;border:1px solid #d9e5dc;border-radius:10px;background:#fff;color:#466254;padding:8px 11px;font:inherit;font-size:.85rem;cursor:pointer}
@@ -26,4 +27,4 @@
 .gyeolgyeoli-day-heading span,.gyeolgyeoli-empty{color:#6c8175;font-size:.86rem}
 .gyeolgyeoli-today-link{width:100%;padding:11px;border:1px solid #cde4d6;border-radius:12px;background:#eaf5ee;color:#176b50;font:inherit;font-weight:700;cursor:pointer}
 .gyeolgyeoli-history .gyeolgyeoli-older{margin:10px auto}
-@media(max-width:700px){.gyeolgyeoli-main{grid-template-columns:1fr}.gyeolgyeoli-history{max-height:190px;border-right:0;border-bottom:1px solid #e2ebe5;padding:12px}.gyeolgyeoli-history-heading{padding-bottom:4px}.gyeolgyeoli-chat-body{min-height:250px;max-height:52vh}.gyeolgyeoli-history-item{padding:8px 10px}}
+@media(max-width:700px){.gyeolgyeoli-support-action{margin-left:0}.gyeolgyeoli-main{grid-template-columns:1fr}.gyeolgyeoli-history{max-height:190px;border-right:0;border-bottom:1px solid #e2ebe5;padding:12px}.gyeolgyeoli-history-heading{padding-bottom:4px}.gyeolgyeoli-chat-body{min-height:250px;max-height:52vh}.gyeolgyeoli-history-item{padding:8px 10px}}
