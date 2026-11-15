@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { bookExamOptions, explanationKey, type Explanation } from "../lib/problem-explanations";
+import { sortBooksForDisplay } from "../lib/book-periods";
 
 type Row = Record<string, any>;
 
@@ -18,7 +19,8 @@ export default function TeacherExplanations({ books, schoolExams }: { books: str
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const effectiveBook = books.includes(book) ? book : books[0] || "";
+  const selectableBooks = sortBooksForDisplay([...books, "UNIT N제 공통수학2", "UNIT N제 공통수학2 기말"]);
+  const effectiveBook = selectableBooks.includes(book) ? book : selectableBooks[0] || "";
   const options = kind === "xpattern" ? (effectiveBook ? bookExamOptions(effectiveBook) : []) : schoolExams.map((exam) => ({ id: String(exam.id), school: String(exam.school_name || ""), label: String(exam.display_name || `${exam.exam_year} ${exam.school_name} ${exam.exam_type}`), max: Number(exam.question_count) || 20 }));
   const schools = [...new Set(options.map((item) => item.school).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
   const effectiveSchool = schools.includes(school) ? school : schools[0] || "";
@@ -62,7 +64,7 @@ export default function TeacherExplanations({ books, schoolExams }: { books: str
   return <section className="panel problem-browser"><h2>문제별 해설 등록</h2><p>학생이 문제번호를 누르면 이곳에 등록한 유튜브 영상과 풀이 이미지가 표시됩니다. 기존 오답 기록은 변경되지 않습니다.</p>
     <form className="form workspace-form" onSubmit={submit}>
       <label>자료 종류<select value={kind} onChange={(event) => { setKind(event.target.value as typeof kind); setSchool(""); setExamId(""); }}><option value="xpattern">우리 교재</option><option value="school">학교 기출</option></select></label>
-      {kind === "xpattern" && <label>교재<select value={effectiveBook} onChange={(event) => { setBook(event.target.value); setSchool(""); setExamId(""); }}>{books.map((item) => <option key={item}>{item}</option>)}</select></label>}
+      {kind === "xpattern" && <label>교재<select value={effectiveBook} onChange={(event) => { setBook(event.target.value); setSchool(""); setExamId(""); }}>{selectableBooks.map((item) => <option key={item} value={item}>{item === "UNIT N제 공통수학2" ? "UNIT N제 공통수학2 중간" : item}</option>)}</select></label>}
       <label>학교<select value={effectiveSchool} onChange={(event) => { setSchool(event.target.value); setExamId(""); }}>{schools.map((item) => <option key={item}>{item}</option>)}</select></label>
       <label>시험<select value={effectiveExamId} onChange={(event) => setExamId(event.target.value)}>{schoolOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
       <label>문제번호 (1~{max || "?"})<input type="number" min={1} max={max || undefined} value={number || ""} onChange={(event) => setNumber(event.target.value === "" ? 0 : Number(event.target.value))} required /></label>
