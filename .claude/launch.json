@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kakao-harness",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/SG오답노트/_sgla/node_modules/next/dist/bin/next", "dev", "C:/SG오답노트/_sgla", "-p", "3987"],
+      "port": 3987
+    }
+  ]
+}

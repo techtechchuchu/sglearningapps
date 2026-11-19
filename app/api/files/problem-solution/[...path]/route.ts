@@ -17,7 +17,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ pat
   if (!SAFE_PATH.test(storagePath)) return NextResponse.json({ message: "파일 경로가 올바르지 않습니다." }, { status: 400 });
 
   try {
-    const signed = await getServerSupabase().storage.from(PRIVATE_BUCKET).createSignedUrl(storagePath, 300);
+    const bucket = getServerSupabase().storage.from(PRIVATE_BUCKET);
+    let signed = await bucket.createSignedUrl(storagePath, 300);
+    // Dragging the whole "problem-solutions" folder into the bucket nests every file one level deeper.
+    if (signed.error || !signed.data?.signedUrl) {
+      const nested = await bucket.createSignedUrl(`${PRIVATE_BUCKET}/${storagePath}`, 300);
+      if (!nested.error && nested.data?.signedUrl) signed = nested;
+    }
     if (signed.error || !signed.data?.signedUrl) {
       console.error("[problem solution] signed url failed", storagePath, signed.error?.message);
       const bucketMissing = /bucket/i.test(signed.error?.message || "");
