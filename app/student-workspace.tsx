@@ -5,6 +5,7 @@ import { displayProblemNumbers, examIncludesSchool, parseProblemNumbers, splitRo
 import BrandLockup from "./brand-lockup";
 import SgContactFooter from "./sg-contact-footer";
 import StudentProblemBrowser from "./student-problem-browser";
+import StudentClassVideos from "./student-class-videos";
 import StudentAttendance from "./student-attendance";
 import StudentLearningHub from "./student-learning-hub";
 import StudentAdmissions from "./student-admissions";
@@ -32,7 +33,7 @@ async function json(response: Response) {
 }
 
 export default function StudentWorkspace({ name, data, refresh, logout }: { name: string; data: Data; refresh: () => Promise<void>; logout: () => void }) {
-  const [tab, setTab] = useState<"home" | "weekly" | "questions" | "helper" | "wrong" | "school" | "learn" | "attendance" | "admissions" | "records" | "account">(() => typeof window !== "undefined" && window.location.hash.startsWith("#attendance=") ? "attendance" : "home");
+  const [tab, setTab] = useState<"home" | "weekly" | "questions" | "helper" | "wrong" | "school" | "learn" | "lessons" | "attendance" | "admissions" | "records" | "account">(() => typeof window !== "undefined" && window.location.hash.startsWith("#attendance=") ? "attendance" : "home");
   const [books, setBooks] = useState<string[]>([]);
   const [examsByBook, setExamsByBook] = useState<Record<string, ExamOption[]>>({});
   const [schoolExams, setSchoolExams] = useState<Exam[]>([]);
@@ -228,7 +229,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   }
 
   const myPageActive = tab === "records" || tab === "account";
-  const moreActive = tab === "weekly" || tab === "questions" || tab === "learn" || tab === "attendance" || tab === "admissions";
+  const moreActive = tab === "weekly" || tab === "questions" || tab === "learn" || tab === "lessons" || tab === "attendance" || tab === "admissions";
 
   function openTab(nextTab: typeof tab) {
     setTab(nextTab);
@@ -264,7 +265,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     </nav>
     </div>
     {myPageActive && <nav className="student-secondary-menu" aria-label="마이페이지 메뉴"><button type="button" className={tab === "records" ? "active" : ""} onClick={() => openTab("records")}>내 기록</button><button type="button" className={tab === "account" ? "active" : ""} onClick={() => openTab("account")}>계정 관리</button></nav>}
-    {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ["learn", "문제별 해설"], ["attendance", "출석 체크"], ["admissions", "내 내신·대학 탐색"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
+    {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ["learn", "문제별 해설"], ["lessons", "수업 영상"], ["attendance", "출석 체크"], ["admissions", "내 내신·대학 탐색"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
     {tab === "account" && !data.mustChangePassword && <LegacyKakaoLink />}
     {message && <p className="workspace-message" role="status">{message}</p>}
     {channelRequest && <div className="channel-request-lock"><section className="channel-request-card" role="dialog" aria-modal="true" aria-labelledby="channel-request-title"><div><span>필수 전송 단계</span><h2 id="channel-request-title">{channelRequest.channelName} 채널로 보내주세요</h2><p>다음 화면으로 이동하려면 카카오채널에서 변형문제 요청을 전송해야 합니다. 아래 버튼을 누르면 요청 내용이 복사되고 채널이 열립니다.</p></div><dl><div><dt>담당</dt><dd>{channelRequest.teacherName}</dd></div><div><dt>교재</dt><dd>{channelRequest.book}</dd></div>{channelRequest.examLabel && <div><dt>학교·시험</dt><dd>{channelRequest.examLabel}</dd></div>}<div><dt>변형 필요 번호</dt><dd>{channelRequest.variantProblem}번</dd></div></dl><div className="channel-request-actions"><button type="button" className="channel-request-button" onClick={sendChannelRequest}>{channelOpened ? "카카오채널 다시 열기" : "요청 복사하고 카카오채널 열기"}</button>{channelOpened && <button type="button" className="channel-request-complete" onClick={completeChannelRequest}>카카오채널에서 전송했습니다</button>}</div><small>카카오 정책상 실제 메시지 전송 여부는 자동으로 확인할 수 없습니다. 채팅방에서 붙여넣기 후 전송 버튼을 꼭 눌러주세요.</small></section></div>}
@@ -292,6 +293,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
       }).filter(([key]) => !String(key).startsWith("\0") && !String(key).endsWith("\0")) as Array<[string, { className: string; teacherName: string }]>).values()];
       return classes.length ? classes : name === "추재현" ? [{ className: "출석 데모반", teacherName: "전체 관리자" }] : [];
     })()} />}
+    {tab === "lessons" && !data.mustChangePassword && <StudentClassVideos studentSchools={studentSchools} />}
     {tab === "learn" && !data.mustChangePassword && <StudentProblemBrowser studentName={name} studentSchools={studentSchools} books={books} schoolExams={schoolExams} wrongAnswers={data.wrongAnswers} schoolAnswers={schoolAnswers} onWrite={(kind, selectedBook, selectedExam, number) => {
       if (kind === "xpattern") { const selectedEdition = examsByBook[selectedBook]?.find((item) => item.id === selectedExam)?.edition; setBookPeriod(selectedEdition === "2026-2-final" ? "2학기 기말" : "전체 교재"); setBook(selectedBook); setExamId(selectedExam); setProblem(String(number)); setExamConfirmed(false); setTab("wrong"); }
       else { setSchoolExamId(selectedExam); setSchoolProblem(String(number)); setSchoolConfirmed(false); setTab("school"); }
