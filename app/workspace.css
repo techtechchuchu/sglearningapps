@@ -271,9 +271,3 @@
 .support-inbox-list textarea{min-height:75px}
 .support-inbox-list form button{justify-self:start}
 @media(max-width:600px){.support-request-backdrop{align-items:flex-end;padding:8px}.support-request-dialog{max-height:88vh;padding:20px 16px;border-radius:18px}.support-inbox-heading{flex-direction:column}}
-.class-video-list{display:grid;gap:10px;margin-top:16px}
-.class-video-item{display:flex;align-items:center;gap:12px;width:100%;padding:13px 15px;border:1px solid #ddd6ce;border-radius:12px;background:#fff;color:inherit;font:inherit;text-align:left;cursor:pointer}
-.class-video-item.selected{border-color:#40584b;background:#edf3f0}
-.class-video-play{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#40584b;color:#fff;font-size:12px}
-.class-video-text{display:grid;gap:3px;min-width:0}
-.class-video-text small{color:#6f7f76;font-size:13px}
