@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveSession } from "../../../lib/active-session";
 import { getServerSupabase } from "../../../lib/supabase-server";
-import { bookExamOptions, explanationKey, safeImageUrl, youtubeId, type ExplanationKind } from "../../../lib/problem-explanations";
+import { bookExamOptions, explanationKey, safeImageUrl, youtubeId, youtubeStartFromUrl, youtubeStartSeconds, type ExplanationKind } from "../../../lib/problem-explanations";
 import { FALLBACK_BOOKS } from "../../../lib/fallback-books";
 
 const headers = { "Cache-Control": "private, no-store" };
+const BASE_COLUMNS = "content_key,title,youtube_video_id,image_url";
+const COLUMNS = `${BASE_COLUMNS},youtube_start_seconds`;
+
+// The start-time column is installed by a separate migration; until then the feature degrades to "play from the beginning".
+function startColumnMissing(error: { code?: string; message?: string } | null) {
+  return !!error && ["42703", "PGRST204"].includes(error.code || "") && String(error.message || "").includes("youtube_start_seconds");
+}
 
 function inputFrom(request: NextRequest) {
   const kind = request.nextUrl.searchParams.get("kind");
@@ -43,7 +50,8 @@ export async function GET(request: NextRequest) {
     if (kind === "xpattern" && !(await knownBook(db, book))) return NextResponse.json({ message: "현재 사용 중인 교재를 선택해주세요." }, { status: 400 });
     const max = await maxForExam(db, kind, book, examId);
     const keys = Array.from({ length: max }, (_, index) => explanationKey(kind, examId, index + 1, book));
-    const result = await db.from("problem_explanations").select("content_key,title,youtube_video_id,image_url").in("content_key", keys);
+    let result: { data: Record<string, unknown>[] | null; error: { code?: string; message?: string } | null } = await db.from("problem_explanations").select(COLUMNS).in("content_key", keys);
+    if (startColumnMissing(result.error)) result = await db.from("problem_explanations").select(BASE_COLUMNS).in("content_key", keys);
     if (result.error) {
       // The independent table is installed separately; existing student features must stay usable meanwhile.
       if (["PGRST205", "42P01"].includes(result.error.code || "")) return NextResponse.json({ explanations: [], available: false, max }, { headers });
@@ -69,12 +77,19 @@ export async function POST(request: NextRequest) {
     const title = String(input.title || "").trim().slice(0, 200);
     const video = youtubeId(input.youtubeUrl);
     const image = safeImageUrl(input.imageUrl);
+    // An explicitly typed start time wins; otherwise use the timestamp inside the shared link.
+    const start = video ? (youtubeStartSeconds(input.startTime) ?? youtubeStartFromUrl(input.youtubeUrl)) : null;
     const db = getServerSupabase();
     if (kind === "xpattern" && !(await knownBook(db, book))) return NextResponse.json({ message: "현재 사용 중인 교재를 선택해주세요." }, { status: 400 });
     const max = await maxForExam(db, kind, book, examId);
     if (!Number.isSafeInteger(number) || number < 1 || number > max) return NextResponse.json({ message: `문제번호는 1~${max}번입니다.` }, { status: 400 });
     const key = explanationKey(kind, examId, number, book);
-    const saved = await db.from("problem_explanations").upsert({ content_key: key, title, youtube_video_id: video, image_url: image, updated_by: session.name, updated_at: new Date().toISOString() }, { onConflict: "content_key" }).select("content_key,title,youtube_video_id,image_url").single();
+    const row = { content_key: key, title, youtube_video_id: video, image_url: image, updated_by: session.name, updated_at: new Date().toISOString() };
+    let saved: { data: Record<string, unknown> | null; error: { code?: string; message?: string } | null } = await db.from("problem_explanations").upsert({ ...row, youtube_start_seconds: start }, { onConflict: "content_key" }).select(COLUMNS).single();
+    if (startColumnMissing(saved.error)) {
+      if (start !== null) return NextResponse.json({ message: "시작 시간 저장 공간이 아직 설치되지 않았습니다. 시작 시간을 비우고 저장하거나 관리자에게 문의해주세요." }, { status: 503, headers });
+      saved = await db.from("problem_explanations").upsert(row, { onConflict: "content_key" }).select(BASE_COLUMNS).single();
+    }
     if (saved.error) throw saved.error;
     return NextResponse.json({ ok: true, explanation: saved.data }, { headers });
   } catch (error) {

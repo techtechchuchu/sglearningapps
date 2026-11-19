@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { examIncludesSchool, parseProblemNumbers } from "../lib/wrong-answers";
-import { bookExamOptions, explanationKey, type Explanation } from "../lib/problem-explanations";
+import { bookExamOptions, explanationKey, formatYoutubeStart, youtubeEmbedUrl, type Explanation } from "../lib/problem-explanations";
 import DemoExplanationMedia from "./demo-explanation-media";
 
 type Row = Record<string, any>;
@@ -122,7 +122,7 @@ export default function StudentProblemBrowser({ studentName, studentSchools, boo
       {selected !== null && <div className="problem-detail"><div className="problem-detail-heading"><h3><span>{selected}번 풀이</span> {demoSelected ? <small>영상·이미지 등록 예시</small> : detail?.title && <small>{detail.title}</small>}</h3><button type="button" className="ghost" onClick={() => setSelected(null)}>닫기</button></div>
         {mine.has(selected) && <div className="problem-own-notes"><strong>내 오답 기록</strong>{mine.get(selected)?.map((note, index) => <p key={index}>{note || "메모 없이 저장됨"}</p>)}</div>}
         {demoSelected && <DemoExplanationMedia />}
-        {detail?.youtube_video_id && <div className="problem-video"><iframe title={`${selected}번 해설 영상`} src={`https://www.youtube-nocookie.com/embed/${detail.youtube_video_id}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen loading="lazy" referrerPolicy="strict-origin-when-cross-origin" /></div>}
+        {detail?.youtube_video_id && <div className="problem-video"><iframe key={`${detail.youtube_video_id}:${detail.youtube_start_seconds || 0}`} title={`${selected}번 해설 영상${detail.youtube_start_seconds ? ` (${formatYoutubeStart(detail.youtube_start_seconds)}부터)` : ""}`} src={youtubeEmbedUrl(detail.youtube_video_id, detail.youtube_start_seconds)} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen loading="lazy" referrerPolicy="strict-origin-when-cross-origin" /></div>}
         {!detail?.youtube_video_id && !demoSelected && <div className="problem-video problem-video-empty" role="status"><span>해설 영상 자리</span><small>영상 링크 등록 전</small></div>}
         {detail?.image_url && <a href={detail.image_url} target="_blank" rel="noopener noreferrer" className="problem-solution-image"><img src={detail.image_url} alt={`${selected}번 풀이 이미지`} loading="lazy" /><span>이미지 크게 보기 ↗</span></a>}
         {!detail?.image_url && !demoSelected && <div className="problem-image-empty">풀이 이미지 자리 <small>{loading ? "불러오는 중" : "이미지 등록 전"}</small></div>}

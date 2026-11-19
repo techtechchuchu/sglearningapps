@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { bookExamOptions, explanationKey, type Explanation } from "../lib/problem-explanations";
+import { bookExamOptions, explanationKey, formatYoutubeStart, youtubeStartFromUrl, type Explanation } from "../lib/problem-explanations";
 import { sortBooksForDisplay } from "../lib/book-periods";
 
 type Row = Record<string, any>;
@@ -14,6 +14,7 @@ export default function TeacherExplanations({ books, schoolExams }: { books: str
   const [number, setNumber] = useState(1);
   const [title, setTitle] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [startTime, setStartTime] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [saved, setSaved] = useState<Explanation[]>([]);
   const [message, setMessage] = useState("");
@@ -45,14 +46,22 @@ export default function TeacherExplanations({ books, schoolExams }: { books: str
   useEffect(() => {
     setTitle(existing?.title || "");
     setYoutubeUrl(existing?.youtube_video_id ? `https://www.youtube.com/watch?v=${existing.youtube_video_id}` : "");
+    setStartTime(formatYoutubeStart(existing?.youtube_start_seconds));
     setImageUrl(existing?.image_url || "");
-  }, [existing?.content_key, existing?.title, existing?.youtube_video_id, existing?.image_url, safeNumber]);
+  }, [existing?.content_key, existing?.title, existing?.youtube_video_id, existing?.youtube_start_seconds, existing?.image_url, safeNumber]);
+
+  function changeYoutubeUrl(value: string) {
+    setYoutubeUrl(value);
+    // A link copied with "현재 시간에 동영상 URL 복사" already carries the timestamp.
+    const fromLink = youtubeStartFromUrl(value);
+    if (fromLink) setStartTime(formatYoutubeStart(fromLink));
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault(); setBusy(true); setMessage("");
     try {
       if (!Number.isSafeInteger(number) || number < 1 || number > max) throw new Error(`문제번호는 1~${max}번입니다.`);
-      const response = await fetch("/api/problem-explanations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, book: effectiveBook, examId: effectiveExamId, number, title, youtubeUrl, imageUrl }) });
+      const response = await fetch("/api/problem-explanations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, book: effectiveBook, examId: effectiveExamId, number, title, youtubeUrl, startTime, imageUrl }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "저장하지 못했습니다.");
       setSaved((current) => [...current.filter((item) => item.content_key !== result.explanation.content_key), result.explanation]);
@@ -69,11 +78,12 @@ export default function TeacherExplanations({ books, schoolExams }: { books: str
       <label>시험<select value={effectiveExamId} onChange={(event) => setExamId(event.target.value)}>{schoolOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
       <label>문제번호 (1~{max || "?"})<input type="number" min={1} max={max || undefined} value={number || ""} onChange={(event) => setNumber(event.target.value === "" ? 0 : Number(event.target.value))} required /></label>
       <label>해설 제목<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} placeholder="선택 사항" /></label>
-      <label>유튜브 영상 주소<input type="url" value={youtubeUrl} onChange={(event) => setYoutubeUrl(event.target.value)} placeholder="https://youtu.be/…" /></label>
+      <label>유튜브 영상 주소<input type="url" value={youtubeUrl} onChange={(event) => changeYoutubeUrl(event.target.value)} placeholder="https://youtu.be/…" /></label>
+      <label>이 문제 시작 시간<input value={startTime} onChange={(event) => setStartTime(event.target.value)} inputMode="numeric" maxLength={12} placeholder="예: 12:34 (비우면 처음부터)" /><small>수업 영상에서 이 문제 풀이가 시작되는 시점입니다. 시간이 포함된 링크를 붙여 넣으면 자동으로 채워집니다.</small></label>
       <label>풀이 이미지 주소<input type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="https://… (선택 사항)" /></label>
       <button className="primary" disabled={busy || !effectiveExamId}>문제 저장하기</button>
     </form>{message && <p className="workspace-message" role="status">{message}</p>}
-    {existing && <p className="problem-browser-note">현재 {safeNumber}번에 등록된 자료: {existing.youtube_video_id ? "유튜브 영상 " : ""}{existing.image_url ? "풀이 이미지" : ""}</p>}
+    {existing && <p className="problem-browser-note">현재 {safeNumber}번에 등록된 자료: {existing.youtube_video_id ? `유튜브 영상${existing.youtube_start_seconds ? ` (${formatYoutubeStart(existing.youtube_start_seconds)}부터)` : ""} ` : ""}{existing.image_url ? "풀이 이미지" : ""}</p>}
   </section>;
 }
 
