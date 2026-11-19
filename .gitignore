@@ -7,3 +7,4 @@ node_modules/
 .npm-cache/
 next-env.d.ts
 
+upload-staging/

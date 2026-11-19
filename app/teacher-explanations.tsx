@@ -80,7 +80,7 @@ export default function TeacherExplanations({ books, schoolExams }: { books: str
       <label>해설 제목<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} placeholder="선택 사항" /></label>
       <label>유튜브 영상 주소<input type="url" value={youtubeUrl} onChange={(event) => changeYoutubeUrl(event.target.value)} placeholder="https://youtu.be/…" /></label>
       <label>이 문제 시작 시간<input value={startTime} onChange={(event) => setStartTime(event.target.value)} inputMode="numeric" maxLength={12} placeholder="예: 12:34 (비우면 처음부터)" /><small>수업 영상에서 이 문제 풀이가 시작되는 시점입니다. 시간이 포함된 링크를 붙여 넣으면 자동으로 채워집니다.</small></label>
-      <label>풀이 이미지 주소<input type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="https://… (선택 사항)" /></label>
+      <label>풀이 이미지 주소<input type="text" inputMode="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="https://… (선택 사항)" /></label>
       <button className="primary" disabled={busy || !effectiveExamId}>문제 저장하기</button>
     </form>{message && <p className="workspace-message" role="status">{message}</p>}
     {existing && <p className="problem-browser-note">현재 {safeNumber}번에 등록된 자료: {existing.youtube_video_id ? `유튜브 영상${existing.youtube_start_seconds ? ` (${formatYoutubeStart(existing.youtube_start_seconds)}부터)` : ""} ` : ""}{existing.image_url ? "풀이 이미지" : ""}</p>}

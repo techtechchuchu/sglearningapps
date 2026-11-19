@@ -77,6 +77,8 @@ export function youtubeEmbedUrl(videoId: string, startSeconds?: number | null): 
 export function safeImageUrl(value: unknown): string | null {
   const raw = String(value || "").trim();
   if (!raw) return null;
+  // Hand-solution crops served from the private bucket through our own route.
+  if (/^\/api\/files\/problem-solution\/[a-z0-9-]{3,80}\/\d{2}\.webp$/.test(raw)) return raw;
   try {
     const url = new URL(raw);
     if (url.protocol !== "https:" || url.username || url.password) throw new Error();
