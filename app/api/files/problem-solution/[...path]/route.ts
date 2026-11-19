@@ -18,7 +18,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ pat
 
   try {
     const signed = await getServerSupabase().storage.from(PRIVATE_BUCKET).createSignedUrl(storagePath, 300);
-    if (signed.error || !signed.data?.signedUrl) return NextResponse.json({ message: "풀이 이미지를 찾지 못했습니다." }, { status: 404 });
+    if (signed.error || !signed.data?.signedUrl) {
+      console.error("[problem solution] signed url failed", storagePath, signed.error?.message);
+      const bucketMissing = /bucket/i.test(signed.error?.message || "");
+      return NextResponse.json({ message: bucketMissing ? `저장소에 '${PRIVATE_BUCKET}' 버킷이 없습니다.` : `버킷에 이 파일이 없습니다: ${storagePath}` }, { status: 404 });
+    }
     const response = NextResponse.redirect(signed.data.signedUrl, 302);
     response.headers.set("Cache-Control", "private, max-age=240");
     return response;
