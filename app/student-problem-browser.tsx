@@ -6,6 +6,9 @@ import { bookExamOptions, explanationKey, formatYoutubeStart, youtubeEmbedUrl, t
 import DemoExplanationMedia from "./demo-explanation-media";
 
 type Row = Record<string, any>;
+
+// Schools listed first in the 학교 기출 picker, in this order (the ones with class recordings and hand solutions).
+const FEATURED_SCHOOLS = ["천상고"];
 type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number };
 type SchoolAnswer = { id: number; exam_id: number; problem: string; memo: string; created_at: string };
 
@@ -32,6 +35,8 @@ export default function StudentProblemBrowser({ studentName, studentSchools, boo
   const options = kind === "xpattern" ? (effectiveBook ? bookExamOptions(effectiveBook) : []) : schoolExams.map((exam) => ({ id: String(exam.id), school: exam.school_name, label: exam.display_name || `${exam.exam_year} ${exam.school_name} ${exam.exam_type}`, max: Number(exam.question_count) || 20, offset: 0 }));
   const hasCurrentSections = options.some((option) => "edition" in option && option.edition === "2026-2-final");
   const schools = [...new Set(options.map((option) => option.school).filter(Boolean))].sort((a, b) => {
+    const featuredA = FEATURED_SCHOOLS.indexOf(a), featuredB = FEATURED_SCHOOLS.indexOf(b);
+    if (featuredA !== featuredB) return (featuredA < 0 ? FEATURED_SCHOOLS.length : featuredA) - (featuredB < 0 ? FEATURED_SCHOOLS.length : featuredB);
     const recommendedA = studentSchools.some((name) => examIncludesSchool(a, name));
     const recommendedB = studentSchools.some((name) => examIncludesSchool(b, name));
     if (recommendedA !== recommendedB) return recommendedA ? -1 : 1;
