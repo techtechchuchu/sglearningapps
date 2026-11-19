@@ -8,7 +8,7 @@ import DemoExplanationMedia from "./demo-explanation-media";
 type Row = Record<string, any>;
 
 // Schools listed first in the 학교 기출 picker, in this order (the ones with class recordings and hand solutions).
-const FEATURED_SCHOOLS = ["천상고"];
+const FEATURED_SCHOOLS = ["천상고", "약사고"];
 type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number };
 type SchoolAnswer = { id: number; exam_id: number; problem: string; memo: string; created_at: string };
 
