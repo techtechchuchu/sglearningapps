@@ -1,4 +1,4 @@
-import { FINAL_TERM_BOOKS, finalBooksForRoster } from "./book-periods";
+import { FINAL_TERM_BOOKS } from "./book-periods";
 import { splitRosterBooks } from "./wrong-answers";
 
 type RosterAssignment = {
@@ -51,10 +51,10 @@ export function explanationBooksForStudent(studentName: string, roster: RosterAs
   if (studentName.trim() === "추재현") return catalogue;
   const classes = leeClassRows(roster);
   const assigned = new Set(classes.flatMap((row) => splitRosterBooks(row.book_name)));
-  const finalBooks = finalBooksForRoster([...FINAL_TERM_BOOKS], classes);
-  // An unknown class has no inferred final books; it must not unlock the full catalogue.
-  if (finalBooks.length < FINAL_TERM_BOOKS.length) {
-    for (const book of finalBooks) if (!book.startsWith("마플교과서") || assigned.has(book)) assigned.add(book);
+  // Only the final edition of a book explicitly assigned to this student is equivalent.
+  for (const book of [...assigned]) {
+    const finalEdition = `${book} 기말`;
+    if (FINAL_TERM_BOOKS.some((item) => item === finalEdition)) assigned.add(finalEdition);
   }
   return catalogue.filter((book) => assigned.has(book));
 }
