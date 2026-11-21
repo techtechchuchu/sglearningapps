@@ -3,18 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { examIncludesSchool, parseProblemNumbers } from "../lib/wrong-answers";
 import { bookExamOptions, explanationKey, formatYoutubeStart, youtubeEmbedUrl, type Explanation } from "../lib/problem-explanations";
+import { explanationSubject, type ExplanationSubject } from "../lib/problem-explanation-access";
 import DemoExplanationMedia from "./demo-explanation-media";
 
 type Row = Record<string, any>;
 
 // Schools listed first in the 학교 기출 picker, in this order (the ones with class recordings and hand solutions).
 const FEATURED_SCHOOLS = ["천상고", "약사고"];
-type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number };
+type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number; subject: string };
 type SchoolAnswer = { id: number; exam_id: number; problem: string; memo: string; created_at: string };
 
-export default function StudentProblemBrowser({ studentName, studentSchools, books, schoolExams, wrongAnswers, schoolAnswers, onWrite }: {
+export default function StudentProblemBrowser({ studentName, studentSchools, availableSubjects, books, schoolExams, wrongAnswers, schoolAnswers, onWrite }: {
   studentName: string;
   studentSchools: string[];
+  availableSubjects: ExplanationSubject[];
   books: string[];
   schoolExams: Exam[];
   wrongAnswers: Row[];
@@ -22,6 +24,7 @@ export default function StudentProblemBrowser({ studentName, studentSchools, boo
   onWrite: (kind: "xpattern" | "school", book: string, examId: string, number: number) => void;
 }) {
   const [kind, setKind] = useState<"xpattern" | "school">("xpattern");
+  const [subject, setSubject] = useState<ExplanationSubject | "">(availableSubjects[0] || "");
   const [book, setBook] = useState(books[0] || "");
   const [school, setSchool] = useState("");
   const [examId, setExamId] = useState("");
@@ -31,8 +34,11 @@ export default function StudentProblemBrowser({ studentName, studentSchools, boo
   const [mediaMessage, setMediaMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const effectiveBook = books.includes(book) ? book : books[0] || "";
-  const options = kind === "xpattern" ? (effectiveBook ? bookExamOptions(effectiveBook) : []) : schoolExams.map((exam) => ({ id: String(exam.id), school: exam.school_name, label: exam.display_name || `${exam.exam_year} ${exam.school_name} ${exam.exam_type}`, max: Number(exam.question_count) || 20, offset: 0 }));
+  const effectiveSubject = availableSubjects.includes(subject as ExplanationSubject) ? subject : availableSubjects[0] || "";
+  const subjectBooks = books.filter((item) => explanationSubject(item) === effectiveSubject);
+  const subjectSchoolExams = schoolExams.filter((item) => explanationSubject(item.subject) === effectiveSubject);
+  const effectiveBook = subjectBooks.includes(book) ? book : subjectBooks[0] || "";
+  const options = kind === "xpattern" ? (effectiveBook ? bookExamOptions(effectiveBook) : []) : subjectSchoolExams.map((exam) => ({ id: String(exam.id), school: exam.school_name, label: exam.display_name || `${exam.exam_year} ${exam.school_name} ${exam.exam_type}`, max: Number(exam.question_count) || 20, offset: 0 }));
   const hasCurrentSections = options.some((option) => "edition" in option && option.edition === "2026-2-final");
   const schools = [...new Set(options.map((option) => option.school).filter(Boolean))].sort((a, b) => {
     const featuredA = FEATURED_SCHOOLS.indexOf(a), featuredB = FEATURED_SCHOOLS.indexOf(b);
@@ -102,8 +108,9 @@ export default function StudentProblemBrowser({ studentName, studentSchools, boo
   return <section className="panel problem-browser">
     <h2>영상·손풀이 다시보기</h2><p>교재 또는 학교 시험을 선택하고 문제번호를 누르세요. 내 오답은 별도로 표시됩니다.</p>
     <div className="problem-browser-filters">
+      <label>과목<select value={effectiveSubject} onChange={(event) => { setSubject(event.target.value as ExplanationSubject); setBook(""); setSchool(""); setExamId(""); }}>{availableSubjects.length ? availableSubjects.map((item) => <option key={item} value={item}>{item}</option>) : <option value="">선택 가능한 과목이 없습니다</option>}</select></label>
       <label>자료 종류<select value={kind} onChange={(event) => { setKind(event.target.value as typeof kind); setSchool(""); setExamId(""); }}><option value="xpattern">우리 교재</option><option value="school">학교 기출</option></select></label>
-      {kind === "xpattern" && <label>교재<select value={effectiveBook} onChange={(event) => { setBook(event.target.value); setSchool(""); setExamId(""); }}>{books.map((item) => <option key={item}>{item}</option>)}</select></label>}
+      {kind === "xpattern" && <label>교재<select value={effectiveBook} onChange={(event) => { setBook(event.target.value); setSchool(""); setExamId(""); }}>{subjectBooks.map((item) => <option key={item}>{item}</option>)}</select></label>}
       <label>수록 학교·연도<select value={effectiveSchool} onChange={(event) => { setSchool(event.target.value); setExamId(""); }}>{schools.map((item) => {
         const isCurrent = options.some((option) => option.school === item && "edition" in option && option.edition === "2026-2-final");
         return <option key={item} value={item}>{hasCurrentSections ? (isCurrent ? "2026 기말판 · " : "기존 교재 · ") : ""}{item}{item.includes("+") ? " (학교 묶음)" : ""}</option>;
