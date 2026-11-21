@@ -55,7 +55,7 @@ function StudentNoticeCarousel({ onOpenAI, showAI }: { onOpenAI: () => void; sho
   </section>;
 }
 
-export default function StudentLearningHub({ view, name, answers, schoolAnswers, onNavigate, showAI = false }: { view: View; name: string; answers: RecordRow[]; schoolAnswers: SchoolRow[]; onNavigate: (tab: "wrong" | "learn" | "questions" | "attendance" | "helper") => void; showAI?: boolean }) {
+export default function StudentLearningHub({ view, name, answers, schoolAnswers, onNavigate, showAI = false, showProblemReview = false }: { view: View; name: string; answers: RecordRow[]; schoolAnswers: SchoolRow[]; onNavigate: (tab: "wrong" | "school" | "learn" | "questions" | "attendance" | "helper") => void; showAI?: boolean; showProblemReview?: boolean }) {
   const now = new Date();
   const today = dayKey(now);
   const start = new Date(now);
@@ -70,7 +70,7 @@ export default function StudentLearningHub({ view, name, answers, schoolAnswers,
   if (view === "home") return <div className="learning-hub">
     <StudentNoticeCarousel onOpenAI={() => onNavigate("helper")} showAI={showAI} />
     <section className="panel learning-hero"><span className="badge">오늘의 학습</span><h2>{name} 학생, 오늘은 무엇을 공부할까요?</h2><p>{new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "full" }).format(now)} · 최근 7일 동안 기록한 학습을 바탕으로 보여드립니다.</p><div className="learning-metrics"><article><b>{todayTotal}</b><span>오늘 기록</span></article><article><b>{weekTotal}</b><span>최근 7일 기록</span></article><article><b>{answers.length}</b><span>누적 오답</span></article></div></section>
-    <section className="panel"><h2>바로 시작하기</h2><div className="learning-actions"><button type="button" onClick={() => onNavigate("wrong")}>✏️ 오답 작성</button><button type="button" onClick={() => onNavigate("learn")}>▶️ 문제별 해설</button><button type="button" onClick={() => onNavigate("questions")}>💬 선생님께 질문</button><button type="button" onClick={() => onNavigate("attendance")}>📍 출석 확인</button></div></section>
+    <section className="panel"><h2>바로 시작하기</h2><div className="learning-actions"><button type="button" onClick={() => onNavigate("wrong")}>✏️ 오답 작성</button>{showProblemReview ? <button type="button" onClick={() => onNavigate("learn")}>▶️ 풀이 다시보기</button> : <button type="button" onClick={() => onNavigate("school")}>학교 기출 오답</button>}<button type="button" onClick={() => onNavigate("questions")}>💬 선생님께 질문</button><button type="button" onClick={() => onNavigate("attendance")}>📍 출석 확인</button></div></section>
     <section className="panel"><h2>최근 학습 기록</h2>{activity.length ? activity.slice(0, 5).map((row) => <div className="row" key={row.id}><strong>{row.label}</strong><span>{row.kind} · {row.at ? new Date(row.at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "날짜 미상"}</span></div>) : <p>아직 기록이 없습니다. 첫 오답을 작성해 보세요.</p>}</section>
   </div>;
 
