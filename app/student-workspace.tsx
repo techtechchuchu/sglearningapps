@@ -12,11 +12,11 @@ import { LegacyKakaoLink } from "./member-account";
 import AccountManagement from "./account-management";
 import { StudentQuestions } from "./learning-questions";
 import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod, finalBooksForRoster } from "../lib/book-periods";
-import { canViewProblemExplanations as canViewExplanations } from "../lib/problem-explanation-access";
+import { canViewProblemExplanations as canViewExplanations, explanationBooksForStudent, explanationSubjectsForStudent } from "../lib/problem-explanation-access";
 
 type Row = Record<string, any>;
 type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices: Row[]; mustChangePassword?: boolean; grade?: string };
-type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number };
+type Exam = { id: number; school_name: string; display_name: string; exam_year: number; exam_type: string; question_count: number; subject: string };
 type SchoolAnswer = { id: number; exam_id: number; problem: string; memo: string; created_at: string };
 type ExamOption = { id: string; school: string; label: string; max: number; edition: string; requiresConfirmation: boolean };
 type ChannelRequest = { teacherName: string; channelName: string; channelUrl: string; book: string; examLabel: string; variantProblem: string };
@@ -110,6 +110,8 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const chosenSchoolExam = schoolExams.find((item) => String(item.id) === schoolExamId);
   const assignedBooks = [...new Set(data.roster.flatMap((row) => splitRosterBooks(row.book_name)))];
   const canViewProblemExplanations = canViewExplanations(name, data.roster);
+  const explanationSubjects = explanationSubjectsForStudent(name, data.roster);
+  const explanationBooks = explanationBooksForStudent(name, data.roster, books);
 
   function reviewWrong() {
     if (!book) { setWrongFormError("교재를 선택해주세요."); return; }
@@ -295,7 +297,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
       }).filter(([key]) => !String(key).startsWith("\0") && !String(key).endsWith("\0")) as Array<[string, { className: string; teacherName: string }]>).values()];
       return classes.length ? classes : name === "추재현" ? [{ className: "출석 데모반", teacherName: "전체 관리자" }] : [];
     })()} />}
-    {tab === "learn" && canViewProblemExplanations && !data.mustChangePassword && <StudentProblemBrowser studentName={name} studentSchools={studentSchools} books={books} schoolExams={schoolExams} wrongAnswers={data.wrongAnswers} schoolAnswers={schoolAnswers} onWrite={(kind, selectedBook, selectedExam, number) => {
+    {tab === "learn" && canViewProblemExplanations && !data.mustChangePassword && <StudentProblemBrowser studentName={name} studentSchools={studentSchools} availableSubjects={explanationSubjects} books={explanationBooks} schoolExams={schoolExams} wrongAnswers={data.wrongAnswers} schoolAnswers={schoolAnswers} onWrite={(kind, selectedBook, selectedExam, number) => {
       if (kind === "xpattern") { const selectedEdition = examsByBook[selectedBook]?.find((item) => item.id === selectedExam)?.edition; setBookPeriod(selectedEdition === "2026-2-final" ? "2학기 기말" : "전체 교재"); setBook(selectedBook); setExamId(selectedExam); setProblem(String(number)); setExamConfirmed(false); setTab("wrong"); }
       else { setSchoolExamId(selectedExam); setSchoolProblem(String(number)); setSchoolConfirmed(false); setTab("school"); }
       setMessage("선택한 문제번호를 입력했습니다. 내용을 확인하고 저장해주세요.");
