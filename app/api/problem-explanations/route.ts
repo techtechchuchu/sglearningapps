@@ -3,6 +3,7 @@ import { getActiveSession } from "../../../lib/active-session";
 import { getServerSupabase } from "../../../lib/supabase-server";
 import { bookExamOptions, explanationKey, safeImageUrl, youtubeId, youtubeStartFromUrl, youtubeStartSeconds, type ExplanationKind } from "../../../lib/problem-explanations";
 import { FALLBACK_BOOKS } from "../../../lib/fallback-books";
+import { hasLeeJubaekClass } from "../../../lib/problem-explanation-access";
 
 const headers = { "Cache-Control": "private, no-store" };
 const BASE_COLUMNS = "content_key,title,youtube_video_id,image_url";
@@ -47,6 +48,15 @@ export async function GET(request: NextRequest) {
     if (!session || (session.role !== "student" && session.role !== "teacher")) return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     const { kind, book, examId } = inputFrom(request);
     const db = getServerSupabase();
+    if (session.role === "student") {
+      const roster = await db.from("student_roster")
+        .select("teacher_name,class_name,enrollment_status")
+        .eq("student_name", session.name);
+      if (roster.error) throw roster.error;
+      if (!hasLeeJubaekClass(roster.data || [])) {
+        return NextResponse.json({ message: "이주백.T 담당 반 학생만 문제별 해설을 볼 수 있습니다." }, { status: 403, headers });
+      }
+    }
     if (kind === "xpattern" && !(await knownBook(db, book))) return NextResponse.json({ message: "현재 사용 중인 교재를 선택해주세요." }, { status: 400 });
     const max = await maxForExam(db, kind, book, examId);
     const keys = Array.from({ length: max }, (_, index) => explanationKey(kind, examId, index + 1, book));
@@ -97,4 +107,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: error instanceof Error ? error.message : "해설을 저장하지 못했습니다." }, { status: 500, headers });
   }
 }
+
 
