@@ -3,7 +3,7 @@ import { getActiveSession } from "../../../lib/active-session";
 import { getServerSupabase } from "../../../lib/supabase-server";
 import { bookExamOptions, explanationKey, safeImageUrl, youtubeId, youtubeStartFromUrl, youtubeStartSeconds, type ExplanationKind } from "../../../lib/problem-explanations";
 import { FALLBACK_BOOKS } from "../../../lib/fallback-books";
-import { canViewProblemExplanations } from "../../../lib/problem-explanation-access";
+import { canViewProblemExplanations, explanationBooksForStudent, explanationSubject, explanationSubjectsForStudent } from "../../../lib/problem-explanation-access";
 
 const headers = { "Cache-Control": "private, no-store" };
 const BASE_COLUMNS = "content_key,title,youtube_video_id,image_url";
@@ -36,10 +36,10 @@ async function maxForExam(db: ReturnType<typeof getServerSupabase>, kind: Explan
 
 async function knownBook(db: ReturnType<typeof getServerSupabase>, book: string) {
   if (!book) return false;
+  if (FALLBACK_BOOKS.includes(book)) return true;
   const result = await db.from("book_master").select("book_name").eq("book_name", book).eq("is_active", true).limit(1);
-  if (result.data?.length) return true;
-  const catalogue = await db.from("book_master").select("id").limit(1);
-  return (!catalogue.data?.length || !!catalogue.error) && FALLBACK_BOOKS.includes(book);
+  if (result.error) throw result.error;
+  return !!result.data?.length;
 }
 
 export async function GET(request: NextRequest) {
@@ -50,11 +50,25 @@ export async function GET(request: NextRequest) {
     const db = getServerSupabase();
     if (session.role === "student") {
       const roster = await db.from("student_roster")
-        .select("teacher_name,class_name,enrollment_status")
+        .select("teacher_name,class_name,enrollment_status,book_name,grade")
         .eq("student_name", session.name);
       if (roster.error) throw roster.error;
       if (!canViewProblemExplanations(session.name, roster.data || [])) {
         return NextResponse.json({ message: "이주백.T 담당 반 학생만 영상·손풀이를 볼 수 있습니다." }, { status: 403, headers });
+      }
+      if (session.name.trim() !== "추재현") {
+        const classes = roster.data || [];
+        if (kind === "xpattern" && !explanationBooksForStudent(session.name, classes, [book]).includes(book)) {
+          return NextResponse.json({ message: "담당 반 교재의 해설만 볼 수 있습니다." }, { status: 403, headers });
+        }
+        if (kind === "school") {
+          const exam = await db.from("school_exam_master").select("subject").eq("id", Number(examId)).eq("is_active", true).maybeSingle();
+          if (exam.error) throw exam.error;
+          const subject = explanationSubject(exam.data?.subject);
+          if (!subject || !explanationSubjectsForStudent(session.name, classes).includes(subject)) {
+            return NextResponse.json({ message: "담당 반 과목의 해설만 볼 수 있습니다." }, { status: 403, headers });
+          }
+        }
       }
     }
     if (kind === "xpattern" && !(await knownBook(db, book))) return NextResponse.json({ message: "현재 사용 중인 교재를 선택해주세요." }, { status: 400 });
