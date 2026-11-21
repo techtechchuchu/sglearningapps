@@ -12,7 +12,7 @@ import { LegacyKakaoLink } from "./member-account";
 import AccountManagement from "./account-management";
 import { StudentQuestions } from "./learning-questions";
 import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod, finalBooksForRoster } from "../lib/book-periods";
-import { hasLeeJubaekClass } from "../lib/problem-explanation-access";
+import { canViewProblemExplanations as canViewExplanations } from "../lib/problem-explanation-access";
 
 type Row = Record<string, any>;
 type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices: Row[]; mustChangePassword?: boolean; grade?: string };
@@ -109,7 +109,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   const otherExams = bookExams.filter((item) => !suggestedExams.includes(item));
   const chosenSchoolExam = schoolExams.find((item) => String(item.id) === schoolExamId);
   const assignedBooks = [...new Set(data.roster.flatMap((row) => splitRosterBooks(row.book_name)))];
-  const canViewProblemExplanations = hasLeeJubaekClass(data.roster);
+  const canViewProblemExplanations = canViewExplanations(name, data.roster);
 
   function reviewWrong() {
     if (!book) { setWrongFormError("교재를 선택해주세요."); return; }
@@ -230,7 +230,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
   }
 
   const myPageActive = tab === "records" || tab === "account";
-  const moreActive = tab === "weekly" || tab === "questions" || tab === "learn" || tab === "attendance" || tab === "admissions";
+  const moreActive = tab === "weekly" || tab === "questions" || tab === "attendance" || tab === "admissions";
 
   function openTab(nextTab: typeof tab) {
     setTab(nextTab);
@@ -260,18 +260,19 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     <nav className={`workspace-tabs student-primary-tabs${menuCondensed ? " is-condensed" : ""}`} aria-label="학생 주요 메뉴">
       <button type="button" className={tab === "home" ? "active" : ""} aria-current={tab === "home" ? "page" : undefined} onClick={() => openTab("home")}>홈</button>
       <button type="button" className={tab === "wrong" ? "active" : ""} aria-current={tab === "wrong" ? "page" : undefined} onClick={() => openTab("wrong")}>오답 작성</button>
-      <button type="button" className={tab === "school" ? "active" : ""} aria-current={tab === "school" ? "page" : undefined} onClick={() => openTab("school")}>학교 기출</button>
+      <button type="button" className={tab === "school" || tab === "learn" ? "active" : ""} aria-current={tab === "school" || tab === "learn" ? "page" : undefined} onClick={() => openTab(canViewProblemExplanations ? "learn" : "school")}>{canViewProblemExplanations ? "풀이 다시보기" : "학교 기출"}</button>
       <button type="button" className={myPageActive ? "active" : ""} aria-expanded={myPageActive} onClick={() => openTab("records")}>마이페이지</button>
       <button type="button" className={moreOpen || moreActive ? "active" : ""} aria-expanded={moreOpen || moreActive} onClick={() => { setMoreOpen((current) => !current); setMessage(""); }}>기능 더보기</button>
     </nav>
     </div>
     {myPageActive && <nav className="student-secondary-menu" aria-label="마이페이지 메뉴"><button type="button" className={tab === "records" ? "active" : ""} onClick={() => openTab("records")}>내 기록</button><button type="button" className={tab === "account" ? "active" : ""} onClick={() => openTab("account")}>계정 관리</button></nav>}
-    {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ...(canViewProblemExplanations ? [["learn", "문제별 해설"]] : []), ["attendance", "출석 체크"], ["admissions", "내 내신·대학 탐색"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
+    {(tab === "learn" || tab === "school") && canViewProblemExplanations && <nav className="student-secondary-menu" aria-label="풀이 다시보기 메뉴"><button type="button" className={tab === "learn" ? "active" : ""} onClick={() => openTab("learn")}>영상·손풀이 다시보기</button><button type="button" className={tab === "school" ? "active" : ""} onClick={() => openTab("school")}>학교 기출 오답</button></nav>}
+    {(moreOpen || moreActive) && <nav className="student-secondary-menu" aria-label="추가 학습 기능">{[["weekly", "주간 학습기록"], ["questions", "질문함"], ["attendance", "출석 체크"], ["admissions", "내 내신·대학 탐색"]].map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => openTab(value as typeof tab)}>{label}</button>)}</nav>}
     {tab === "account" && !data.mustChangePassword && <LegacyKakaoLink />}
     {message && <p className="workspace-message" role="status">{message}</p>}
     {channelRequest && <div className="channel-request-lock"><section className="channel-request-card" role="dialog" aria-modal="true" aria-labelledby="channel-request-title"><div><span>필수 전송 단계</span><h2 id="channel-request-title">{channelRequest.channelName} 채널로 보내주세요</h2><p>다음 화면으로 이동하려면 카카오채널에서 변형문제 요청을 전송해야 합니다. 아래 버튼을 누르면 요청 내용이 복사되고 채널이 열립니다.</p></div><dl><div><dt>담당</dt><dd>{channelRequest.teacherName}</dd></div><div><dt>교재</dt><dd>{channelRequest.book}</dd></div>{channelRequest.examLabel && <div><dt>학교·시험</dt><dd>{channelRequest.examLabel}</dd></div>}<div><dt>변형 필요 번호</dt><dd>{channelRequest.variantProblem}번</dd></div></dl><div className="channel-request-actions"><button type="button" className="channel-request-button" onClick={sendChannelRequest}>{channelOpened ? "카카오채널 다시 열기" : "요청 복사하고 카카오채널 열기"}</button>{channelOpened && <button type="button" className="channel-request-complete" onClick={completeChannelRequest}>카카오채널에서 전송했습니다</button>}</div><small>카카오 정책상 실제 메시지 전송 여부는 자동으로 확인할 수 없습니다. 채팅방에서 붙여넣기 후 전송 버튼을 꼭 눌러주세요.</small></section></div>}
     {data.mustChangePassword && tab !== "account" ? <section className="panel"><h2>임시 비밀번호 변경 필요</h2><p>새 비밀번호를 설정한 뒤 오답노트를 이용할 수 있습니다.</p><button className="primary" onClick={() => setTab("account")}>비밀번호 변경하기</button></section> : null}
-    {tab === "home" && !data.mustChangePassword && <StudentLearningHub view="home" name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} showAI />}
+    {tab === "home" && !data.mustChangePassword && <StudentLearningHub view="home" name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} showAI showProblemReview={canViewProblemExplanations} />}
     {(tab === "weekly" || tab === "helper") && !data.mustChangePassword && <StudentLearningHub view={tab} name={name} answers={data.wrongAnswers} schoolAnswers={schoolAnswers} onNavigate={openTab} showAI />}
     {(tab === "home" || tab === "wrong") && !data.mustChangePassword && wrongAnswerPanel}
     {tab === "questions" && !data.mustChangePassword && <StudentQuestions classes={[...new Map(data.roster.filter((row) => row.enrollment_status !== "퇴원").map((row) => [`${row.teacher_name}\0${row.class_name}`, { teacherName: String(row.teacher_name || ""), className: String(row.class_name || "") }])).values()].filter((item) => item.teacherName && item.className)} />}

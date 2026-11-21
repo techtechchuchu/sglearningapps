@@ -13,3 +13,7 @@ export function hasLeeJubaekClass(roster: RosterAssignment[]): boolean {
   );
 }
 
+export function canViewProblemExplanations(studentName: string, roster: RosterAssignment[]): boolean {
+  return studentName.trim() === "추재현" || hasLeeJubaekClass(roster);
+}
+

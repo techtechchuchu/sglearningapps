@@ -100,7 +100,7 @@ export default function StudentProblemBrowser({ studentName, studentSchools, boo
   const demoSelected = demoExam && selected === 9 && !detail?.youtube_video_id && !detail?.image_url;
 
   return <section className="panel problem-browser">
-    <h2>문제별 해설 <small className="problem-demo-label">예시 화면</small></h2><p>교재 또는 학교 시험을 선택하고 문제번호를 누르세요. 내 오답은 별도로 표시됩니다.</p>
+    <h2>영상·손풀이 다시보기</h2><p>교재 또는 학교 시험을 선택하고 문제번호를 누르세요. 내 오답은 별도로 표시됩니다.</p>
     <div className="problem-browser-filters">
       <label>자료 종류<select value={kind} onChange={(event) => { setKind(event.target.value as typeof kind); setSchool(""); setExamId(""); }}><option value="xpattern">우리 교재</option><option value="school">학교 기출</option></select></label>
       {kind === "xpattern" && <label>교재<select value={effectiveBook} onChange={(event) => { setBook(event.target.value); setSchool(""); setExamId(""); }}>{books.map((item) => <option key={item}>{item}</option>)}</select></label>}
