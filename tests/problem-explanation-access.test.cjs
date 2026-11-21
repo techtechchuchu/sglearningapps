@@ -45,4 +45,6 @@ test("assigned books include their class final editions but exclude other class 
   assert.deepEqual(explanationBooksForStudent("학생A", [leeMath, otherGeometry], catalogue), catalogue.slice(0, 3));
   assert.deepEqual(explanationBooksForStudent("학생A", [{ ...leeMath, enrollment_status: "명단 확인 필요" }], catalogue), []);
   assert.deepEqual(explanationBooksForStudent("추재현", [], catalogue), catalogue);
+  const leeGeometry = { teacher_name: "이주백.T", class_name: "화목 고2 기하", book_name: "기하끝, X-패턴 기하", enrollment_status: "재원" };
+  assert.deepEqual(explanationBooksForStudent("학생B", [leeGeometry], ["기하끝", "기하끝 기말", "X-패턴 기하", "기하 쎈 기말"]), ["기하끝", "기하끝 기말", "X-패턴 기하"]);
 });
