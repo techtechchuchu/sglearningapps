@@ -270,4 +270,9 @@
 .support-inbox-list form{margin-top:12px}
 .support-inbox-list textarea{min-height:75px}
 .support-inbox-list form button{justify-self:start}
+.support-file-actions{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.support-file-action{position:relative;display:inline-flex;align-items:center;min-height:38px;padding:7px 12px;border:1px solid #bcd1c7;border-radius:9px;background:#f6faf7;color:#176b50;font-weight:700;cursor:pointer}
+.support-file-action input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.support-file-action:focus-within{outline:2px solid #176b50;outline-offset:2px}
+.support-attachment-link{display:block;width:fit-content;max-width:100%;margin:6px 0;color:#176b50;overflow-wrap:anywhere}
 @media(max-width:600px){.support-request-backdrop{align-items:flex-end;padding:8px}.support-request-dialog{max-height:88vh;padding:20px 16px;border-radius:18px}.support-inbox-heading{flex-direction:column}}
