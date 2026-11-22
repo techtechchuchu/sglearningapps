@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
-type SupportItem = { id: string; requester_role: string; requester_name: string; message: string; status: "open" | "replied"; admin_reply: string | null; created_at: string; replied_at: string | null };
+type SupportItem = { id: string; requester_role: string; requester_name: string; message: string; status: "open" | "replied"; admin_reply: string | null; created_at: string; replied_at: string | null; attachments: { id: string; file_name: string; content_type: string }[] };
 const dateTime = (value: string) => new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "short", timeStyle: "short" }).format(new Date(value));
 
 export default function SupportRequestInbox() {
@@ -11,6 +11,7 @@ export default function SupportRequestInbox() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState("");
+  const [uploadingId, setUploadingId] = useState("");
 
   async function reload() {
     setLoading(true); setError("");
@@ -34,10 +35,25 @@ export default function SupportRequestInbox() {
       const response = await fetch("/api/support/requests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, reply: text }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "답변을 저장하지 못했습니다.");
-      setItems((previous) => previous.map((item) => item.id === id ? data.request : item));
+      setItems((previous) => previous.map((item) => item.id === id ? { ...data.request, attachments: item.attachments || [] } : item));
       setDrafts((previous) => ({ ...previous, [id]: "" }));
     } catch (caught) { setError(caught instanceof Error ? caught.message : "답변을 저장하지 못했습니다."); }
     finally { setBusyId(""); }
+  }
+
+  async function attach(id: string, file?: File) {
+    if (!file || uploadingId) return;
+    setUploadingId(id); setError("");
+    try {
+      const form = new FormData();
+      form.set("requestId", id);
+      form.set("file", file);
+      const response = await fetch("/api/support/attachments", { method: "POST", body: form });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "파일을 첨부하지 못했습니다.");
+      setItems((previous) => previous.map((item) => item.id === id ? { ...item, attachments: [...(item.attachments || []), data.attachment] } : item));
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "파일을 첨부하지 못했습니다."); }
+    finally { setUploadingId(""); }
   }
 
   const pending = items.filter((item) => item.status === "open");
@@ -46,6 +62,6 @@ export default function SupportRequestInbox() {
     <div className="support-inbox-heading"><div><h2>관리자 상담 요청 · 답변 대기 {pending.length}건</h2><p>로그인한 이용자가 앱에서 남긴 문의입니다. 답변은 이용자 화면의 내 문의 내역에 표시됩니다.</p></div><button type="button" className="ghost" onClick={() => void reload()} disabled={loading}>{loading ? "확인 중…" : "새로고침"}</button></div>
     {error && <p className="alert" role="alert">{error}</p>}
     {!loading && !items.length && <p>접수된 문의가 없습니다.</p>}
-    <div className="support-inbox-list">{ordered.map((item) => <article key={item.id}><small>{item.status === "open" ? "답변 대기" : "답변 완료"} · {dateTime(item.created_at)} · {item.requester_name} ({item.requester_role})</small><p>{item.message}</p>{item.admin_reply && <div className="support-inbox-previous"><strong>이전 답변</strong><p>{item.admin_reply}</p></div>}<form onSubmit={(event) => void reply(event, item.id)}><label htmlFor={`support-reply-${item.id}`}>{item.admin_reply ? "답변 수정" : "관리자 답변"}</label><textarea id={`support-reply-${item.id}`} value={drafts[item.id] || ""} onChange={(event) => setDrafts((previous) => ({ ...previous, [item.id]: event.target.value }))} minLength={2} maxLength={2000} required /><button type="submit" className="primary" disabled={busyId !== "" || (drafts[item.id] || "").trim().length < 2}>{busyId === item.id ? "저장 중…" : "답변 저장"}</button></form></article>)}</div>
+    <div className="support-inbox-list">{ordered.map((item) => <article key={item.id}><small>{item.status === "open" ? "답변 대기" : "답변 완료"} · {dateTime(item.created_at)} · {item.requester_name} ({item.requester_role})</small><p>{item.message}</p>{item.attachments?.map((file) => <a className="support-attachment-link" href={`/api/support/attachments/${file.id}`} target="_blank" rel="noopener noreferrer" key={file.id}>📎 {file.file_name}</a>)}{item.admin_reply && <div className="support-inbox-previous"><strong>이전 답변</strong><p>{item.admin_reply}</p></div>}<form onSubmit={(event) => void reply(event, item.id)}><label htmlFor={`support-reply-${item.id}`}>{item.admin_reply ? "답변 수정" : "관리자 답변"}</label><textarea id={`support-reply-${item.id}`} value={drafts[item.id] || ""} onChange={(event) => setDrafts((previous) => ({ ...previous, [item.id]: event.target.value }))} minLength={2} maxLength={2000} required /><div className="support-file-actions"><label className="support-file-action">📷 사진 촬영<input type="file" accept="image/*" capture="environment" disabled={!!uploadingId} onChange={(event) => { void attach(item.id, event.target.files?.[0]); event.target.value = ""; }} /></label><label className="support-file-action">📎 파일 첨부<input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf" disabled={!!uploadingId} onChange={(event) => { void attach(item.id, event.target.files?.[0]); event.target.value = ""; }} /></label></div>{uploadingId === item.id && <small>파일 첨부 중…</small>}<button type="submit" className="primary" disabled={busyId !== "" || (drafts[item.id] || "").trim().length < 2}>{busyId === item.id ? "저장 중…" : "답변 저장"}</button></form></article>)}</div>
   </section>;
 }
