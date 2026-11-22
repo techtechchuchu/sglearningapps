@@ -92,12 +92,36 @@ export function buildReportStatus(roster: Row[], answers: Row[], reports: Row[],
     const student = String(answer.username || "").trim();
     if (student) byStudent.set(student, [...(byStudent.get(student) || []), answer]);
   }
+  const assignedByStudent = new Map<string, Set<string>>();
+  for (const row of active) {
+    const student = String(row.student_name || "").trim();
+    if (!student) continue;
+    const assigned = assignedByStudent.get(student) || new Set<string>();
+    splitRosterBooks(row.book_name).forEach((book) => assigned.add(book));
+    assignedByStudent.set(student, assigned);
+  }
   const delivered = new Map<string, ReportStatusRow>();
   const next = new Map<string, ReportStatusRow>();
   const submitted = new Map<string, ReportStatusRow>();
   const missing = new Map<string, ReportStatusRow>();
   const unmatched = new Map<string, ReportStatusRow>();
   const seenLinks = new Set<string>();
+  for (const [teacher, report] of latestReports) {
+    if (!Array.isArray(report.items)) continue;
+    const cutoff = timestamp(report.cutoff_at);
+    for (const item of report.items) {
+      const student = String(item.student || "").trim();
+      const className = String(item.className || "").trim();
+      const book = String(item.book || "").trim();
+      if (!student || !book) continue;
+      const rosterRow = active.find((row) => row.teacher_name === teacher && row.student_name === student && row.class_name === className);
+      delivered.set(`${teacher}\u0000${className}\u0000${student}`, {
+        teacher, className, student, book, count: Number(item.count) || 0,
+        cutoff: shortDate(cutoff), first: "", latest: "", suggestedDate: "",
+        school: String(rosterRow?.school_name || ""), grade: String(rosterRow?.grade || ""), window: "",
+      });
+    }
+  }
   for (const row of active) {
     const teacher = String(row.teacher_name || "").trim();
     const student = String(row.student_name || "").trim();
@@ -109,7 +133,7 @@ export function buildReportStatus(roster: Row[], answers: Row[], reports: Row[],
     const matched = studentAnswers.filter((answer) => matchesRosterBook(allowed, answer.unit));
     const report = latestReports.get(teacher);
     const cutoff = report ? timestamp(report.cutoff_at) : -Infinity;
-    for (const answer of studentAnswers.filter((item) => !matchesRosterBook(allowed, item.unit))) {
+    for (const answer of studentAnswers.filter((item) => !matchesRosterBook(assignedByStudent.get(student) || allowed, item.unit))) {
       const when = answerTimestamp(answer.created_at);
       if (Number.isFinite(when) && when >= Math.max(wednesday, cutoff) && when <= now) addAnswer(unmatched, key, row, answer, now);
     }
@@ -122,8 +146,9 @@ export function buildReportStatus(roster: Row[], answers: Row[], reports: Row[],
       if (when >= wednesday && when <= now) addAnswer(submitted, key, row, answer, now);
       if (!report) continue;
       const start = report.period_start ? timestamp(report.period_start) : -Infinity;
-      if (when >= start && when <= cutoff) addAnswer(delivered, key, row, answer, cutoff);
-      if (when > cutoff) addAnswer(next, key, row, answer, cutoff, nextDelivery(teacher, className, cutoff));
+      if (!Array.isArray(report.items) && when >= start && when <= cutoff) addAnswer(delivered, key, row, answer, cutoff);
+      const inPdf = Array.isArray(report.items) && report.items.some((item: Row) => item.student === student && matchesRosterBook(new Set([String(item.book || "")]), answer.unit));
+      if (when > cutoff || (Array.isArray(report.items) && when >= start && !inPdf)) addAnswer(next, key, row, answer, cutoff, nextDelivery(teacher, className, cutoff));
     }
     if (latestReports.has(teacher) && !studentAnswers.some((answer) => {
       const when = answerTimestamp(answer.created_at);
@@ -136,4 +161,5 @@ export function buildReportStatus(roster: Row[], answers: Row[], reports: Row[],
   const rows = (items: Map<string, ReportStatusRow>) => [...items.values()].sort((a, b) => `${a.teacher}|${a.className}|${a.student}`.localeCompare(`${b.teacher}|${b.className}|${b.student}`, "ko"));
   return { delivered: rows(delivered), next: rows(next), submitted: rows(submitted), missing: rows(missing), unmatched: rows(unmatched), reportCount: latestReports.size, window };
 }
+
 

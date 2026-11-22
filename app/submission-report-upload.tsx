@@ -11,7 +11,7 @@ async function extractPdfText(file: File): Promise<string> {
     const pages: string[] = [];
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
       const content = await (await pdf.getPage(pageNumber)).getTextContent();
-      pages.push(content.items.map((item) => "str" in item ? item.str : "").join(" "));
+      pages.push(content.items.map((item) => "str" in item ? `${item.str}${item.hasEOL ? "\n" : " "}` : "").join(""));
     }
     return pages.join("\n");
   } finally {
@@ -51,9 +51,10 @@ export default function SubmissionReportUpload({ refresh }: { refresh: () => Pro
 
   return <section className="panel">
     <h2>📄 오답 제출 보고서 PDF 업로드</h2>
-    <p>기존 보고서의 담당 선생님과 제출 기준 시각을 읽어 저장합니다. 원본 PDF는 서버에 저장하지 않습니다.</p>
+    <p>보고서의 담당 선생님, 제출 기준 시각, 실제 수록 명단을 읽어 저장합니다. 원본 PDF는 서버에 저장하지 않습니다.</p>
     <label>보고서 PDF 선택<input type="file" accept="application/pdf,.pdf" multiple disabled={busy} onChange={(event) => void upload(event.target.files)} /></label>
     {busy && <p role="status">보고서를 읽고 저장 결과를 확인하는 중입니다.</p>}
     {message && <p role="status">{message}</p>}
   </section>;
 }
+

@@ -19,6 +19,7 @@ function loadTypescript(file) {
 
 const { parseUtcDbTime } = loadTypescript(path.resolve(__dirname, "../lib/db-time.ts"));
 const { buildReportStatus } = loadTypescript(path.resolve(__dirname, "../lib/report-status.ts"));
+const { parseSubmissionReportText } = loadTypescript(path.resolve(__dirname, "../lib/submission-report.ts"));
 
 test("UTC database time displays as Korean local time", () => {
   const date = parseUtcDbTime("2026-11-22 02:43:39.08");
@@ -40,3 +41,36 @@ test("a saved answer with a different roster book is flagged for review", () => 
   assert.equal(corrected.next.length, 1);
   assert.equal(corrected.unmatched.length, 0);
 });
+
+test("a book assigned in another class is not reported as a mismatch", () => {
+  const roster = [
+    { student_name: "권민준", teacher_name: "이주백.T", class_name: "화목 고2 기하", book_name: "기하끝, 기하끝 기말", enrollment_status: "재원" },
+    { student_name: "권민준", teacher_name: "박병민.T", class_name: "월수금 고2 미적분1", book_name: "X-패턴 미적분1", enrollment_status: "재원" },
+  ];
+  const answers = [{ id: 1452, username: "권민준", unit: "기하끝 기말", problem: "25, 31", created_at: "2026-11-18 10:41:52.343" }];
+  const reports = [
+    { teacher_name: "이주백.T", cutoff_at: "2026-11-17T14:15:00" },
+    { teacher_name: "박병민.T", cutoff_at: "2026-11-17T14:15:00" },
+  ];
+  const status = buildReportStatus(roster, answers, reports, Date.parse("2026-11-22T06:00:00Z"));
+  assert.equal(status.unmatched.length, 0);
+  assert.equal(status.next.length, 1);
+  assert.equal(status.next[0].teacher, "이주백.T");
+});
+
+test("the saved PDF roster, not a recalculation, determines delivery", () => {
+  const roster = ["강민수", "김소윤"].map((student_name) => ({ student_name, teacher_name: "노대근.T", class_name: "월금일 고1 내신심화반", book_name: "X-패턴 공통수학2 기말", enrollment_status: "재원" }));
+  const answers = roster.map((row, id) => ({ id, username: row.student_name, unit: "X-패턴 공통수학2 기말", problem: "1,2", created_at: "2026-11-21 02:00:00" }));
+  const reports = [{ teacher_name: "노대근.T", period_start: "2026-11-20 14:00:00", cutoff_at: "2026-11-22 14:32:00", items: [{ student: "강민수", className: "월금일 고1 내신심화반", book: "X-패턴 공통수학2 기말", count: 20 }] }];
+  const status = buildReportStatus(roster, answers, reports, Date.parse("2026-11-22T06:00:00Z"));
+  assert.deepEqual(status.delivered.map((row) => [row.student, row.count]), [["강민수", 20]]);
+  assert.deepEqual(status.next.map((row) => row.student), ["김소윤"]);
+});
+
+test("PDF row parsing preserves wrapped class names", () => {
+  const text = "원장님반(이주백T) 오답 제출 명단\n기준: 2026-11-20 14:00 ~ 2026-11-22 14:32 제출 · 생성 2026-11-22 14:32\n대상 1명 / 오답노트 1건\n학생   반   교재   제출   수록   생성 못한 번호\n박보승   월금일(뒤) 고1\n내신심화반   X-패턴 공통수학2 기말   6   6   -";
+  const report = parseSubmissionReportText(text, "이주백T 오답명단(11.20 1400 ~ 11.22 1432).pdf");
+  assert.equal(report.ok, true);
+  assert.deepEqual(report.items, [{ student: "박보승", className: "월금일(뒤) 고1 내신심화반", book: "X-패턴 공통수학2 기말", count: 6 }]);
+});
+
