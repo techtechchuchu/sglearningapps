@@ -6,6 +6,21 @@ import { fetchPagedRows } from "../../../../lib/paged-rows";
 
 const BUCKET = "wrong-note-pdfs";
 
+async function removeSupportForOwner(db: ReturnType<typeof getServerSupabase>, role: string, name: string) {
+  const requests = await fetchPagedRows((start, end) => db.from("support_requests").select("id").eq("requester_role", role).eq("requester_name", name).range(start, end));
+  for (const item of requests) {
+    const files = await db.from("support_request_attachments").select("storage_path").eq("request_id", item.id);
+    if (files.error) throw files.error;
+    const paths = (files.data || []).map((file) => file.storage_path);
+    if (paths.length) {
+      const removed = await db.storage.from("support-request-attachments").remove(paths);
+      if (removed.error) throw removed.error;
+    }
+  }
+  const removed = await db.from("support_requests").delete().eq("requester_role", role).eq("requester_name", name);
+  if (removed.error) throw removed.error;
+}
+
 function expired(withdrawnAt: string | null) {
   if (!withdrawnAt) return false;
   const date = new Date(withdrawnAt);
@@ -37,8 +52,7 @@ export async function POST(request: NextRequest) {
       const identities = await db.from("sg_identities").delete().eq("target_role", "member").eq("target_key", key);
       if (identities.error) throw identities.error;
       for (const [role, name] of [["member", key], ["university", account.data.email]] as const) {
-        const support = await db.from("support_requests").delete().eq("requester_role", role).eq("requester_name", name);
-        if (support.error) throw support.error;
+        await removeSupportForOwner(db, role, name);
       }
       const removed = await db.from("university_users").delete().eq("id", key).eq("withdrawn_at", account.data.withdrawn_at).select("id");
       // The date was checked above. The extra predicate protects against a concurrent status change.
@@ -76,8 +90,7 @@ export async function POST(request: NextRequest) {
       const removed = await db.from(table).delete().eq(column, key);
       if (removed.error) throw removed.error;
     }
-    const support = await db.from("support_requests").delete().eq("requester_role", "student").eq("requester_name", key);
-    if (support.error) throw support.error;
+    await removeSupportForOwner(db, "student", key);
     const identities = await db.from("sg_identities").delete().eq("target_role", "student").eq("target_key", key);
     if (identities.error) throw identities.error;
     const removed = await db.from("users").delete().eq("username", key).eq("withdrawn_at", account.data.withdrawn_at).select("username");
