@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       cutoff_at: report.cutoffAt,
       target_count: report.targetCount,
       note_count: report.noteCount,
+      items: report.items,
       uploaded_at: new Date().toISOString(),
       uploaded_by: "전체 관리자",
     };
@@ -51,3 +52,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "보고서를 저장하거나 저장 결과를 검증하지 못했습니다." }, { status: 500 });
   }
 }
+
