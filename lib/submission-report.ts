@@ -45,8 +45,8 @@ export function parseSubmissionReportText(text: string, filename: string, fallba
     pending = pending ? `${pending} ${line}` : line;
     if (!/\s{2,}\d+\s{2,}\d+\s{2,}(?:-|[\d,\s]+)$/.test(pending)) continue;
     const cells = pending.split(/\s{2,}/).map((cell) => cell.trim()).filter(Boolean);
-    if (cells.length >= 6 && /^[가-힣]{2,4}$/.test(cells[0]) && /^\d+$/.test(cells.at(-3) || "")) {
-      report.items.push({ student: cells[0], className: cells.slice(1, -4).join(" "), book: cells.at(-4) || "", count: Number(cells.at(-3)) });
+    if (cells.length >= 6 && /^[가-힣]{2,4}$/.test(cells[0]) && /^\d+$/.test(cells.at(-3) || "") && /^\d+$/.test(cells.at(-2) || "")) {
+      report.items.push({ student: cells[0], className: cells.slice(1, -4).join(" "), book: cells.at(-4) || "", count: Number(cells.at(-2)) });
     }
     pending = "";
   }
