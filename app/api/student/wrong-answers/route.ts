@@ -3,6 +3,7 @@ import { getActiveSession } from "../../../../lib/active-session";
 import { getServerSupabase } from "../../../../lib/supabase-server";
 import { normalizeSubmittedNumbers, parseProblemNumbers } from "../../../../lib/wrong-answers";
 import { FALLBACK_BOOKS } from "../../../../lib/fallback-books";
+import { matchesSavedVariantRequest } from "../../../../lib/variant-request";
 
 async function ownSession(request: NextRequest) {
   const session = await getActiveSession(request);
@@ -55,7 +56,18 @@ export async function POST(request: NextRequest) {
     const existing = await existingNumbers(db, username, book);
     const fresh = normalized.numbers.filter((number) => !existing.has(number));
     const duplicate = normalized.numbers.filter((number) => existing.has(number));
-    if (!fresh.length) return NextResponse.json({ message: "입력한 문제번호가 모두 이미 저장되어 있습니다.", duplicate }, { status: 409 });
+    if (!fresh.length) {
+      if (variantChoice === "yes") {
+        const previous = await db.from("wrong_answers")
+          .select("id,username,unit,problem,memo,created_at")
+          .eq("username", username).eq("unit", book)
+          .order("created_at", { ascending: false }).limit(200);
+        if (previous.error) throw previous.error;
+        const savedRequest = previous.data?.find((row) => matchesSavedVariantRequest(row, normalized.numbers, variantDisplayNumbers));
+        if (savedRequest) return NextResponse.json({ ok: true, resume: true, saved: [], duplicate, row: savedRequest }, { status: 200 });
+      }
+      return NextResponse.json({ message: "입력한 오답은 이미 저장되어 있습니다. 최근 변형문제 요청에서 카카오 전송 단계를 다시 열 수 있습니다.", duplicate }, { status: 409 });
+    }
     if (variantNumbers.some((number) => !fresh.includes(number))) {
       return NextResponse.json({ message: "이미 저장된 오답은 이번 변형문제 요청에서 제외해주세요." }, { status: 409 });
     }

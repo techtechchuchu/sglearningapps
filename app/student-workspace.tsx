@@ -13,6 +13,7 @@ import AccountManagement from "./account-management";
 import { StudentQuestions } from "./learning-questions";
 import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod, finalBooksForRoster } from "../lib/book-periods";
 import { canViewProblemExplanations as canViewExplanations, explanationBooksForStudent, explanationSubjectsForStudent } from "../lib/problem-explanation-access";
+import { variantRequestNumbers } from "../lib/variant-request";
 
 type Row = Record<string, any>;
 type Data = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; notices: Row[]; mustChangePassword?: boolean; grade?: string };
@@ -144,26 +145,46 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     window.setTimeout(() => document.getElementById("wrong-inline-confirm")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
   }
 
-  async function saveWrong() {
-    const assignedName = book.endsWith(" 기말") ? book.slice(0, -" 기말".length) : book;
+  function channelForBook(requestBook: string) {
+    const assignedName = requestBook.endsWith(" 기말") ? requestBook.slice(0, -" 기말".length) : requestBook;
     const teacherNames = [...new Set(data.roster
-      .filter((row) => splitRosterBooks(row.book_name).some((assigned) => assigned === book || assigned === assignedName))
+      .filter((row) => splitRosterBooks(row.book_name).some((assigned) => assigned === requestBook || assigned === assignedName))
       .map((row) => String(row.teacher_name || "").trim()).filter(Boolean))];
     const teacherName = teacherNames.length === 1 ? teacherNames[0] : "";
     const channel = TEACHER_KAKAO_CHANNELS.find((item) => teacherName.includes(item.teacher));
+    return { teacherNames, teacherName, channel };
+  }
+
+  async function saveWrong() {
+    const { teacherNames, teacherName, channel } = channelForBook(book);
     if (variantChoice === "yes" && !channel) {
       setWrongFormError(teacherNames.length > 1 ? "담당 선생님이 여러 분으로 확인됩니다. 학원에 확인해주세요." : "담당 선생님의 카카오채널이 아직 등록되지 않았습니다. 학원에 문의해주세요.");
       setWrongReviewReady(false);
       return;
     }
+    setWrongFormError("");
     await run(async () => {
-      const result = await json(await fetch("/api/student/wrong-answers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ book, examId, examConfirmed, problem, memo, bookConfirmed: true, variantChoice, variantProblem }) }));
+      const result = await json(await fetch("/api/student/wrong-answers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ book, examId, examConfirmed, problem, memo, bookConfirmed: true, variantChoice, variantProblem }) })).catch((error) => { setWrongFormError(error instanceof Error ? error.message : "오답을 저장하지 못했습니다."); throw error; });
       setChannelOpened(false);
       setChannelRequest(variantChoice === "yes" && channel ? { teacherName, channelName: channel.channelName, channelUrl: channel.channelUrl, book, examLabel: book.startsWith("X-패턴") ? chosenBookExam?.label || "" : "", variantProblem } : null);
-      await refresh();
       setProblem(""); setMemo(""); setExamConfirmed(false); setVariantChoice(""); setVariantProblem(""); setWrongReviewReady(false);
-      setMessage(variantChoice === "yes" ? "오답을 저장했습니다. 카카오채널 전송을 완료해야 다음 화면으로 이동할 수 있습니다." : `저장 확인 완료: ${result.saved.join(", ")}${result.duplicate.length ? ` · 중복 제외: ${result.duplicate.join(", ")}` : ""}`);
+      setMessage(variantChoice === "yes" ? result.resume ? "이미 저장된 요청입니다. 카카오채널 전송 단계를 다시 열었습니다." : "오답을 저장했습니다. 카카오채널에서 요청을 전송해주세요." : `저장 확인 완료: ${result.saved.join(", ")}${result.duplicate.length ? ` · 중복 제외: ${result.duplicate.join(", ")}` : ""}`);
+      if (!result.resume) void refresh().catch(() => setMessage("오답은 저장됐습니다. 목록이 갱신되지 않으면 새로고침해주세요."));
     });
+  }
+
+  const latestSavedVariant = data.wrongAnswers.find((row) => variantRequestNumbers(row.memo)?.length && channelForBook(String(row.unit || "")).channel);
+
+  function reopenSavedVariant() {
+    if (!latestSavedVariant) return;
+    const savedBook = String(latestSavedVariant.unit || "");
+    const { teacherName, channel } = channelForBook(savedBook);
+    const numbers = variantRequestNumbers(latestSavedVariant.memo);
+    if (!channel || !numbers) return;
+    const examLabel = savedBook.startsWith("X-패턴") ? String(latestSavedVariant.memo || "").match(/^\[([^\]]+)\]/)?.[1] || "" : "";
+    setChannelOpened(false);
+    setChannelRequest({ teacherName, channelName: channel.channelName, channelUrl: channel.channelUrl, book: savedBook, examLabel, variantProblem: numbers.join(", ") });
+    setWrongFormError("");
   }
 
   function sendChannelRequest() {
@@ -241,7 +262,7 @@ export default function StudentWorkspace({ name, data, refresh, logout }: { name
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 
-  const wrongAnswerPanel = <section className="panel wrong-answer-panel"><h2>{tab === "home" ? "바로 오답 작성" : "오답 작성"}</h2>{tab === "home" && <p className="panel-intro">교재와 문제번호를 선택하면 이 화면에서 바로 오답을 저장할 수 있습니다.</p>}<form onSubmit={(event) => { event.preventDefault(); reviewWrong(); }} className="form workspace-form" noValidate>
+  const wrongAnswerPanel = <section className="panel wrong-answer-panel"><h2>{tab === "home" ? "바로 오답 작성" : "오답 작성"}</h2>{tab === "home" && <p className="panel-intro">교재와 문제번호를 선택하면 이 화면에서 바로 오답을 저장할 수 있습니다.</p>}{latestSavedVariant && <p><button type="button" className="ghost" onClick={reopenSavedVariant}>최근 저장한 변형문제 요청 · 카카오 전송 다시 열기</button></p>}<form onSubmit={(event) => { event.preventDefault(); reviewWrong(); }} className="form workspace-form" noValidate>
     <fieldset className="book-period-picker"><legend>시험 시기 선택</legend><p>기말 교재는 현재 학년·반에 맞는 교재만 표시됩니다.</p><div role="group" aria-label="교재 시기 선택">{BOOK_PERIODS.map((period) => <button type="button" key={period} className={bookPeriod === period ? "active" : ""} aria-pressed={bookPeriod === period} onClick={() => { const nextBooks = booksForPeriod(books, period); setBookPeriod(period); setBook(nextBooks[0] || ""); setExamId(""); setExamConfirmed(false); }}>{period}</button>)}</div></fieldset>
     <label>{bookPeriod === "전체 교재" ? "전체 교재" : `${bookPeriod} 교재`}<select value={book} onChange={(event) => { setBook(event.target.value); setExamId(""); }} required><option value="">선택해주세요</option><optgroup label={bookPeriod}>{visibleBooks.map((item) => <option key={item}>{item}</option>)}</optgroup></select></label>
     {bookExams.length > 0 && <label>수록 학교·연도<select value={examId} required onChange={(event) => { setExamId(event.target.value); setExamConfirmed(false); }}><option value="">학교와 연도를 선택해주세요</option>{suggestedExams.length > 0 && <optgroup label="내 학교가 포함된 단원">{suggestedExams.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</optgroup>}{otherExams.length > 0 && <optgroup label="다른 학교·묶음 단원">{otherExams.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</optgroup>}</select><small>학교가 함께 적힌 단원은 한 묶음입니다. 내 학교가 포함돼도 실제로 푼 단원과 연도를 확인해주세요.</small></label>}
