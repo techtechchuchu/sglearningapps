@@ -19,7 +19,13 @@ export async function GET(request: NextRequest) {
     if (!all) query = query.eq("requester_role", session.role).eq("requester_name", session.name);
     const result = await query;
     if (result.error) throw result.error;
-    return NextResponse.json({ requests: result.data || [], admin }, { headers: { "Cache-Control": "no-store" } });
+    const requests = result.data || [];
+    const ids = requests.map((item) => item.id);
+    const attachments = ids.length ? await db.from("support_request_attachments")
+      .select("id,request_id,file_name,content_type,created_at")
+      .in("request_id", ids).order("created_at", { ascending: true }) : { data: [], error: null };
+    if (attachments.error) throw attachments.error;
+    return NextResponse.json({ requests: requests.map((item) => ({ ...item, attachments: attachments.data?.filter((file) => file.request_id === item.id) || [] })), admin }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("[support-requests] list failed", error instanceof Error ? error.name : "unknown");
     return fail("문의 목록을 불러오지 못했습니다.", 502);
