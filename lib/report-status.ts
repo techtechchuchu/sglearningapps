@@ -1,4 +1,5 @@
 import { parseProblemNumbers, splitRosterBooks } from "./wrong-answers";
+import { parseUtcDbTime } from "./db-time";
 
 type Row = Record<string, any>;
 export type ReportStatusRow = {
@@ -27,6 +28,10 @@ function timestamp(value: unknown): number {
   return Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized) ? normalized : `${normalized}+09:00`);
 }
 
+function answerTimestamp(value: unknown): number {
+  return parseUtcDbTime(value).getTime();
+}
+
 function kstParts(ms: number) {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(ms);
   const part = (type: string) => Number(parts.find((item) => item.type === type)?.value);
@@ -51,7 +56,7 @@ function nextDelivery(teacher: string, className: string, cutoff: number) {
 }
 
 function addAnswer(target: Map<string, ReportStatusRow>, key: string, roster: Row, answer: Row, cutoff: number, suggestedDate = "") {
-  const when = timestamp(answer.created_at);
+  const when = answerTimestamp(answer.created_at);
   if (!Number.isFinite(when)) return;
   const entry = target.get(key) || {
     teacher: String(roster.teacher_name || ""), className: String(roster.class_name || ""), student: String(roster.student_name || ""),
@@ -91,6 +96,7 @@ export function buildReportStatus(roster: Row[], answers: Row[], reports: Row[],
   const next = new Map<string, ReportStatusRow>();
   const submitted = new Map<string, ReportStatusRow>();
   const missing = new Map<string, ReportStatusRow>();
+  const unmatched = new Map<string, ReportStatusRow>();
   const seenLinks = new Set<string>();
   for (const row of active) {
     const teacher = String(row.teacher_name || "").trim();
@@ -101,29 +107,33 @@ export function buildReportStatus(roster: Row[], answers: Row[], reports: Row[],
     const allowed = new Set(splitRosterBooks(row.book_name));
     const studentAnswers = byStudent.get(student) || [];
     const matched = studentAnswers.filter((answer) => matchesRosterBook(allowed, answer.unit));
+    const report = latestReports.get(teacher);
+    const cutoff = report ? timestamp(report.cutoff_at) : -Infinity;
+    for (const answer of studentAnswers.filter((item) => !matchesRosterBook(allowed, item.unit))) {
+      const when = answerTimestamp(answer.created_at);
+      if (Number.isFinite(when) && when >= Math.max(wednesday, cutoff) && when <= now) addAnswer(unmatched, key, row, answer, now);
+    }
     for (const answer of matched) {
       const link = `${key}\u0000${String(answer.unit || "").trim()}\u0000${answer.id ?? `${answer.created_at}|${answer.problem}`}`;
       if (seenLinks.has(link)) continue;
       seenLinks.add(link);
-      const when = timestamp(answer.created_at);
+      const when = answerTimestamp(answer.created_at);
       if (!Number.isFinite(when)) continue;
       if (when >= wednesday && when <= now) addAnswer(submitted, key, row, answer, now);
-      const report = latestReports.get(teacher);
       if (!report) continue;
-      const cutoff = timestamp(report.cutoff_at);
       const start = report.period_start ? timestamp(report.period_start) : -Infinity;
       if (when >= start && when <= cutoff) addAnswer(delivered, key, row, answer, cutoff);
       if (when > cutoff) addAnswer(next, key, row, answer, cutoff, nextDelivery(teacher, className, cutoff));
     }
     if (latestReports.has(teacher) && !studentAnswers.some((answer) => {
-      const when = timestamp(answer.created_at);
+      const when = answerTimestamp(answer.created_at);
       return when >= wednesday && when <= now;
     })) {
-      const dates = studentAnswers.map((answer) => timestamp(answer.created_at)).filter(Number.isFinite);
+      const dates = studentAnswers.map((answer) => answerTimestamp(answer.created_at)).filter(Number.isFinite);
       missing.set(key, { teacher, className, student, book: "", count: 0, cutoff: "", first: "", latest: dates.length ? shortDate(dates.reduce((max, date) => Math.max(max, date), -Infinity)) : "-", suggestedDate: "", school: String(row.school_name || ""), grade: String(row.grade || ""), window });
     }
   }
   const rows = (items: Map<string, ReportStatusRow>) => [...items.values()].sort((a, b) => `${a.teacher}|${a.className}|${a.student}`.localeCompare(`${b.teacher}|${b.className}|${b.student}`, "ko"));
-  return { delivered: rows(delivered), next: rows(next), submitted: rows(submitted), missing: rows(missing), reportCount: latestReports.size, window };
+  return { delivered: rows(delivered), next: rows(next), submitted: rows(submitted), missing: rows(missing), unmatched: rows(unmatched), reportCount: latestReports.size, window };
 }
 

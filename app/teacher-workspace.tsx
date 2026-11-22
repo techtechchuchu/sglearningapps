@@ -17,6 +17,7 @@ import StaffNotifications from "./staff-notifications";
 import AcademyReview from "./academy-review";
 import StudentSignupReview from "./student-signup-review";
 import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod } from "../lib/book-periods";
+import { formatKoreanDbTime, parseUtcDbTime } from "../lib/db-time";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; sharedAccount?: Row | null; withdrawnMembers?: Row[]; activeBooks: string[] };
@@ -107,7 +108,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   const visibleAnswers = matchingAnswers.filter((row) => (!studentFilter || row.username === studentFilter) && (!classFilter || visibleRoster.some((item) => item.student_name === row.username && splitRosterBooks(item.book_name).includes(row.unit))));
   const datedAnswers = matchingAnswers.filter((row) => {
     if (!row.created_at || !row.username) return false;
-    const date = new Date(row.created_at);
+    const date = parseUtcDbTime(row.created_at);
     return !Number.isNaN(date.getTime()) && koreanDate(date) === submissionDate;
   });
   const submittedToday = new Set(datedAnswers.map((row) => String(row.username)));
@@ -130,7 +131,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     const sunday = new Date(monday); sunday.setDate(monday.getDate() + 7);
     const submitted = new Map<string, { numbers: Set<string>; books: Set<string> }>();
     for (const row of matchingAnswers) {
-      const created = new Date(row.created_at);
+      const created = parseUtcDbTime(row.created_at);
       const createdKst = new Date(created.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
       if (createdKst < monday || createdKst >= sunday) continue;
       const current = submitted.get(row.username) || { numbers: new Set<string>(), books: new Set<string>() };
@@ -222,7 +223,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
       <section className="panel"><h2>🧩 변형문제 요청</h2><div className="metrics"><article><b>{new Set(variantRequests.map((row) => row.username)).size}</b><span>요청 학생</span></article><article><b>{variantRequests.length}</b><span>요청 건수</span></article></div><details><summary>전체 요청 보기 · {variantRequests.length}건</summary>{variantRequests.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""}</span></div>)}</details></section>
       <section className="grid2"><article className="panel"><h2>최근 오답</h2>{matchingAnswers.slice(0, 12).map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit}</strong><span>{displayProblemNumbers(row.unit, row.problem)}번</span></div>)}</article><article className="panel"><h2>최근 오답노트 PDF</h2>{data.wrongNoteFiles.slice(0, 12).map((row) => <div className="row" key={row.id}><strong>{row.student_name}</strong><span>{row.original_filename} {row.id && <a href={`/api/files/wrong-note/${row.id}`} target="_blank" rel="noopener noreferrer">PDF 열기</a>}</span></div>)}</article></section>
     </>}
-    {tab === "answers" && <section className="panel"><h2>학생 오답 현황</h2><p>명단의 교재가 여러 개일 때 각각 분리해 연결합니다.</p>{visibleAnswers.length ? visibleAnswers.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""} {row.created_at && `· ${new Date(row.created_at).toLocaleString("ko-KR")}`}</span></div>) : <p>조건에 맞는 오답이 없습니다.</p>}</section>}
+    {tab === "answers" && <section className="panel"><h2>학생 오답 현황</h2><p>명단의 교재가 여러 개일 때 각각 분리해 연결합니다.</p>{visibleAnswers.length ? visibleAnswers.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""} {row.created_at && `· ${formatKoreanDbTime(row.created_at)}`}</span></div>) : <p>조건에 맞는 오답이 없습니다.</p>}</section>}
     {tab === "weekly" && <section className="panel"><h2>이번 주 제출 현황</h2><p>{week.label}</p>{[...new Set(visibleRoster.map((row) => row.student_name))].map((student) => { const status = week.submitted.get(student); return <div className="row" key={student}><strong>{student} · {status?.numbers.size ? `제출 ${status.numbers.size}문항` : "미제출"}</strong><span>{status ? [...status.books].join(", ") : "이번 주 기록 없음"}</span></div>; })}</section>}
     {tab === "daily" && <section className="panel"><h2>날짜별 제출량</h2><p>{submissionDate} · 한국 시간 기준</p><div className="metrics"><article><b>{visibleDaily.length}</b><span>제출 학생</span></article><article><b>{visibleDaily.reduce((sum, row) => sum + row.records, 0)}</b><span>오답 기록</span></article><article><b>{visibleDaily.reduce((sum, row) => sum + row.problems, 0)}</b><span>제출 문항</span></article></div>{visibleDaily.map((row) => <div className="row" key={row.name}><strong>{row.name}</strong><span>오답 {row.records}건 · 문제 {row.problems}문항</span></div>)}</section>}
     {tab === "missing" && <section className="panel"><h2>미제출 학생</h2><p>{submissionDate}에 오답 기록이 없는 재원 학생 · {missingStudents.length}명</p>{missingStudents.length ? missingStudents.map((name) => <div className="row" key={name}><strong>{name}</strong><span>{[...new Set(visibleRoster.filter((row) => row.student_name === name).map((row) => row.class_name).filter(Boolean))].join(", ")}</span></div>) : <p>선택한 명단의 학생이 모두 제출했습니다.</p>}</section>}
