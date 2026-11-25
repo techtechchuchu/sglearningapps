@@ -8,6 +8,16 @@ export function splitRosterBooks(value: unknown): string[] {
   return String(value || "").split(",").map((part) => part.trim()).filter(Boolean);
 }
 
+const submittedBookAliases: Record<string, string> = {
+  "X-패턴 공통수학2 기말": "X-패턴 공통수학2",
+  "UNIT N제 공통수학2 기말": "UNIT N제 공통수학2",
+};
+
+export function matchesRosterBook(allowed: Set<string>, submitted: unknown): boolean {
+  const book = String(submitted || "").trim();
+  return allowed.has(book) || allowed.has(submittedBookAliases[book] || "");
+}
+
 export function parseProblemNumbers(value: unknown): string[] {
   const parts = String(value || "").split(/[,\s，]+/).map((n) => n.trim()).filter(Boolean);
   if (!parts.length || parts.some((n) => !/^\d+$/.test(n))) throw new Error("문제번호는 숫자를 쉼표로 구분해 입력해주세요.");
@@ -86,3 +96,4 @@ export function displayProblemNumbers(book: string, problem: unknown) {
   if (grouped.size === 1 && !unmatched.length) return [...grouped.values()][0].join(", ");
   return [...[...grouped].map(([label, values]) => `${label}: ${values.join(", ")}`), ...(unmatched.length ? [`확인필요: ${unmatched.join(", ")}`] : [])].join(" / ");
 }
+

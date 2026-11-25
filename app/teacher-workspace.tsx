@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { displayProblemNumbers, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
+import { displayProblemNumbers, matchesRosterBook, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
 import AdminPanel from "./admin-panel";
 import SubmissionReportUpload from "./submission-report-upload";
 import RosterActions from "./roster-actions";
@@ -101,11 +101,19 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   const students = [...new Set(activeRoster.map((row) => String(row.student_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
   const classes = [...new Set(activeRoster.map((row) => String(row.class_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
   const visibleRoster = activeRoster.filter((row) => (!studentFilter || row.student_name === studentFilter) && (!classFilter || row.class_name === classFilter));
-  const allowedPairs = useMemo(() => new Set(data.roster.flatMap((row) => splitRosterBooks(row.book_name).map((book) => `${row.student_name}\u0000${book}`))), [data.roster]);
-  const matchingAnswers = data.wrongAnswers.filter((row) => admin || allowedPairs.has(`${row.username}\u0000${row.unit}`));
+  const assignedBooks = useMemo(() => {
+    const byStudent = new Map<string, Set<string>>();
+    for (const row of data.roster) {
+      const books = byStudent.get(row.student_name) || new Set<string>();
+      splitRosterBooks(row.book_name).forEach((book) => books.add(book));
+      byStudent.set(row.student_name, books);
+    }
+    return byStudent;
+  }, [data.roster]);
+  const matchingAnswers = data.wrongAnswers.filter((row) => admin || matchesRosterBook(assignedBooks.get(row.username) || new Set<string>(), row.unit));
   const variantRequests = matchingAnswers.filter((row) => String(row.memo || "").includes("변형"));
   const latestReports = data.reports.filter((row, index, rows) => rows.findIndex((candidate) => candidate.teacher_name === row.teacher_name) === index);
-  const visibleAnswers = matchingAnswers.filter((row) => (!studentFilter || row.username === studentFilter) && (!classFilter || visibleRoster.some((item) => item.student_name === row.username && splitRosterBooks(item.book_name).includes(row.unit))));
+  const visibleAnswers = matchingAnswers.filter((row) => (!studentFilter || row.username === studentFilter) && (!classFilter || visibleRoster.some((item) => item.student_name === row.username && matchesRosterBook(new Set(splitRosterBooks(item.book_name)), row.unit))));
   const datedAnswers = matchingAnswers.filter((row) => {
     if (!row.created_at || !row.username) return false;
     const date = parseUtcDbTime(row.created_at);
@@ -250,4 +258,5 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     <SupportRequestWidget fixedFooter />
   </main>;
 }
+
 
