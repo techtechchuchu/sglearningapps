@@ -20,6 +20,14 @@ function loadTypescript(file) {
 const { parseUtcDbTime } = loadTypescript(path.resolve(__dirname, "../lib/db-time.ts"));
 const { buildReportStatus } = loadTypescript(path.resolve(__dirname, "../lib/report-status.ts"));
 const { parseSubmissionReportText } = loadTypescript(path.resolve(__dirname, "../lib/submission-report.ts"));
+const { matchesRosterBook } = loadTypescript(path.resolve(__dirname, "../lib/wrong-answers.ts"));
+
+test("current roster books include their final-term submission variants", () => {
+  const allowed = new Set(["X-패턴 공통수학2", "UNIT N제 공통수학2"]);
+  assert.equal(matchesRosterBook(allowed, "X-패턴 공통수학2 기말"), true);
+  assert.equal(matchesRosterBook(allowed, "UNIT N제 공통수학2 기말"), true);
+  assert.equal(matchesRosterBook(allowed, "기하끝 기말"), false);
+});
 
 test("UTC database time displays as Korean local time", () => {
   const date = parseUtcDbTime("2026-11-22 02:43:39.08");
