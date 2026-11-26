@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { displayProblemNumbers, matchesRosterBook, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
+import { displayProblemNumbers, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
 import AssignmentEditor from "./assignment-editor";
 import { formatKoreanDbTime, parseUtcDbTime } from "../lib/db-time";
 
 type Row = Record<string, any>;
 
-export default function StudentDetail({ teacher, roster, answers, users, files, schoolAnswers, schoolExams, refresh }: {
-  teacher: string; roster: Row[]; answers: Row[]; users: Row[]; files: Row[]; schoolAnswers: Row[]; schoolExams: Row[]; refresh: () => Promise<void>;
+export default function StudentDetail({ roster, answers, users, files, schoolAnswers, schoolExams, refresh }: {
+  roster: Row[]; answers: Row[]; users: Row[]; files: Row[]; schoolAnswers: Row[]; schoolExams: Row[]; refresh: () => Promise<void>;
 }) {
   const [selected, setSelected] = useState("");
   const [search, setSearch] = useState("");
@@ -19,8 +19,7 @@ export default function StudentDetail({ teacher, roster, answers, users, files, 
   const filteredNames = names.filter((item) => item.toLocaleLowerCase("ko").includes(search.trim().toLocaleLowerCase("ko")));
   const studentRoster = active.filter((row) => row.student_name === name);
   const books = [...new Set(studentRoster.flatMap((row) => splitRosterBooks(row.book_name)))];
-  const allowedBooks = new Set(books);
-  const studentAnswers = answers.filter((row) => row.username === name && (teacher === "전체 관리자" || matchesRosterBook(allowedBooks, row.unit)));
+  const studentAnswers = answers.filter((row) => row.username === name);
   const studentSchoolAnswers = schoolAnswers.filter((row) => row.username === name);
   const studentFiles = files.filter((row) => row.student_name === name);
   const problemCount = studentAnswers.reduce((total, row) => {
