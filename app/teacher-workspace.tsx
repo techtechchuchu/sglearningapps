@@ -101,7 +101,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   const students = [...new Set(activeRoster.map((row) => String(row.student_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
   const classes = [...new Set(activeRoster.map((row) => String(row.class_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
   const visibleRoster = activeRoster.filter((row) => (!studentFilter || row.student_name === studentFilter) && (!classFilter || row.class_name === classFilter));
-  const assignedStudents = new Set(students);
+  const assignedStudents = new Set(data.roster.map((row) => String(row.student_name || "").trim()).filter(Boolean));
   const matchingAnswers = data.wrongAnswers.filter((row) => admin || assignedStudents.has(String(row.username || "").trim()));
   const variantRequests = matchingAnswers.filter((row) => String(row.memo || "").includes("변형"));
   const latestReports = data.reports.filter((row, index, rows) => rows.findIndex((candidate) => candidate.teacher_name === row.teacher_name) === index);
