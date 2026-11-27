@@ -7,6 +7,7 @@ const dateTime = (value: string) => new Intl.DateTimeFormat("ko-KR", { timeZone:
 
 export default function SupportRequestInbox() {
   const [items, setItems] = useState<SupportItem[]>([]);
+  const [view, setView] = useState<"open" | "replied">("open");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,11 +58,12 @@ export default function SupportRequestInbox() {
   }
 
   const pending = items.filter((item) => item.status === "open");
-  const ordered = [...pending, ...items.filter((item) => item.status !== "open")];
+  const ordered = items.filter((item) => item.status === view);
   return <section className="panel support-inbox" aria-label="관리자 상담 요청">
     <div className="support-inbox-heading"><div><h2>관리자 상담 요청 · 답변 대기 {pending.length}건</h2><p>로그인한 이용자가 앱에서 남긴 문의입니다. 답변은 이용자 화면의 내 문의 내역에 표시됩니다.</p></div><button type="button" className="ghost" onClick={() => void reload()} disabled={loading}>{loading ? "확인 중…" : "새로고침"}</button></div>
+    <div className="admin-notice-actions"><button type="button" aria-pressed={view === "open"} onClick={() => setView("open")}>답변 대기 {pending.length}건</button><button type="button" aria-pressed={view === "replied"} onClick={() => setView("replied")}>답변 완료 {items.length - pending.length}건</button></div>
     {error && <p className="alert" role="alert">{error}</p>}
-    {!loading && !items.length && <p>접수된 문의가 없습니다.</p>}
+    {!loading && !ordered.length && <p>{view === "open" ? "답변을 기다리는 문의가 없습니다." : "답변 완료된 문의가 없습니다."}</p>}
     <div className="support-inbox-list">{ordered.map((item) => <article key={item.id}><small>{item.status === "open" ? "답변 대기" : "답변 완료"} · {dateTime(item.created_at)} · {item.requester_name} ({item.requester_role})</small><p>{item.message}</p>{item.attachments?.map((file) => <a className="support-attachment-link" href={`/api/support/attachments/${file.id}`} target="_blank" rel="noopener noreferrer" key={file.id}>📎 {file.file_name}</a>)}{item.admin_reply && <div className="support-inbox-previous"><strong>이전 답변</strong><p>{item.admin_reply}</p></div>}<form onSubmit={(event) => void reply(event, item.id)}><label htmlFor={`support-reply-${item.id}`}>{item.admin_reply ? "답변 수정" : "관리자 답변"}</label><textarea id={`support-reply-${item.id}`} value={drafts[item.id] || ""} onChange={(event) => setDrafts((previous) => ({ ...previous, [item.id]: event.target.value }))} minLength={2} maxLength={2000} required /><div className="support-file-actions"><label className="support-file-action">📷 사진 촬영<input type="file" accept="image/*" capture="environment" disabled={!!uploadingId} onChange={(event) => { void attach(item.id, event.target.files?.[0]); event.target.value = ""; }} /></label><label className="support-file-action">📎 파일 첨부<input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf" disabled={!!uploadingId} onChange={(event) => { void attach(item.id, event.target.files?.[0]); event.target.value = ""; }} /></label></div>{uploadingId === item.id && <small>파일 첨부 중…</small>}<button type="submit" className="primary" disabled={busyId !== "" || (drafts[item.id] || "").trim().length < 2}>{busyId === item.id ? "저장 중…" : "답변 저장"}</button></form></article>)}</div>
   </section>;
 }
