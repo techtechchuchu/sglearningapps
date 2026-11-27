@@ -83,7 +83,7 @@ export default function TeacherAnswerList({ answers, roster }: { answers: Row[];
     </div>
     <div className={styles.groups}>
       {groups.size ? [...groups].map(([name, rows]) => <details key={name} className={styles.group}>
-        <summary><strong>{name}</strong><span>{type === "variant" ? "요청" : "제출"} {problemTotals.get(name)}문제</span><small>최근 {rows[0]?.created_at ? formatKoreanDbTime(rows[0].created_at) : "시각 없음"}{rows.length < (recordTotals.get(name) || 0) ? ` · 현재 ${rows.length}건 표시` : ""}</small></summary>
+        <summary><strong>{name}</strong><span className={styles.latestCount}>최근 {type === "variant" ? "요청" : "제출"} {problemCount(rows[0])}문제</span><small>누적 {problemTotals.get(name)}문제 · {rows[0]?.created_at ? formatKoreanDbTime(rows[0].created_at) : "시각 없음"}{rows.length < (recordTotals.get(name) || 0) ? ` · 현재 ${rows.length}건 표시` : ""}</small></summary>
         <div className={styles.records}>{rows.map((row, index) => {
           const memo = String(row.memo || "").replace(/\s*\[변형문제 요청[^\]]*\]/g, "").trim();
           return <div className={styles.record} key={row.id ?? `${name}-${index}`}>
