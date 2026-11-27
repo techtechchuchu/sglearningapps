@@ -7,6 +7,7 @@ import SubmissionReportUpload from "./submission-report-upload";
 import RosterActions from "./roster-actions";
 import StudentDetail from "./student-detail";
 import TeacherStudentRoster from "./teacher-student-roster";
+import TeacherAnswerList from "./teacher-answer-list";
 import BrandLockup from "./brand-lockup";
 import SupportRequestWidget from "./support-request-widget";
 import SupportRequestInbox from "./support-request-inbox";
@@ -18,7 +19,7 @@ import StaffNotifications from "./staff-notifications";
 import AcademyReview from "./academy-review";
 import StudentSignupReview from "./student-signup-review";
 import { BOOK_PERIODS, BookPeriod, filterBooksByPeriod } from "../lib/book-periods";
-import { formatKoreanDbTime, parseUtcDbTime } from "../lib/db-time";
+import { parseUtcDbTime } from "../lib/db-time";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; sharedAccount?: Row | null; withdrawnMembers?: Row[]; activeBooks: string[] };
@@ -114,7 +115,6 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   const matchingAnswers = data.wrongAnswers.filter((row) => admin || matchesRosterBook(assignedBooks.get(row.username) || new Set<string>(), row.unit));
   const variantRequests = matchingAnswers.filter((row) => String(row.memo || "").includes("변형"));
   const latestReports = data.reports.filter((row, index, rows) => rows.findIndex((candidate) => candidate.teacher_name === row.teacher_name) === index);
-  const visibleAnswers = matchingAnswers.filter((row) => (!studentFilter || row.username === studentFilter) && (!classFilter || visibleRoster.some((item) => item.student_name === row.username && matchesRosterBook(new Set(splitRosterBooks(item.book_name)), row.unit))));
   const datedAnswers = matchingAnswers.filter((row) => {
     if (!row.created_at || !row.username) return false;
     const date = parseUtcDbTime(row.created_at);
@@ -221,7 +221,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     <nav className="workspace-tabs staff-subtabs" aria-label="세부 메뉴">{menus.map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value); setMessage(""); }}>{label}</button>)}</nav>
     {editingFavorites && <div className="staff-favorites-backdrop"><section className="staff-favorites-dialog" role="dialog" aria-modal="true" aria-labelledby="favorites-title"><div className="staff-favorites-dialog-heading"><h2 id="favorites-title">자주 쓰는 메뉴 편집</h2><button type="button" aria-label="닫기" onClick={() => setEditingFavorites(false)}>×</button></div><p>최대 5개까지 고정할 수 있습니다. 이 브라우저에서 로그인한 {teacher} 계정에 적용됩니다.</p><div className="staff-favorites-options">{favoriteOptions.map(([value, label]) => <label key={value}><input type="checkbox" checked={favoriteDraft.includes(value)} disabled={!favoriteDraft.includes(value) && favoriteDraft.length >= 5} onChange={(event) => setFavoriteDraft((current) => event.target.checked ? current.length < 5 ? [...current, value] : current : current.filter((item) => item !== value))} />{label}</label>)}</div><small>{favoriteDraft.length}/5개 선택</small><div className="staff-favorites-actions"><button type="button" onClick={() => setEditingFavorites(false)}>취소</button><button type="button" className="primary" onClick={saveFavorites}>저장</button></div></section></div>}
     {message && <p className="workspace-message" role="status">{message}</p>}
-    {(tab === "answers" || tab === "weekly" || tab === "daily" || tab === "missing") && <section className="panel workspace-filters">{(tab === "daily" || tab === "missing") && <label>기준 날짜<input type="date" value={submissionDate} onChange={(event) => setSubmissionDate(event.target.value)} /></label>}<label>학생<select value={studentFilter} onChange={(event) => setStudentFilter(event.target.value)}><option value="">전체</option>{students.map((student) => <option key={student}>{student}</option>)}</select></label><label>반<select value={classFilter} onChange={(event) => setClassFilter(event.target.value)}><option value="">전체</option>{classes.map((className) => <option key={className}>{className}</option>)}</select></label></section>}
+    {(tab === "weekly" || tab === "daily" || tab === "missing") && <section className="panel workspace-filters">{(tab === "daily" || tab === "missing") && <label>기준 날짜<input type="date" value={submissionDate} onChange={(event) => setSubmissionDate(event.target.value)} /></label>}<label>학생<select value={studentFilter} onChange={(event) => setStudentFilter(event.target.value)}><option value="">전체</option>{students.map((student) => <option key={student}>{student}</option>)}</select></label><label>반<select value={classFilter} onChange={(event) => setClassFilter(event.target.value)}><option value="">전체</option>{classes.map((className) => <option key={className}>{className}</option>)}</select></label></section>}
     {tab === "home" && <>
       <section className="panel"><h2>🏠 오답노트 관리 홈</h2><p>{admin ? "저장된 보고서 기준, 학생 제출 현황과 변형문제 요청을 한 화면에서 확인합니다." : "전체 관리자가 저장한 보고서 기준과 담당 학생 현황을 확인합니다."}</p></section>
       {admin && <SupportRequestInbox />}
@@ -232,7 +232,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
       <section className="panel"><h2>🧩 변형문제 요청</h2><div className="metrics"><article><b>{new Set(variantRequests.map((row) => row.username)).size}</b><span>요청 학생</span></article><article><b>{variantRequests.length}</b><span>요청 건수</span></article></div><details><summary>전체 요청 보기 · {variantRequests.length}건</summary>{variantRequests.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""}</span></div>)}</details></section>
       <section className="grid2"><article className="panel"><h2>최근 오답</h2>{matchingAnswers.slice(0, 12).map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit}</strong><span>{displayProblemNumbers(row.unit, row.problem)}번</span></div>)}</article><article className="panel"><h2>최근 오답노트 PDF</h2>{data.wrongNoteFiles.slice(0, 12).map((row) => <div className="row" key={row.id}><strong>{row.student_name}</strong><span>{row.original_filename} {row.id && <a href={`/api/files/wrong-note/${row.id}`} target="_blank" rel="noopener noreferrer">PDF 열기</a>}</span></div>)}</article></section>
     </>}
-    {tab === "answers" && <section className="panel"><h2>학생 오답 현황</h2><p>명단의 교재가 여러 개일 때 각각 분리해 연결합니다.</p>{visibleAnswers.length ? visibleAnswers.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""} {row.created_at && `· ${formatKoreanDbTime(row.created_at)}`}</span></div>) : <p>조건에 맞는 오답이 없습니다.</p>}</section>}
+    {tab === "answers" && <TeacherAnswerList answers={matchingAnswers} roster={activeRoster} />}
     {tab === "weekly" && <section className="panel"><h2>이번 주 제출 현황</h2><p>{week.label}</p>{[...new Set(visibleRoster.map((row) => row.student_name))].map((student) => { const status = week.submitted.get(student); return <div className="row" key={student}><strong>{student} · {status?.numbers.size ? `제출 ${status.numbers.size}문항` : "미제출"}</strong><span>{status ? [...status.books].join(", ") : "이번 주 기록 없음"}</span></div>; })}</section>}
     {tab === "daily" && <section className="panel"><h2>날짜별 제출량</h2><p>{submissionDate} · 한국 시간 기준</p><div className="metrics"><article><b>{visibleDaily.length}</b><span>제출 학생</span></article><article><b>{visibleDaily.reduce((sum, row) => sum + row.records, 0)}</b><span>오답 기록</span></article><article><b>{visibleDaily.reduce((sum, row) => sum + row.problems, 0)}</b><span>제출 문항</span></article></div>{visibleDaily.map((row) => <div className="row" key={row.name}><strong>{row.name}</strong><span>오답 {row.records}건 · 문제 {row.problems}문항</span></div>)}</section>}
     {tab === "missing" && <section className="panel"><h2>미제출 학생</h2><p>{submissionDate}에 오답 기록이 없는 재원 학생 · {missingStudents.length}명</p>{missingStudents.length ? missingStudents.map((name) => <div className="row" key={name}><strong>{name}</strong><span>{[...new Set(visibleRoster.filter((row) => row.student_name === name).map((row) => row.class_name).filter(Boolean))].join(", ")}</span></div>) : <p>선택한 명단의 학생이 모두 제출했습니다.</p>}</section>}
