@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { displayProblemNumbers, matchesRosterBook, splitRosterBooks } from "../lib/wrong-answers";
+import { displayProblemNumbers, matchesRosterBook, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
+import { variantRequestNumbers } from "../lib/variant-request";
 import { formatKoreanDbTime } from "../lib/db-time";
 import styles from "./teacher-answer-list.module.css";
 
@@ -11,6 +12,14 @@ const PAGE_SIZE = 20;
 
 function isVariantRequest(row: Row) {
   return String(row.memo || "").includes("[변형문제 요청");
+}
+
+function problemCount(row: Row): number {
+  if (isVariantRequest(row)) {
+    const requested = variantRequestNumbers(row.memo);
+    if (requested) return requested.length;
+  }
+  try { return parseProblemNumbers(row.problem).length; } catch { return 0; }
 }
 
 export default function TeacherAnswerList({ answers, roster }: { answers: Row[]; roster: Row[] }) {
@@ -42,10 +51,12 @@ export default function TeacherAnswerList({ answers, roster }: { answers: Row[];
     .filter((row) => isVariantRequest(row) === (type === "variant"))
     .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
   const visibleRows = results.slice(0, visibleCount);
-  const totals = new Map<string, number>();
+  const recordTotals = new Map<string, number>();
+  const problemTotals = new Map<string, number>();
   for (const row of results) {
     const name = String(row.username || "").trim();
-    totals.set(name, (totals.get(name) || 0) + 1);
+    recordTotals.set(name, (recordTotals.get(name) || 0) + 1);
+    problemTotals.set(name, (problemTotals.get(name) || 0) + problemCount(row));
   }
   const groups = new Map<string, Row[]>();
   for (const row of visibleRows) {
@@ -67,12 +78,12 @@ export default function TeacherAnswerList({ answers, roster }: { answers: Row[];
       </label>
     </div>
     <div className={styles.tabs} role="group" aria-label="기록 종류">
-      <button type="button" className={type === "normal" ? styles.active : ""} aria-pressed={type === "normal"} onClick={() => { setType("normal"); setVisibleCount(PAGE_SIZE); }}>일반 오답 <span>{normalCount}</span></button>
-      <button type="button" className={type === "variant" ? styles.active : ""} aria-pressed={type === "variant"} onClick={() => { setType("variant"); setVisibleCount(PAGE_SIZE); }}>변형문제 요청 <span>{variantCount}</span></button>
+      <button type="button" className={type === "normal" ? styles.active : ""} aria-pressed={type === "normal"} onClick={() => { setType("normal"); setVisibleCount(PAGE_SIZE); }}>일반 오답 <span>{normalCount}건</span></button>
+      <button type="button" className={type === "variant" ? styles.active : ""} aria-pressed={type === "variant"} onClick={() => { setType("variant"); setVisibleCount(PAGE_SIZE); }}>변형문제 요청 <span>{variantCount}건</span></button>
     </div>
     <div className={styles.groups}>
       {groups.size ? [...groups].map(([name, rows]) => <details key={name} className={styles.group}>
-        <summary><strong>{name}</strong><span>{type === "variant" ? "요청" : "제출"} {totals.get(name)}건</span><small>최근 {rows[0]?.created_at ? formatKoreanDbTime(rows[0].created_at) : "시각 없음"}{rows.length < (totals.get(name) || 0) ? ` · 현재 ${rows.length}건 표시` : ""}</small></summary>
+        <summary><strong>{name}</strong><span>{type === "variant" ? "요청" : "제출"} {problemTotals.get(name)}문제</span><small>최근 {rows[0]?.created_at ? formatKoreanDbTime(rows[0].created_at) : "시각 없음"}{rows.length < (recordTotals.get(name) || 0) ? ` · 현재 ${rows.length}건 표시` : ""}</small></summary>
         <div className={styles.records}>{rows.map((row, index) => {
           const memo = String(row.memo || "").replace(/\s*\[변형문제 요청[^\]]*\]/g, "").trim();
           return <div className={styles.record} key={row.id ?? `${name}-${index}`}>
