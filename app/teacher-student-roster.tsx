@@ -16,6 +16,12 @@ function signupStatus(account?: Row): { label: string; category: Exclude<StatusF
   return { label: "가입 완료", category: "complete" };
 }
 
+function teacherDisplayName(value: string): string {
+  const name = value.replace(/\.?T$/i, "").trim();
+  if (!name) return "담당 미지정";
+  return name.endsWith("쌤") || name.endsWith("선생님") ? name : `${name}쌤`;
+}
+
 export default function TeacherStudentRoster({ roster, users, sharedAccount }: {
   roster: Row[];
   users: Row[];
@@ -27,9 +33,12 @@ export default function TeacherStudentRoster({ roster, users, sharedAccount }: {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const activeRoster = roster.filter((row) => (!row.enrollment_status || row.enrollment_status === "재원") && String(row.student_name || "").trim());
-  const classes = [...new Set(activeRoster.map((row) => String(row.class_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
+  const classes = [...new Set(activeRoster.map((row) => JSON.stringify([String(row.teacher_name || "").trim(), String(row.class_name || "").trim()])))]
+    .map((key) => ({ key, names: JSON.parse(key) as [string, string] }))
+    .filter((item) => item.names[1])
+    .sort((a, b) => a.names[1].localeCompare(b.names[1], "ko") || a.names[0].localeCompare(b.names[0], "ko"));
   const accounts = new Map(users.map((user) => [String(user.username || "").trim(), user]));
-  const classRows = activeRoster.filter((row) => !selectedClass || row.class_name === selectedClass);
+  const classRows = activeRoster.filter((row) => !selectedClass || JSON.stringify([String(row.teacher_name || "").trim(), String(row.class_name || "").trim()]) === selectedClass);
   const uniqueStudents = new Map<string, ReturnType<typeof signupStatus>>();
   for (const row of classRows) {
     const name = String(row.student_name || "").trim();
@@ -54,7 +63,7 @@ export default function TeacherStudentRoster({ roster, users, sharedAccount }: {
       <label>반 선택
         <select value={selectedClass} onChange={(event) => { setSelectedClass(event.target.value); setVisibleCount(PAGE_SIZE); }}>
           <option value="">전체 반</option>
-          {classes.map((className) => <option key={className} value={className}>{className}</option>)}
+          {classes.map((item) => <option key={item.key} value={item.key}>{item.names[1]} - {teacherDisplayName(item.names[0])}</option>)}
         </select>
       </label>
       <label>학생 이름 검색
