@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { displayProblemNumbers, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
+import { displayProblemNumbers, matchesRosterBook, parseProblemNumbers, splitRosterBooks } from "../lib/wrong-answers";
 import AdminPanel from "./admin-panel";
 import SubmissionReportUpload from "./submission-report-upload";
 import RosterActions from "./roster-actions";
@@ -101,11 +101,19 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
   const students = [...new Set(activeRoster.map((row) => String(row.student_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
   const classes = [...new Set(activeRoster.map((row) => String(row.class_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
   const visibleRoster = activeRoster.filter((row) => (!studentFilter || row.student_name === studentFilter) && (!classFilter || row.class_name === classFilter));
-  const assignedStudents = new Set(data.roster.map((row) => String(row.student_name || "").trim()).filter(Boolean));
-  const matchingAnswers = data.wrongAnswers.filter((row) => admin || assignedStudents.has(String(row.username || "").trim()));
+  const assignedBooks = useMemo(() => {
+    const byStudent = new Map<string, Set<string>>();
+    for (const row of data.roster) {
+      const books = byStudent.get(row.student_name) || new Set<string>();
+      splitRosterBooks(row.book_name).forEach((book) => books.add(book));
+      byStudent.set(row.student_name, books);
+    }
+    return byStudent;
+  }, [data.roster]);
+  const matchingAnswers = data.wrongAnswers.filter((row) => admin || matchesRosterBook(assignedBooks.get(row.username) || new Set<string>(), row.unit));
   const variantRequests = matchingAnswers.filter((row) => String(row.memo || "").includes("변형"));
   const latestReports = data.reports.filter((row, index, rows) => rows.findIndex((candidate) => candidate.teacher_name === row.teacher_name) === index);
-  const visibleAnswers = matchingAnswers.filter((row) => (!studentFilter || row.username === studentFilter) && (!classFilter || visibleRoster.some((item) => item.student_name === row.username)));
+  const visibleAnswers = matchingAnswers.filter((row) => (!studentFilter || row.username === studentFilter) && (!classFilter || visibleRoster.some((item) => item.student_name === row.username && matchesRosterBook(new Set(splitRosterBooks(item.book_name)), row.unit))));
   const datedAnswers = matchingAnswers.filter((row) => {
     if (!row.created_at || !row.username) return false;
     const date = parseUtcDbTime(row.created_at);
@@ -223,7 +231,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
       <section className="panel"><h2>🧩 변형문제 요청</h2><div className="metrics"><article><b>{new Set(variantRequests.map((row) => row.username)).size}</b><span>요청 학생</span></article><article><b>{variantRequests.length}</b><span>요청 건수</span></article></div><details><summary>전체 요청 보기 · {variantRequests.length}건</summary>{variantRequests.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""}</span></div>)}</details></section>
       <section className="grid2"><article className="panel"><h2>최근 오답</h2>{matchingAnswers.slice(0, 12).map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit}</strong><span>{displayProblemNumbers(row.unit, row.problem)}번</span></div>)}</article><article className="panel"><h2>최근 오답노트 PDF</h2>{data.wrongNoteFiles.slice(0, 12).map((row) => <div className="row" key={row.id}><strong>{row.student_name}</strong><span>{row.original_filename} {row.id && <a href={`/api/files/wrong-note/${row.id}`} target="_blank" rel="noopener noreferrer">PDF 열기</a>}</span></div>)}</article></section>
     </>}
-    {tab === "answers" && <section className="panel"><h2>학생 오답 현황</h2><p>담당 재원생의 모든 오답 제출 기록을 교재와 관계없이 표시합니다.</p>{visibleAnswers.length ? visibleAnswers.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""} {row.created_at && `· ${formatKoreanDbTime(row.created_at)}`}</span></div>) : <p>조건에 맞는 오답이 없습니다.</p>}</section>}
+    {tab === "answers" && <section className="panel"><h2>학생 오답 현황</h2><p>명단의 교재가 여러 개일 때 각각 분리해 연결합니다.</p>{visibleAnswers.length ? visibleAnswers.map((row) => <div className="row" key={row.id}><strong>{row.username} · {row.unit} · {displayProblemNumbers(row.unit, row.problem)}번</strong><span>{row.memo || ""} {row.created_at && `· ${formatKoreanDbTime(row.created_at)}`}</span></div>) : <p>조건에 맞는 오답이 없습니다.</p>}</section>}
     {tab === "weekly" && <section className="panel"><h2>이번 주 제출 현황</h2><p>{week.label}</p>{[...new Set(visibleRoster.map((row) => row.student_name))].map((student) => { const status = week.submitted.get(student); return <div className="row" key={student}><strong>{student} · {status?.numbers.size ? `제출 ${status.numbers.size}문항` : "미제출"}</strong><span>{status ? [...status.books].join(", ") : "이번 주 기록 없음"}</span></div>; })}</section>}
     {tab === "daily" && <section className="panel"><h2>날짜별 제출량</h2><p>{submissionDate} · 한국 시간 기준</p><div className="metrics"><article><b>{visibleDaily.length}</b><span>제출 학생</span></article><article><b>{visibleDaily.reduce((sum, row) => sum + row.records, 0)}</b><span>오답 기록</span></article><article><b>{visibleDaily.reduce((sum, row) => sum + row.problems, 0)}</b><span>제출 문항</span></article></div>{visibleDaily.map((row) => <div className="row" key={row.name}><strong>{row.name}</strong><span>오답 {row.records}건 · 문제 {row.problems}문항</span></div>)}</section>}
     {tab === "missing" && <section className="panel"><h2>미제출 학생</h2><p>{submissionDate}에 오답 기록이 없는 재원 학생 · {missingStudents.length}명</p>{missingStudents.length ? missingStudents.map((name) => <div className="row" key={name}><strong>{name}</strong><span>{[...new Set(visibleRoster.filter((row) => row.student_name === name).map((row) => row.class_name).filter(Boolean))].join(", ")}</span></div>) : <p>선택한 명단의 학생이 모두 제출했습니다.</p>}</section>}
@@ -243,7 +251,7 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {tab === "withdrawn" && <section className="panel"><h2>탈퇴 회원</h2><p>로그인은 중지됩니다. 계정과 개인 기록은 탈퇴일부터 1년간 보관합니다. 만료된 계정은 전체관리자가 확인 후 영구 삭제할 수 있습니다. 학원 명단은 별도로 관리합니다.</p><h3>학원 학생 계정</h3>{data.users.filter((user) => user.withdrawn_at).length ? data.users.filter((user) => user.withdrawn_at).map((user) => <div className="row" key={user.username}><strong>{user.username}</strong><span>탈퇴 {new Date(user.withdrawn_at).toLocaleString("ko-KR")} · 보관 만료 {retentionEnd(user.withdrawn_at)} {admin && retentionExpired(user.withdrawn_at) && <button type="button" disabled={busy} onClick={() => void purgeWithdrawn("student", user.username, user.username)}>영구 삭제</button>}</span></div>) : <p>탈퇴한 학생 계정이 없습니다.</p>}{admin && <><h3>독립·대학생 계정</h3>{(data.withdrawnMembers || []).length ? (data.withdrawnMembers || []).map((user) => <div className="row" key={user.id}><strong>{user.display_name || user.email || "이름 미설정"}</strong><span>{user.school || "학교 미등록"} · 탈퇴 {new Date(user.withdrawn_at).toLocaleString("ko-KR")} · 보관 만료 {retentionEnd(user.withdrawn_at)} {retentionExpired(user.withdrawn_at) && <button type="button" disabled={busy} onClick={() => void purgeWithdrawn("member", user.id, user.display_name || user.email || "독립 계정")}>영구 삭제</button>}</span></div>) : <p>탈퇴한 독립 계정이 없습니다.</p>}</>}</section>}
     {tab === "attendance" && <TeacherAttendance teacher={teacher} roster={activeRoster.map((row) => ({ student_name: String(row.student_name || ""), class_name: String(row.class_name || ""), teacher_name: String(row.teacher_name || "") }))} />}
     {tab === "questions" && <TeacherQuestions roster={data.roster} users={data.users} />}
-    {tab === "detail" && <StudentDetail roster={data.roster} answers={matchingAnswers} users={data.users} files={data.wrongNoteFiles} schoolAnswers={data.schoolWrongAnswers} schoolExams={data.schoolExams} refresh={refresh} />}
+    {tab === "detail" && <StudentDetail roster={data.roster} answers={data.wrongAnswers} users={data.users} files={data.wrongNoteFiles} schoolAnswers={data.schoolWrongAnswers} schoolExams={data.schoolExams} refresh={refresh} />}
     {(tab === "register" || tab === "exited") && <RosterActions mode={tab} teacher={teacher} roster={data.roster} activeBooks={data.activeBooks || []} refresh={refresh} />}
     {tab === "reset" && <section className="panel"><h2>학생 비밀번호 관리</h2><h3>처리 대기 요청</h3>{data.resetRequests.length ? data.resetRequests.map((row) => <div className="row" key={row.id}><strong>{row.username}</strong><span>{new Date(row.requested_at).toLocaleString("ko-KR")}</span></div>) : <p>대기 중인 요청이 없습니다.</p>}<h3>임시 비밀번호 발급</h3><form onSubmit={resetPassword} className="form workspace-form"><label>학생<select value={resetStudent} onChange={(event) => setResetStudent(event.target.value)} required><option value="">선택해주세요</option>{data.users.map((user) => <option key={user.username}>{user.username}</option>)}</select></label><label>새 임시 비밀번호<input type="password" minLength={4} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><label>임시 비밀번호 확인<input type="password" minLength={4} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label><button className="primary" disabled={busy}>임시 비밀번호 발급</button></form></section>}
     {tab === "admin" && admin && <AdminPanel key={adminPanelKey} initialSection={adminInitialSection} roster={data.roster} users={data.users} activeBooks={data.activeBooks || []} refreshRoster={refresh} />}
