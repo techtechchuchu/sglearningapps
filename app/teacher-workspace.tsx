@@ -11,6 +11,8 @@ import TeacherAnswerList from "./teacher-answer-list";
 import BrandLockup from "./brand-lockup";
 import SupportRequestWidget from "./support-request-widget";
 import SupportRequestInbox from "./support-request-inbox";
+import AdminHomeSlides from "./admin-home-slides";
+import AdminNoticeManager from "./admin-notice-manager";
 import ReportStatusPanel from "./report-status-panel";
 import TeacherExplanations from "./teacher-explanations";
 import TeacherAttendance from "./teacher-attendance";
@@ -23,7 +25,7 @@ import { parseUtcDbTime } from "../lib/db-time";
 
 type Row = Record<string, any>;
 export type TeacherData = { roster: Row[]; wrongAnswers: Row[]; wrongNoteFiles: Row[]; reports: Row[]; printStatus: Row[]; schoolWrongAnswers: Row[]; schoolExams: Row[]; resetRequests: Row[]; users: Row[]; sharedAccount?: Row | null; withdrawnMembers?: Row[]; activeBooks: string[] };
-type StaffTab = "home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "explanations" | "detail" | "students" | "attendance" | "questions" | "register" | "exited" | "withdrawn" | "reset" | "admin";
+type StaffTab = "home" | "answers" | "weekly" | "daily" | "missing" | "school" | "paper" | "print" | "explanations" | "detail" | "students" | "attendance" | "questions" | "register" | "exited" | "withdrawn" | "reset" | "admin" | "banners" | "support" | "notices";
 const ADMIN_FAVORITES: StaffTab[] = ["attendance", "detail", "reset"];
 const TEACHER_FAVORITES: StaffTab[] = ["attendance", "students", "detail"];
 
@@ -190,16 +192,16 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     });
   }
 
-  const group = ["home", "answers", "weekly", "daily", "school", "missing"].includes(tab) ? "answers" : ["detail", "students", "attendance", "questions", "register", "exited", "withdrawn", "reset", "admin"].includes(tab) ? "students" : "paper";
+  const group = ["home", "answers", "weekly", "daily", "school", "missing"].includes(tab) ? "answers" : ["detail", "students", "attendance", "questions", "register", "exited", "withdrawn", "reset"].includes(tab) ? "students" : ["admin", "banners", "support", "notices"].includes(tab) ? "operations" : "paper";
   const menus: Array<[typeof tab, string]> = group === "answers"
     ? [["home", "🏠 홈"], ["answers", "📋 전체 오답"], ["weekly", "🗓️ 주간 제출"], ["daily", "🗓️ 날짜별 제출량"], ["school", "🏫 학교 기출"], ["missing", "🚨 미제출"]]
     : group === "students"
-      ? [["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["questions", "💬 학생 질문함"], ["exited", "🚪 퇴원생 관리"], ["withdrawn", "📁 탈퇴 회원"], ["reset", "🔑 비밀번호 관리"], ...(admin ? [["admin", "⚙️ 관리자 설정"] as [typeof tab, string]] : [])]
-      : [["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"]];
+      ? [["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["questions", "💬 학생 질문함"], ["exited", "🚪 퇴원생 관리"], ["withdrawn", "📁 탈퇴 회원"], ["reset", "🔑 비밀번호 관리"]]
+      : group === "operations" ? [["banners", "🖼️ 학생 홈 배너"], ["support", "💬 상담함"], ["notices", "📢 공지 관리"], ["admin", "⚙️ 관리자 설정"]] : [["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"]];
   const favoriteOptions: Array<[StaffTab, string]> = [
     ["home", "🏠 홈"], ["answers", "📋 전체 오답"], ["weekly", "🗓️ 주간 제출"], ["daily", "🗓️ 날짜별 제출량"], ["school", "🏫 학교 기출"], ["missing", "🚨 미제출"],
     ["detail", "👤 학생 상세"], ["register", "➕ 신규생 등록"], ["students", "🏫 반 학생·가입"], ["attendance", "📍 출석 목록"], ["questions", "💬 학생 질문함"], ["exited", "🚪 퇴원생 관리"], ["withdrawn", "📁 탈퇴 회원"], ["reset", "🔑 비밀번호 관리"],
-    ...(admin ? [["admin", "⚙️ 관리자 설정"] as [StaffTab, string]] : []), ["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"],
+    ...(admin ? [["banners", "🖼️ 학생 홈 배너"] as [StaffTab, string], ["support", "💬 상담함"] as [StaffTab, string], ["notices", "📢 공지 관리"] as [StaffTab, string], ["admin", "⚙️ 관리자 설정"] as [StaffTab, string]] : []), ["paper", "📄 오답 Paper 엑셀"], ["print", "🖨️ 출력 관리"], ["explanations", "▶ 문제별 해설"],
   ];
   const favoriteMenu = favorites.map((value) => favoriteOptions.find(([key]) => key === value)).filter((item): item is [StaffTab, string] => Boolean(item));
 
@@ -217,14 +219,13 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     <AcademyReview refresh={refresh} />
     <StudentSignupReview teacher={teacher} roster={data.roster} refresh={refresh} />
     <section className="staff-favorites" aria-label="자주 쓰는 메뉴"><div className="staff-favorites-heading"><strong>자주 쓰는 메뉴</strong><button type="button" onClick={() => { setFavoriteDraft(favorites); setEditingFavorites(true); }}>편집하기</button></div><nav className="staff-favorites-links" aria-label="고정 메뉴">{favoriteMenu.length ? favoriteMenu.map(([value, label]) => <button type="button" key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value); setMessage(""); }}>{label}</button>) : <span>고정한 메뉴가 없습니다. 편집하기에서 추가하세요.</span>}</nav></section>
-    <nav className="workspace-group-tabs" aria-label="관리 영역"><button className={group === "answers" ? "active" : ""} onClick={() => setTab("home")}>📝 오답 관리</button><button className={group === "students" ? "active" : ""} onClick={() => setTab("students")}>👥 학생 관리</button><button className={group === "paper" ? "active" : ""} onClick={() => setTab("paper")}>🖨️ 오답노트 · 출력</button></nav>
+    <nav className="workspace-group-tabs" aria-label="관리 영역"><button className={group === "answers" ? "active" : ""} onClick={() => setTab("home")}>📝 오답 관리</button><button className={group === "students" ? "active" : ""} onClick={() => setTab("students")}>👥 학생 관리</button><button className={group === "paper" ? "active" : ""} onClick={() => setTab("paper")}>🖨️ 오답노트 · 출력</button>{admin && <button className={group === "operations" ? "active" : ""} onClick={() => setTab("banners")}>⚙️ 운영 관리</button>}</nav>
     <nav className="workspace-tabs staff-subtabs" aria-label="세부 메뉴">{menus.map(([value, label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => { setTab(value); setMessage(""); }}>{label}</button>)}</nav>
     {editingFavorites && <div className="staff-favorites-backdrop"><section className="staff-favorites-dialog" role="dialog" aria-modal="true" aria-labelledby="favorites-title"><div className="staff-favorites-dialog-heading"><h2 id="favorites-title">자주 쓰는 메뉴 편집</h2><button type="button" aria-label="닫기" onClick={() => setEditingFavorites(false)}>×</button></div><p>최대 5개까지 고정할 수 있습니다. 이 브라우저에서 로그인한 {teacher} 계정에 적용됩니다.</p><div className="staff-favorites-options">{favoriteOptions.map(([value, label]) => <label key={value}><input type="checkbox" checked={favoriteDraft.includes(value)} disabled={!favoriteDraft.includes(value) && favoriteDraft.length >= 5} onChange={(event) => setFavoriteDraft((current) => event.target.checked ? current.length < 5 ? [...current, value] : current : current.filter((item) => item !== value))} />{label}</label>)}</div><small>{favoriteDraft.length}/5개 선택</small><div className="staff-favorites-actions"><button type="button" onClick={() => setEditingFavorites(false)}>취소</button><button type="button" className="primary" onClick={saveFavorites}>저장</button></div></section></div>}
     {message && <p className="workspace-message" role="status">{message}</p>}
     {(tab === "weekly" || tab === "daily" || tab === "missing") && <section className="panel workspace-filters">{(tab === "daily" || tab === "missing") && <label>기준 날짜<input type="date" value={submissionDate} onChange={(event) => setSubmissionDate(event.target.value)} /></label>}<label>학생<select value={studentFilter} onChange={(event) => setStudentFilter(event.target.value)}><option value="">전체</option>{students.map((student) => <option key={student}>{student}</option>)}</select></label><label>반<select value={classFilter} onChange={(event) => setClassFilter(event.target.value)}><option value="">전체</option>{classes.map((className) => <option key={className}>{className}</option>)}</select></label></section>}
     {tab === "home" && <>
       <section className="panel"><h2>🏠 오답노트 관리 홈</h2><p>{admin ? "저장된 보고서 기준, 학생 제출 현황과 변형문제 요청을 한 화면에서 확인합니다." : "전체 관리자가 저장한 보고서 기준과 담당 학생 현황을 확인합니다."}</p></section>
-      {admin && <SupportRequestInbox />}
       {admin && <SubmissionReportUpload refresh={refresh} />}
       {admin && <section className="panel"><h2>📄 최신 저장 보고서</h2>{latestReports.length ? <div className="metrics">{latestReports.map((row) => <article key={row.id}><b>{row.teacher_name}</b><span>최근 제출 마감 {row.cutoff_at ? new Date(row.cutoff_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-"}</span><small>대상 {row.target_count ?? "-"}명 · {row.note_count ?? "-"}건</small></article>)}</div> : <p>아직 저장된 보고서가 없습니다.</p>}</section>}
       <ReportStatusPanel roster={data.roster} answers={data.wrongAnswers} reports={data.reports} />
@@ -255,6 +256,9 @@ export default function TeacherWorkspace({ teacher, data, refresh, logout }: { t
     {tab === "detail" && <StudentDetail roster={data.roster} answers={data.wrongAnswers} users={data.users} files={data.wrongNoteFiles} schoolAnswers={data.schoolWrongAnswers} schoolExams={data.schoolExams} refresh={refresh} />}
     {(tab === "register" || tab === "exited") && <RosterActions mode={tab} teacher={teacher} roster={data.roster} activeBooks={data.activeBooks || []} refresh={refresh} />}
     {tab === "reset" && <section className="panel"><h2>학생 비밀번호 관리</h2><h3>처리 대기 요청</h3>{data.resetRequests.length ? data.resetRequests.map((row) => <div className="row" key={row.id}><strong>{row.username}</strong><span>{new Date(row.requested_at).toLocaleString("ko-KR")}</span></div>) : <p>대기 중인 요청이 없습니다.</p>}<h3>임시 비밀번호 발급</h3><form onSubmit={resetPassword} className="form workspace-form"><label>학생<select value={resetStudent} onChange={(event) => setResetStudent(event.target.value)} required><option value="">선택해주세요</option>{data.users.map((user) => <option key={user.username}>{user.username}</option>)}</select></label><label>새 임시 비밀번호<input type="password" minLength={4} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><label>임시 비밀번호 확인<input type="password" minLength={4} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label><button className="primary" disabled={busy}>임시 비밀번호 발급</button></form></section>}
+    {tab === "banners" && admin && <AdminHomeSlides />}
+    {tab === "support" && admin && <SupportRequestInbox />}
+    {tab === "notices" && admin && <AdminNoticeManager />}
     {tab === "admin" && admin && <AdminPanel key={adminPanelKey} initialSection={adminInitialSection} roster={data.roster} users={data.users} activeBooks={data.activeBooks || []} refreshRoster={refresh} />}
     <SupportRequestWidget fixedFooter />
   </main>;
