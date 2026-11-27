@@ -79,7 +79,7 @@ export default function TeacherStudentRoster({ roster, users, sharedAccount }: {
         </details>;
       }) : <p className={styles.empty}>조건에 맞는 학생이 없습니다.</p>}
     </div>
-    {results.length > visibleCount && <button type="button" className={styles.more} onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>20명 더 보기 <span>({visibleCount}/{results.length}건 표시)</span></button>}
+    {results.length > visibleCount && <button type="button" className={styles.more} onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>20건 더 보기 <span>({visibleCount}/{results.length}건 표시)</span></button>}
     {sharedAccount && <details className={styles.shared}><summary>공용 확인 계정</summary><p>{sharedAccount.username} · {sharedAccount.grade} · 가입 완료 · 모든 선생님에게 표시 · 출석·미제출 집계 제외</p></details>}
   </section>;
 }
