@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSupabase } from "../../../../lib/supabase-server";
 import { staffSession } from "../../../../lib/staff-access";
 
+function noticeSchedule(input: Record<string, unknown>) {
+  const startsAt = input.startsAt ? new Date(String(input.startsAt)) : null;
+  const endsAt = input.endsAt ? new Date(String(input.endsAt)) : null;
+  if ((startsAt && Number.isNaN(startsAt.getTime())) || (endsAt && Number.isNaN(endsAt.getTime())) || (startsAt && endsAt && endsAt <= startsAt)) throw new Error("공지 게시 기간을 확인해주세요.");
+  return { starts_at: startsAt?.toISOString() || null, ends_at: endsAt?.toISOString() || null };
+}
+
 function authorized(request: NextRequest) { return staffSession(request) === "전체 관리자"; }
 function denied() { return NextResponse.json({ message: "전체 관리자만 이용할 수 있습니다." }, { status: 403 }); }
 
@@ -56,7 +63,7 @@ export async function POST(request: NextRequest) {
       const target = String(input.target || "all");
       if (!title || !content || !["all", "student", "teacher"].includes(target)) return NextResponse.json({ message: "공지 제목·내용·대상을 확인해주세요." }, { status: 400 });
       const now = new Date().toISOString();
-      const created = await db.from("notices").insert({ title, content, target, priority: Math.max(0, Math.min(999, Number(input.priority) || 100)), is_active: Boolean(input.isActive), created_at: now, updated_at: now }).select("*").single();
+      const created = await db.from("notices").insert({ title, content, target, priority: Math.max(0, Math.min(999, Number(input.priority) || 100)), is_active: Boolean(input.isActive), ...noticeSchedule(input), created_at: now, updated_at: now }).select("*").single();
       if (created.error) throw created.error;
       return NextResponse.json({ ok: true, row: created.data }, { status: 201 });
     }
@@ -122,6 +129,7 @@ export async function PATCH(request: NextRequest) {
       if (input.target !== undefined && ["all", "student", "teacher"].includes(input.target)) payload.target = input.target;
       if (input.isActive !== undefined) payload.is_active = Boolean(input.isActive);
       if (input.priority !== undefined) payload.priority = Math.max(0, Math.min(999, Number(input.priority) || 0));
+      if (input.startsAt !== undefined || input.endsAt !== undefined) Object.assign(payload, noticeSchedule(input));
       const updated = await db.from("notices").update(payload).eq("id", id).select("*").single();
       if (updated.error) throw updated.error;
       return NextResponse.json({ ok: true, row: updated.data });
