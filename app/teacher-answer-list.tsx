@@ -22,17 +22,26 @@ function problemCount(row: Row): number {
   try { return parseProblemNumbers(row.problem).length; } catch { return 0; }
 }
 
+function teacherDisplayName(value: string): string {
+  const name = value.replace(/\.?T$/i, "").trim();
+  if (!name) return "담당 미지정";
+  return name.endsWith("쌤") || name.endsWith("선생님") ? name : `${name}쌤`;
+}
+
 export default function TeacherAnswerList({ answers, roster }: { answers: Row[]; roster: Row[] }) {
   const [selectedClass, setSelectedClass] = useState("");
   const [search, setSearch] = useState("");
   const [type, setType] = useState<AnswerType>("normal");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const classes = [...new Set(roster.map((row) => String(row.class_name || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
+  const classes = [...new Set(roster.map((row) => JSON.stringify([String(row.teacher_name || "").trim(), String(row.class_name || "").trim()])))]
+    .map((key) => ({ key, names: JSON.parse(key) as [string, string] }))
+    .filter((item) => item.names[1])
+    .sort((a, b) => a.names[1].localeCompare(b.names[1], "ko") || a.names[0].localeCompare(b.names[0], "ko"));
   const classBooks = new Map<string, Set<string>>();
   if (selectedClass) {
     for (const row of roster) {
-      if (row.class_name !== selectedClass) continue;
+      if (JSON.stringify([String(row.teacher_name || "").trim(), String(row.class_name || "").trim()]) !== selectedClass) continue;
       const name = String(row.student_name || "").trim();
       const books = classBooks.get(name) || new Set<string>();
       splitRosterBooks(row.book_name).forEach((book) => books.add(book));
@@ -70,7 +79,7 @@ export default function TeacherAnswerList({ answers, roster }: { answers: Row[];
       <label>반 선택
         <select value={selectedClass} onChange={(event) => { setSelectedClass(event.target.value); setVisibleCount(PAGE_SIZE); }}>
           <option value="">전체 반</option>
-          {classes.map((className) => <option key={className} value={className}>{className}</option>)}
+          {classes.map((item) => <option key={item.key} value={item.key}>{item.names[1]} - {teacherDisplayName(item.names[0])}</option>)}
         </select>
       </label>
       <label>학생 이름 검색
@@ -83,7 +92,7 @@ export default function TeacherAnswerList({ answers, roster }: { answers: Row[];
     </div>
     <div className={styles.groups}>
       {groups.size ? [...groups].map(([name, rows]) => <details key={name} className={styles.group}>
-        <summary><strong>{name}</strong><span>{type === "variant" ? "요청" : "제출"} {problemTotals.get(name)}문제</span><small>최근 {rows[0]?.created_at ? formatKoreanDbTime(rows[0].created_at) : "시각 없음"}{rows.length < (recordTotals.get(name) || 0) ? ` · 현재 ${rows.length}건 표시` : ""}</small></summary>
+        <summary><strong>{name}</strong><span className={styles.latestCount}>최근 {type === "variant" ? "요청" : "제출"} {problemCount(rows[0])}문제</span><small>누적 {problemTotals.get(name)}문제 · {rows[0]?.created_at ? formatKoreanDbTime(rows[0].created_at) : "시각 없음"}{rows.length < (recordTotals.get(name) || 0) ? ` · 현재 ${rows.length}건 표시` : ""}</small></summary>
         <div className={styles.records}>{rows.map((row, index) => {
           const memo = String(row.memo || "").replace(/\s*\[변형문제 요청[^\]]*\]/g, "").trim();
           return <div className={styles.record} key={row.id ?? `${name}-${index}`}>
