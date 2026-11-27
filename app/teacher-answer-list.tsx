@@ -23,7 +23,7 @@ function problemCount(row: Row): number {
 }
 
 function teacherDisplayName(value: string): string {
-  const name = value.replace(/\\.?T$/i, "").trim();
+  const name = value.replace(/\.?T$/i, "").trim();
   if (!name) return "담당 미지정";
   return name.endsWith("쌤") || name.endsWith("선생님") ? name : `${name}쌤`;
 }
