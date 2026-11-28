@@ -14,10 +14,9 @@ export type StudentHomeSlide = {
 };
 
 const fallbackSlides: StudentHomeSlide[] = [
-  { id: "winter", kind: "blog", title: "2027 겨울방학 수학·과학 시간표", description: "예비고1·2·3 겨울방학 수업 시간표를 확인하세요.", eyebrow: "학원 소식", image: "/sg-blog-winter-2027.png", url: "https://blog.naver.com/PostView.naver?blogId=ulsansgg&logNo=224465437422&redirect=Dlog" },
-  { id: "prehigh", kind: "blog", title: "예비고1 겨울방학 수업·입반 테스트", description: "수업 시간표와 입반 테스트 안내를 확인하세요.", eyebrow: "학원 소식", image: "/sg-blog-prehigh-2027.png", url: "https://blog.naver.com/PostView.naver?blogId=ulsansgg&logNo=224465314793&redirect=Dlog" },
-  { id: "startplan", kind: "blog", title: "2027 SG 예비고1 스타트플랜 설명회", description: "11월 18일 차오름센터 설명회 안내를 확인하세요.", eyebrow: "학원 소식", image: "/sg-blog-startplan-2027.jpg", url: "https://blog.naver.com/PostView.naver?blogId=ulsansgg&logNo=224442015757&redirect=Dlog" },
-  { id: "premium", kind: "blog", title: "고1 11월 전국모의고사 현장 응시", description: "THE PREMIUM 전국모의고사 현장 응시 안내를 확인하세요.", eyebrow: "학원 소식", image: "/sg-blog-premium-2026.png", url: "https://blog.naver.com/PostView.naver?blogId=ulsansgg&logNo=224437617530&redirect=Dlog" },
+  { id: "science-midterm", kind: "blog", title: "26년 고1 2학기 중간고사 과학 성적우수자", description: "SG 고등관 과학 성적우수자를 확인하세요.", eyebrow: "학원 소식", image: "/sg-blog-science-midterm-2026.png", url: "https://blog.naver.com/ulsansgg/224479629492" },
+  { id: "math-midterm", kind: "blog", title: "26년 고1 2학기 중간고사 수학 성적우수자", description: "SG 고등관 수학 성적우수자를 확인하세요.", eyebrow: "학원 소식", image: "/sg-blog-math-midterm-2026.png", url: "https://blog.naver.com/ulsansgg/224476134438" },
+  { id: "winter", kind: "blog", title: "2027 겨울방학 수학·과학 시간표", description: "예비고1·2·3 겨울방학 수업 시간표를 확인하세요.", eyebrow: "학원 소식", image: "/sg-blog-winter-2027.png", url: "https://blog.naver.com/ulsansgg/224465437422" },
   { id: "home", kind: "home", title: "아이폰 홈 화면에서 스터디결 바로 열기", description: "Safari에서 공유 버튼을 누르고 ‘홈 화면에 추가’를 선택하세요.", eyebrow: "아이폰 이용 안내" },
   { id: "ai", kind: "ai", title: "앱 사용이 어려우신가요?", description: "결결이에게 스터디결 사용법과 이용 중 불편한 점을 물어보세요.", eyebrow: "AI 앱 이용 안내" },
 ];
